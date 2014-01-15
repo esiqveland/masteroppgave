@@ -32,7 +32,6 @@
 *.tdo
 
 ###### JAVA GITIGNORE
-*.war
 *.class
 *.iml
 # Mobile Tools for Java (J2ME)
@@ -45,9 +44,7 @@ __pycache__/
 *.py[cod]
 
 # Distribution / packaging
-build/
 develop-eggs/
-dist/
 eggs/
 *.egg-info/
 .installed.cfg
