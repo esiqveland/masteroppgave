@@ -45,7 +45,6 @@ __pycache__/
 *.py[cod]
 
 # Distribution / packaging
-bin/
 build/
 develop-eggs/
 dist/
