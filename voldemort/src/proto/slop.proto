@@ -1,0 +1,24 @@
+// Please use protoc version 2.3.0 to recompile:
+//   https://code.google.com/p/protobuf/downloads/detail?name=protobuf-2.3.0.tar.gz&can=2&q=
+// Use commmand like the below to recompile:
+// $ protoc -I=src/proto --java_out=src/java src/proto/slop.proto
+
+package voldemort;
+
+option java_package = "voldemort.serialization";
+option java_outer_classname = "VSlopProto";
+option optimize_for = SPEED;
+
+message Slop {
+  optional string store = 1;
+  optional string operation = 2;
+  optional bytes key = 3;
+  optional bytes value = 4;
+  optional int32 node_id = 5;
+  optional int64 arrived = 6;
+}
+
+  
+  
+
+  
