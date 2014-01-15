@@ -31,13 +31,6 @@
 *.xdy
 *.tdo
 
-###### JAVA GITIGNORE
-*.class
-*.iml
-# Mobile Tools for Java (J2ME)
-.mtj.tmp/
-
-
 ###### PYTHON GITIGNORE
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -75,3 +68,15 @@ coverage.xml
 *.log
 *.pot
 
+
+
+###### JAVA GITIGNORE
+*.class
+*.iml
+# Mobile Tools for Java (J2ME)
+.mtj.tmp/
+
+dist/classes
+dist/contrib-classes
+dist/resources
+dist/testclasses
