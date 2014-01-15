@@ -1,0 +1,29 @@
+\section{Prelim}
+
+\subsection{Extending filesystem}
+for more storage, we had to extend the filesystem:
+http://archlinuxarm.org/forum/viewtopic.php?f=31&t=3119&start=20#p33507
+
+To take advantage of the entire SD card.
+
+\subsection{Setup of Oracle JDK7/8}
+For hardfloat and different other things.
+
+JDK7 and especially JDK8 has shown good performance on RPI even compared to native code.
+
+https://jdk8.java.net/download.html
+
+For early access images of JDK8, b123 at time of writing (15.1.2013).
+
+Following the guide at: http://www.savagehomeautomation.com/raspi-jdk8
+
+mkdir -p -v /opt/java
+
+tar xvzf ~/jdk-8-ea-b106-linux-arm-vfp-hflt-04_sep_2013.tar.gz -C /opt/java
+
+To complete the JDK installation we need to let the system know there is a new JVM installed and where it is located.  Use the following command to perform this task.
+
+
+In the line started with "SRV_JAVA_OPTS" find "-Xmx512m" and change it to a lower value than the physical ram available on your board, 412MB worked well for me.
+
+
