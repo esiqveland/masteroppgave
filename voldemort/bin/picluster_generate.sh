@@ -1,7 +1,7 @@
 #!/bin/bash
 
 PROJECT_DIR="${HOME}/src/masteroppgave/voldemort"
-CONFIG_DIR="${PROJECT_DIR}/config/picluster"
+CONFIG_DIR="${PROJECT_DIR}/config/picluster/config"
 
 mkdir -p ${CONFIG_DIR}
 
