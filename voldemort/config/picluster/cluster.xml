@@ -1,0 +1,19 @@
+<cluster>
+  <name>picluster</name>
+  <server>
+    <id>0</id>
+    <host>192.168.0.200</host>
+    <http-port>8081</http-port>
+    <socket-port>6666</socket-port>
+    <admin-port>6667</admin-port>
+    <partitions>1, 0</partitions>
+  </server>
+  <server>
+    <id>1</id>
+    <host>192.168.0.201</host>
+    <http-port>8081</http-port>
+    <socket-port>6666</socket-port>
+    <admin-port>6667</admin-port>
+    <partitions>3, 2</partitions>
+  </server>
+</cluster>

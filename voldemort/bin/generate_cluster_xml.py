@@ -210,3 +210,5 @@ if args.zones:
     cmd = [scriptPath, '-v', vold_home, '-c', clusterXMLFilePath, '-s', current_stores, 
                    '-o', os.path.abspath(args.output_dir)]
     subprocess.call(cmd)
+
+print "wrote config:", clusterXMLFilePath
