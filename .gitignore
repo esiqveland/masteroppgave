@@ -35,7 +35,6 @@
 *.war
 *.class
 *.iml
-*.project
 # Mobile Tools for Java (J2ME)
 .mtj.tmp/
 
@@ -45,20 +44,12 @@
 __pycache__/
 *.py[cod]
 
-# C extensions
-*.so
-
 # Distribution / packaging
 bin/
 build/
 develop-eggs/
 dist/
 eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
 *.egg-info/
 .installed.cfg
 *.egg
@@ -79,7 +70,6 @@ coverage.xml
 
 # Mr Developer
 .mr.developer.cfg
-.project
 .pydevproject
 
 # Rope
@@ -89,5 +79,3 @@ coverage.xml
 *.log
 *.pot
 
-# Sphinx documentation
-docs/_build/
