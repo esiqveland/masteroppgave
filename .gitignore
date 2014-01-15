@@ -76,7 +76,29 @@ coverage.xml
 # Mobile Tools for Java (J2ME)
 .mtj.tmp/
 
-dist/classes
-dist/contrib-classes
-dist/resources
-dist/testclasses
+*/dist/classes
+*/dist/contrib-classes
+*/dist/resources
+*/dist/testclasses
+
+classes
+*~
+*.iml
+*.ipr
+*.iws
+*#
+.#*
+test-output
+node.id
+rebalancing.slave.list
+server.state
+.version
+.temp
+.idea
+data/
+META-INF/MANIFEST.MF
+gc.log
+voldsys$_*
+.project
+.settings
+.pydevproject
