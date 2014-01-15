@@ -85,6 +85,8 @@ parser.add_argument('-s', '--current-stores', type=str, default= "config/tools/d
                          'use config/tools/dummy-stores.xml from the root voldemort home folder.')
 parser.add_argument('-o', '--output-dir', type=str, dest='output_dir',
                     help='output directory location')
+parser.add_argument('-rp', '--rest-port', type=int, default=8085,
+                    dest='rest_port', help='rest service port number')
 parser.add_argument('-z', '--zones', type=int, dest='zones',
                     help='For non zoned clusters do not provide this argument.' 
                          'For zoned clusters provide this argument with at least two zones.')
@@ -134,6 +136,7 @@ partitions = args.partitions
 name = args.name
 http_port = args.http_port
 sock_port = args.sock_port
+rest_port = args.rest_port
 admin_port = args.admin_port
 seed = args.seed
 vold_home = os.pardir
@@ -190,6 +193,7 @@ for i in xrange(nodes):
     print >> fileHandle, "    <host>host%d</host>" % i
   print >> fileHandle, "    <http-port>%d</http-port>" % http_port
   print >> fileHandle, "    <socket-port>%d</socket-port>" % sock_port
+  print >> fileHandle, "    <rest-port>%d</rest-port>" % rest_port
   print >> fileHandle, "    <admin-port>%d</admin-port>" % admin_port
   print >> fileHandle, "    <partitions>%s</partitions>" % partitionslist
   # If zones are being used, assign a zone-id
