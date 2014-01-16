@@ -193,8 +193,8 @@ for i in xrange(nodes):
     print >> fileHandle, "    <host>host%d</host>" % i
   print >> fileHandle, "    <http-port>%d</http-port>" % http_port
   print >> fileHandle, "    <socket-port>%d</socket-port>" % sock_port
-  print >> fileHandle, "    <rest-port>%d</rest-port>" % rest_port
   print >> fileHandle, "    <admin-port>%d</admin-port>" % admin_port
+  print >> fileHandle, "    <rest-port>%d</rest-port>" % rest_port
   print >> fileHandle, "    <partitions>%s</partitions>" % partitionslist
   # If zones are being used, assign a zone-id
   if args.zones:

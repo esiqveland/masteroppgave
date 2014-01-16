@@ -6,5 +6,7 @@ export VOLDEMORT_HOME="${VOLD_HOME}/config/picluster"
 echo "Running from dir: "
 echo ${VOLDEMORT_HOME}
 
-./bin/voldemort-piserver.sh
+screen -wipe
+
+screen -S voldemort /bin/bash -c "./bin/voldemort-piserver.sh"
 
