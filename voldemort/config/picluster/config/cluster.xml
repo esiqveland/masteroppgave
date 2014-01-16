@@ -2,7 +2,7 @@
   <name>picluster</name>
   <server>
     <id>0</id>
-    <host>pinode0</host>
+    <host>192.168.0.200</host>
     <http-port>8081</http-port>
     <socket-port>6666</socket-port>
     <admin-port>6667</admin-port>
@@ -11,7 +11,7 @@
   </server>
   <server>
     <id>1</id>
-    <host>pinode1</host>
+    <host>192.168.0.201</host>
     <http-port>8081</http-port>
     <socket-port>6666</socket-port>
     <admin-port>6667</admin-port>
