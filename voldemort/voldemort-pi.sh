@@ -8,5 +8,5 @@ echo ${VOLDEMORT_HOME}
 
 screen -wipe
 
-screen -S voldemort /bin/bash -c "./bin/voldemort-piserver.sh"
+screen -S voldemort -d -m /bin/bash -c "./bin/voldemort-piserver.sh; exec bash"
 
