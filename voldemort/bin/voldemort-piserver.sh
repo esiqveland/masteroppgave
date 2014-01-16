@@ -21,6 +21,6 @@
 # Spin up the voldemort server(BDB-JE) with a production worthy JVM config
 #
 #export VOLD_OPTS=" -server -Xms384m -Xmx384m -XX:NewSize=48m -XX:MaxNewSize=48m -XX:+UseConcMarkSweepGC -XX:+UseParNewGC -XX:CMSInitiatingOccupancyFraction=70 -XX:SurvivorRatio=2 -XX:+AlwaysPreTouch -XX:+PrintTenuringDistribution -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:gc.log -XX:+PrintGCApplicationStoppedTime -XX:+PrintGCApplicationConcurrentTime "
-echo "WARNING: This setup spins up a kickass server for production/perftesting. Make SURE that you are running on a server class machine"
-echo "Tip: Make sure you either disable swap or give your user permission to mlock the heap"
+#echo "WARNING: This setup spins up a kickass server for production/perftesting. Make SURE that you are running on a server class machine"
+#echo "Tip: Make sure you either disable swap or give your user permission to mlock the heap"
 bin/voldemort-server.sh $@
