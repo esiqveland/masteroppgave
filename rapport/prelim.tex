@@ -27,3 +27,21 @@ To complete the JDK installation we need to let the system know there is a new J
 In the line started with "SRV_JAVA_OPTS" find "-Xmx512m" and change it to a lower value than the physical ram available on your board, 412MB worked well for me.
 
 
+\subsection{Configuring Voldemort}
+
+generate\_cluster.py
+Python script that aids in the generation of Voldemort cluster.xml config file.
+
+This file lists all the nodes in the cluster and the 
+\subsection{Running Voldemort} 
+
+As expected, lots of problems arose when trying to deploy and run voldemort on the tiny embedded architecture.
+
+JNA.jar included did not have linux-arm precompiled binaries for the native method calls used in the software.
+
+The call done by JNA is to mlockall:
+
+Since 0.6.2: JNA for mlockall. This prevents Linux from swapping out parts of the JVM that aren't accessed frequently. Chris Goffinet reported a 13% performance improvement in his tests from this change. CASSANDRA-1214 
+(https://journal.paul.querna.org/articles/2010/11/11/enabling-jna-in-cassandra/)
+mlockall locks the memory that JVM uses as a heap into memory, so that it is not swapped out.
+
