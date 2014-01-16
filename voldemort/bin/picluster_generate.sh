@@ -14,7 +14,7 @@ PARTITIONS=4
 python2.7 generate_cluster_xml.py  \
     --file picluster.hostnames.txt --name picluster  \
     --nodes ${NUM_NODES} --partitions ${PARTITIONS}  \
-    --socket-port 6666 --http-port 8081  \
+    --socket-port 6666 --http-port 8081  --admin-port 6667 \
     --output-dir ${CONFIG_DIR}  \
     --current-stores ${CONFIG_DIR}/config/stores.xml
 
