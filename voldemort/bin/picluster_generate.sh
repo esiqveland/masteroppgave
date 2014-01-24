@@ -6,10 +6,10 @@ CONFIG_DIR="${PROJECT_DIR}/config/picluster/config"
 mkdir -p ${CONFIG_DIR}
 
 # number of nodes in cluster
-NUM_NODES=2
+NUM_NODES=8
 
 # number of partitions
-PARTITIONS=4
+PARTITIONS=16
 
 python2.7 generate_cluster_xml.py  \
     --file picluster.hostnames.txt --name picluster  \
