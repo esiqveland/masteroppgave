@@ -42,7 +42,7 @@ done
 CLASSPATH=$CLASSPATH:$base_dir/dist/resources
 
 if [ -z "$VOLD_OPTS" ]; then
-  VOLD_OPTS="-Xmx312m -server -Dcom.sun.management.jmxremote"
+  VOLD_OPTS="-Xmx284m -server -Dcom.sun.management.jmxremote"
 fi
 
 export CLASSPATH
