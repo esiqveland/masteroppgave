@@ -20,8 +20,7 @@ def update_git():
     subprocess.call(["git", "pull"])
 
 def launch_voldemort():
-    subprocess.call(["voldemort-pi.sh"])
-    pass
+    subprocess.call(["%s/voldemort-pi.sh" % (prosjektdir)])
 
 def set_node_id(property_file, node_id):
     print "Editing .properties: %s" % property_file
@@ -32,8 +31,7 @@ def set_node_id(property_file, node_id):
             print line,
 
 
-while True:
-    update_git() # will not work
-    set_node_id(property_file=prop_file, node_id=node_number)
-    launch_voldemort()
+update_git() # will not work
+set_node_id(property_file=prop_file, node_id=node_number)
+launch_voldemort()
 
