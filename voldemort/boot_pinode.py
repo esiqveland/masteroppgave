@@ -16,7 +16,7 @@ prop_file = "config/picluster/config/server.properties"
 os.chdir(prosjektdir)
 
 def update_git():
-    subprocess.call(["git", "checkout", propfile])
+    subprocess.call(["git", "checkout", prop_file])
     subprocess.call(["git", "pull"])
 
 def launch_voldemort():
