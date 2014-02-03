@@ -5,6 +5,7 @@ import socket
 import os
 import subprocess
 import fileinput
+import time
 
 prosjektdir = "/home/king/src/masteroppgave/voldemort"
 hostname = socket.gethostname()
@@ -30,6 +31,7 @@ def set_node_id(property_file, node_id):
         else:
             print line,
 
+time.sleep(2)
 
 update_git() # will not work
 set_node_id(property_file=prop_file, node_id=node_number)
