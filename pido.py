@@ -11,6 +11,8 @@ commands['ls'] = ("ls -a","king")
 commands['reboot'] = ("reboot","root")
 commands['kill'] = ("./src/masteroppgave/voldemort/bin/voldemort-stop.sh", "king")
 commands['start'] = ("./src/masteroppgave/voldemort/boot_pinode.py", "king")
+commands['reset'] = ("cd src/masteroppgave;git clean -fd",'king')
+
 
 
 def parseNodes(argument):
