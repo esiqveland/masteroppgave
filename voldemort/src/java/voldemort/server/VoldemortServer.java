@@ -325,7 +325,7 @@ public class VoldemortServer extends AbstractService {
     @Override
     protected void startInner() throws VoldemortException {
         // lock down jvm heap
-        JNAUtils.tryMlockall();
+        //JNAUtils.tryMlockall();
         logger.info("Starting " + services.size() + " services.");
         long start = System.currentTimeMillis();
         for(VoldemortService service: services)
@@ -359,7 +359,7 @@ public class VoldemortServer extends AbstractService {
         if(exceptions.size() > 0)
             throw exceptions.get(0);
         // release lock of jvm heap
-        JNAUtils.tryMunlockall();
+        //JNAUtils.tryMunlockall();
     }
 
     public static void main(String[] args) throws Exception {

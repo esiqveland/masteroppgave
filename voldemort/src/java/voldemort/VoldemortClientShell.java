@@ -280,6 +280,7 @@ public class VoldemortClientShell {
         MutableInt parsePos = new MutableInt(0);
         Object key = parseKey(getArgStr, parsePos);
         printVersioned(client.get(key));
+        client.getAll()
     }
 
     private void processDelete(String deleteArgStr) {
