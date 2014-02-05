@@ -45,12 +45,24 @@ def wrongUsage():
 	sys.exit(0)		
 
 
+if len(sys.argv) > 1:
+	if 'admin' in sys.argv[1]:
+		if len(sys.argv) < 4:
+			print "usage: admin \"command\" range user"
+			sys.exit(0)
+		command = sys.argv[2]
+		nodeset = parseNodes(sys.argv[3])
+		user = sys.argv[4]
+		spawnThreads(command,user,nodeset)
+		sys.exit(0)
+
 if len(sys.argv) > 2:
 	if commands.get(sys.argv[1]):
 		command, user = commands.get(sys.argv[1])
 		nodeset = parseNodes(sys.argv[2])
 		spawnThreads(command,user,nodeset)
 	else:
+
 		wrongUsage()
 
 
