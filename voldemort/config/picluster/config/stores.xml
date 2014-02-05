@@ -6,6 +6,7 @@
         <owners>harry@hogwarts.edu, hermoine@hogwarts.edu</owners>
         <routing-strategy>consistent-routing</routing-strategy>
         <routing>client</routing>
+        <hinted-handoff-strategy>consistent-handoff</hinted-handoff-strategy>
         <replication-factor>4</replication-factor>
         <required-reads>1</required-reads>
         <required-writes>2</required-writes>
