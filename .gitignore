@@ -68,7 +68,7 @@ coverage.xml
 *.log
 *.pot
 
-
+.DS_Store
 
 ###### JAVA GITIGNORE
 *.class
