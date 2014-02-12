@@ -265,7 +265,18 @@ public class VoldemortConfig implements Serializable {
         this(new Props(props));
     }
 
+    /**
+     * Empty constructor to allow for subclassing with ZooKeeper configuration.
+     * */
+    public  VoldemortConfig() {
+
+    }
+
     public VoldemortConfig(Props props) {
+        setProps(props);
+    }
+
+    protected void setProps(Props props) {
         try {
             this.nodeId = props.getInt("node.id");
         } catch(UndefinedPropertyException e) {

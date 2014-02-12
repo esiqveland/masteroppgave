@@ -20,9 +20,10 @@ public class VoldemortZooKeeperConfig extends VoldemortConfig implements Watcher
     private ZooKeeper zk = null;
     private String zkURI = "localhost:3000";
 
-    public VoldemortZooKeeperConfig(ZooKeeper zk, Props properties) throws ConfigurationException {
-        super(properties);
-        this.zk = zk;
+    public VoldemortZooKeeperConfig(String zkurl) throws ConfigurationException {
+        this.zk = VoldemortZooKeeperConfig.setupZooKeeper(zkurl, this);
+        Props props = loadConfigs(this.zk);
+        setProps(props);
     }
 
     private static Props loadConfigs(ZooKeeper zk) {
@@ -44,11 +45,7 @@ public class VoldemortZooKeeperConfig extends VoldemortConfig implements Watcher
     }
 
     public static VoldemortConfig loadFromZooKeeper(String zookeeperurl) {
-        ZooKeeper zk = setupZooKeeper(zookeeperurl, null);
-
-        Props props = loadConfigs(zk);
-
-        VoldemortZooKeeperConfig voldemortConfig = new VoldemortZooKeeperConfig(zk, props);
+        VoldemortZooKeeperConfig voldemortConfig = new VoldemortZooKeeperConfig(zookeeperurl);
         return voldemortConfig;
     }
 
