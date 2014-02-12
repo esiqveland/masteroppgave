@@ -1,10 +1,9 @@
 #!/bin/bash
 
-hostname = open("hostname.txt").read()
 
-prosjektdir = "/Users/knut/src/voldemortcluster/" + hostname + "/voldemort"
+prosjektdir = "/Users/knut/src/voldemortcluster/node0/voldemort"
 
-export VOLD_HOME="/Users/knut/src/voldemortcluster/" + hostname + "/voldemort"
+export VOLD_HOME="/Users/knut/src/voldemortcluster/node0/voldemort"
 export VOLDEMORT_HOME="${VOLD_HOME}/config/picluster"
 
 echo "Running from dir: "
