@@ -7,7 +7,9 @@ import subprocess
 import fileinput
 import time
 
-prosjektdir = "/Users/knut/src/voldemortcluster/node0/voldemort"
+hostname = open("hostname.txt").readline()
+
+prosjektdir = "/Users/knut/src/voldemortcluster/" + hostname + "/voldemort"
 prop_file = "config/picluster/config/server.properties"
 
 os.chdir(prosjektdir)
