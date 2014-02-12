@@ -371,7 +371,7 @@ public class VoldemortServer extends AbstractService {
                 config = VoldemortConfig.loadFromVoldemortHome(args[0]);
             else if(args.length == 2)
                 if (args[1].contains("zk:")) {
-                    config = VoldemortZooKeeperConfig.loadFromZooKeeper(args[1].substring(3));
+                    config = VoldemortZooKeeperConfig.loadFromZooKeeper(args[0], args[1].substring(3));
                 } else {
                     config = VoldemortConfig.loadFromVoldemortHome(args[0], args[1]);
                 }
