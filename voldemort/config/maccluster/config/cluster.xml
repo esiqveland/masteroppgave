@@ -2,74 +2,20 @@
   <name>picluster</name>
   <server>
     <id>0</id>
-    <host>192.168.0.200</host>
+    <host>192.168.0.100</host>
     <http-port>8081</http-port>
     <socket-port>6666</socket-port>
     <admin-port>6667</admin-port>
     <rest-port>8085</rest-port>
-    <partitions>5, 0</partitions>
+    <partitions>6, 14, 5, 15, 9, 2, 10, 8</partitions>
   </server>
   <server>
     <id>1</id>
-    <host>192.168.0.201</host>
-    <http-port>8081</http-port>
-    <socket-port>6666</socket-port>
-    <admin-port>6667</admin-port>
-    <rest-port>8085</rest-port>
-    <partitions>7, 1</partitions>
-  </server>
-  <server>
-    <id>2</id>
-    <host>192.168.0.202</host>
-    <http-port>8081</http-port>
-    <socket-port>6666</socket-port>
-    <admin-port>6667</admin-port>
-    <rest-port>8085</rest-port>
-    <partitions>14, 4</partitions>
-  </server>
-  <server>
-    <id>3</id>
-    <host>192.168.0.203</host>
-    <http-port>8081</http-port>
-    <socket-port>6666</socket-port>
-    <admin-port>6667</admin-port>
-    <rest-port>8085</rest-port>
-    <partitions>12, 15</partitions>
-  </server>
-  <server>
-    <id>4</id>
-    <host>192.168.0.204</host>
-    <http-port>8081</http-port>
-    <socket-port>6666</socket-port>
-    <admin-port>6667</admin-port>
-    <rest-port>8085</rest-port>
-    <partitions>3, 10</partitions>
-  </server>
-  <server>
-    <id>5</id>
-    <host>192.168.0.205</host>
-    <http-port>8081</http-port>
-    <socket-port>6666</socket-port>
-    <admin-port>6667</admin-port>
-    <rest-port>8085</rest-port>
-    <partitions>2, 13</partitions>
-  </server>
-  <server>
-    <id>6</id>
-    <host>192.168.0.206</host>
-    <http-port>8081</http-port>
-    <socket-port>6666</socket-port>
-    <admin-port>6667</admin-port>
-    <rest-port>8085</rest-port>
-    <partitions>8, 11</partitions>
-  </server>
-  <server>
-    <id>7</id>
-    <host>192.168.0.207</host>
-    <http-port>8081</http-port>
-    <socket-port>6666</socket-port>
-    <admin-port>6667</admin-port>
-    <rest-port>8085</rest-port>
-    <partitions>6, 9</partitions>
+    <host>192.168.0.100</host>
+    <http-port>9081</http-port>
+    <socket-port>7666</socket-port>
+    <admin-port>7667</admin-port>
+    <rest-port>9085</rest-port>
+    <partitions>12, 11, 13, 0, 4, 7, 1, 3</partitions>
   </server>
 </cluster>
