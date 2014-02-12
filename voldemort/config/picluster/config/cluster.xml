@@ -7,7 +7,7 @@
     <socket-port>6666</socket-port>
     <admin-port>6667</admin-port>
     <rest-port>8085</rest-port>
-    <partitions>5, 0</partitions>
+    <partitions>12, 10</partitions>
   </server>
   <server>
     <id>1</id>
@@ -16,7 +16,7 @@
     <socket-port>6666</socket-port>
     <admin-port>6667</admin-port>
     <rest-port>8085</rest-port>
-    <partitions>7, 1</partitions>
+    <partitions>5, 8</partitions>
   </server>
   <server>
     <id>2</id>
@@ -25,7 +25,7 @@
     <socket-port>6666</socket-port>
     <admin-port>6667</admin-port>
     <rest-port>8085</rest-port>
-    <partitions>14, 4</partitions>
+    <partitions>6, 2</partitions>
   </server>
   <server>
     <id>3</id>
@@ -34,7 +34,7 @@
     <socket-port>6666</socket-port>
     <admin-port>6667</admin-port>
     <rest-port>8085</rest-port>
-    <partitions>12, 15</partitions>
+    <partitions>9, 1</partitions>
   </server>
   <server>
     <id>4</id>
@@ -43,7 +43,7 @@
     <socket-port>6666</socket-port>
     <admin-port>6667</admin-port>
     <rest-port>8085</rest-port>
-    <partitions>3, 10</partitions>
+    <partitions>11, 14</partitions>
   </server>
   <server>
     <id>5</id>
@@ -52,7 +52,7 @@
     <socket-port>6666</socket-port>
     <admin-port>6667</admin-port>
     <rest-port>8085</rest-port>
-    <partitions>2, 13</partitions>
+    <partitions>13, 7</partitions>
   </server>
   <server>
     <id>6</id>
@@ -61,7 +61,7 @@
     <socket-port>6666</socket-port>
     <admin-port>6667</admin-port>
     <rest-port>8085</rest-port>
-    <partitions>8, 11</partitions>
+    <partitions>4, 3</partitions>
   </server>
   <server>
     <id>7</id>
@@ -70,6 +70,6 @@
     <socket-port>6666</socket-port>
     <admin-port>6667</admin-port>
     <rest-port>8085</rest-port>
-    <partitions>6, 9</partitions>
+    <partitions>0, 15</partitions>
   </server>
 </cluster>
