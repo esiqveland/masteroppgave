@@ -57,7 +57,7 @@ public class VoldemortZooKeeperConfig extends VoldemortConfig implements Watcher
     }
 
     private static String getClusterConfigFromZooKeeper(ZooKeeper zk) {
-        return getFileFromZooKeeper(zk, "/voldemort/config/cluster.xml");
+        return getFileFromZooKeeper(zk, "/config/cluster.xml");
     }
 
     private static String getFileFromZooKeeper(ZooKeeper zk, String path) {
@@ -94,7 +94,7 @@ public class VoldemortZooKeeperConfig extends VoldemortConfig implements Watcher
     public static String getNodeConfigFromZooKeeper(ZooKeeper zk) throws UnknownHostException {
         String hostname = new String(InetAddress.getLocalHost().getCanonicalHostName().toString());
 
-        return getFileFromZooKeeper(zk, "/voldemort/config/"+hostname+".properties");
+        return getFileFromZooKeeper(zk, "/config/"+hostname+".properties");
     }
 
     private boolean isZooKeeperAlive() {
