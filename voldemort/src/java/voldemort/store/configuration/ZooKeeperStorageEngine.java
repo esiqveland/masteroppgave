@@ -189,8 +189,8 @@ public class ZooKeeperStorageEngine extends AbstractStorageEngine<String, String
             try {
                 voldemortZooKeeperConfig.getZooKeeper().setData(this.configdir+"/"+key, value.getValue().getBytes(), value.getVersion().hashCode());
             } catch (InterruptedException | KeeperException e) {
-                logger.info("Error with zookeeper setData to key: " + key);
-                throw new VoldemortException("Error with zookeeper setData to key: " + key, e);
+                logger.info("Error with zookeeper setData to key: " + this.configdir + "/" + key);
+                throw new VoldemortException("Error with zookeeper setData to key: " + this.configdir + "/" + key, e);
             }
         }
 
@@ -199,20 +199,21 @@ public class ZooKeeperStorageEngine extends AbstractStorageEngine<String, String
     private List<Versioned<String>> get(String key) {
         List<String> children;
         List<Versioned<String>> found = new ArrayList<Versioned<String>>();
-        logger.info("Getting zookey: " + this.configdir + "/" + key);
 
         try {
             children = voldemortZooKeeperConfig.getZooKeeper().getChildren(this.configdir, false);
             for(String child : children) {
                 if(child.equals(key)) {
-                    Stat childStat = voldemortZooKeeperConfig.getZooKeeper().exists(child, false);
+//                    logger.info("Getting zookey: " + this.configdir + "/" + key);
+                    logger.info("Getting zookey: " + this.configdir + "/" + child);
+
+                    Stat childStat = voldemortZooKeeperConfig.getZooKeeper().exists(this.configdir + "/" + child, false);
 
                     VectorClock clock = new VectorClock(childStat.getCtime());
 
-                    String data = new String(voldemortZooKeeperConfig.getZooKeeper().getData(child, false, childStat));
+                    String data = new String(voldemortZooKeeperConfig.getZooKeeper().getData(this.configdir + "/" + child, false, childStat));
                     Versioned<String> stringVersioned = new Versioned<String>(data, clock);
                     found.add(stringVersioned);
-
                 }
             }
         } catch (InterruptedException | KeeperException e) {
