@@ -1,7 +1,7 @@
 #!/bin/bash
 
 export VOLD_HOME="/home/king/src/masteroppgave/voldemort"
-export VOLDEMORT_HOME="${VOLD_HOME}/config/maccluster"
+export VOLDEMORT_HOME="${VOLD_HOME}/config/maccluster/config"
 
 echo "Running from dir: "
 echo ${VOLDEMORT_HOME}
