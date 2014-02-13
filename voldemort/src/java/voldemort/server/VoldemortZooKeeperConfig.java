@@ -19,15 +19,15 @@ import java.util.Properties;
 public class VoldemortZooKeeperConfig extends VoldemortConfig implements Watcher {
 
     private ZooKeeper zk = null;
-    private String zkURI = "localhost:3000";
+    private String zkURL;
 
-    public VoldemortZooKeeperConfig(String voldemortHome, String zkurl) throws ConfigurationException {
+    public VoldemortZooKeeperConfig(String voldemortHome, String voldemortConfigDir, String zkurl) throws ConfigurationException {
+        zkURL = zkurl;
         this.zk = VoldemortZooKeeperConfig.setupZooKeeper(zkurl, this);
 
         Props props = loadConfigs(this.zk);
         props.put("voldemort.home", voldemortHome);
 
-        String voldemortConfigDir = voldemortHome + File.separator + "config";
         props.put("metadata.directory", voldemortConfigDir);
 
         setProps(props);
@@ -51,8 +51,11 @@ public class VoldemortZooKeeperConfig extends VoldemortConfig implements Watcher
         return properties;
     }
 
-    public static VoldemortConfig loadFromZooKeeper(String voldemorthome, String zookeeperurl) {
-        VoldemortZooKeeperConfig voldemortConfig = new VoldemortZooKeeperConfig(voldemorthome, zookeeperurl);
+    public static VoldemortConfig loadFromZooKeeper(String voldemorthome, String voldeConfig, String zookeeperurl) {
+        if(voldeConfig == null) {
+            voldeConfig = voldemorthome + "/config";
+        }
+        VoldemortZooKeeperConfig voldemortConfig = new VoldemortZooKeeperConfig( voldemorthome, voldeConfig, zookeeperurl);
         return voldemortConfig;
     }
 
@@ -106,7 +109,7 @@ public class VoldemortZooKeeperConfig extends VoldemortConfig implements Watcher
     public ZooKeeper getZooKeeper() {
         if (isZooKeeperAlive())
             return this.zk;
-        zk = setupZooKeeper(zkURI, this);
+        zk = setupZooKeeper(zkURL, this);
         return zk;
     }
 }

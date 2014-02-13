@@ -374,14 +374,14 @@ public class VoldemortServer extends AbstractService {
             else if(args.length == 1)
                 config = VoldemortConfig.loadFromVoldemortHome(args[0]);
             else if(args.length == 2)
-                if (args[1].contains("zk:")) {
-                    config = VoldemortZooKeeperConfig.loadFromZooKeeper(args[0], args[1].substring(3));
-                } else {
-                    config = VoldemortConfig.loadFromVoldemortHome(args[0], args[1]);
+                config = VoldemortConfig.loadFromVoldemortHome(args[0], args[1]);
+            else if(args.length == 3)
+                if (args[2].contains("zk:")) {
+                    config = VoldemortZooKeeperConfig.loadFromZooKeeper(args[0], args[1], args[2].substring(3));
                 }
             else
                 croak("USAGE: java " + VoldemortServer.class.getName()
-                      + " [voldemort_home_dir] [voldemort_config_dir]");
+                      + " [voldemort_home_dir] [voldemort_config_dir] [zookeeperurl: zk:host:port/chroot]");
         } catch(Exception e) {
             logger.error(e);
             Utils.croak("Error while loading configuration: " + e.getMessage());
