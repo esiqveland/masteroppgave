@@ -86,16 +86,6 @@ public class ZooKeeperStorageEngine extends AbstractStorageEngine<String, String
 
         String path = "";
         try {
-            Stat stat = voldemortZooKeeperConfig.getZooKeeper().exists(key, false);
-            if(stat != null) {
-                voldemortZooKeeperConfig.getZooKeeper().delete(key, stat.getVersion());
-                return true;
-            }
-        } catch (InvalidPathException | InterruptedException | KeeperException e) {
-            logger.error("Error while attempting to delete key:" + key, e);
-        }
-
-        try {
             Stat stat = voldemortZooKeeperConfig.getZooKeeper().exists(configdir + "/" + key, false);
             if(stat != null) {
                 voldemortZooKeeperConfig.getZooKeeper().delete(configdir + "/" + key, stat.getVersion());
@@ -198,7 +188,7 @@ public class ZooKeeperStorageEngine extends AbstractStorageEngine<String, String
         } else {
             // is zookeeper key
             try {
-                voldemortZooKeeperConfig.getZooKeeper().setData(key, value.getValue().getBytes(), value.getVersion().hashCode());
+                voldemortZooKeeperConfig.getZooKeeper().setData(this.configdir+"/"+key, value.getValue().getBytes(), value.getVersion().hashCode());
             } catch (InterruptedException | KeeperException e) {
                 logger.info("Error with zookeeper setData to key: " + key);
                 throw new VoldemortException("Error with zookeeper setData to key: " + key, e);
@@ -211,7 +201,7 @@ public class ZooKeeperStorageEngine extends AbstractStorageEngine<String, String
         List<String> children;
         List<Versioned<String>> found = new ArrayList<Versioned<String>>();
         try {
-            children = voldemortZooKeeperConfig.getZooKeeper().getChildren(key, false);
+            children = voldemortZooKeeperConfig.getZooKeeper().getChildren(this.configdir+"/"+key, false);
             for(String child : children) {
                 if(child.equals(key)) {
                     Stat childStat = voldemortZooKeeperConfig.getZooKeeper().exists(child, false);
