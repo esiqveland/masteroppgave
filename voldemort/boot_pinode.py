@@ -12,7 +12,7 @@ hostname = socket.gethostname()
 
 node_number = hostname[-1]
 
-prop_file = "config/picluster/config/server.properties"
+prop_file = "config/maccluster/config/server.properties"
 
 os.chdir(prosjektdir)
 

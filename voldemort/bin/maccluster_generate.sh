@@ -6,7 +6,7 @@ CONFIG_DIR="${PROJECT_DIR}/config/maccluster/config"
 mkdir -p ${CONFIG_DIR}
 
 # number of nodes in cluster
-NUM_NODES=2
+NUM_NODES=3
 
 # number of partitions
 PARTITIONS=16

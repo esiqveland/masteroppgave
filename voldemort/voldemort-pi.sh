@@ -1,12 +1,12 @@
 #!/bin/bash
 
 export VOLD_HOME="/home/king/src/masteroppgave/voldemort"
-export VOLDEMORT_HOME="${VOLD_HOME}/config/picluster"
+export VOLDEMORT_HOME="${VOLD_HOME}/config/maccluster/config"
 
 echo "Running from dir: "
 echo ${VOLDEMORT_HOME}
 
 screen -wipe
 
-screen -S voldemort -d -m /bin/bash -c "./bin/voldemort-piserver.sh $VOLD_HOME zk:192.168.0.210:2181; exec bash"
+screen -S voldemort -d -m /bin/bash -c "./bin/voldemort-piserver.sh $VOLD_HOME $VOLDEMORT_HOME; exec bash"
 

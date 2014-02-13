@@ -17,7 +17,7 @@ commands['reset'] = ("cd src/masteroppgave;git clean -fd",'king')
 
 def parseNodes(argument):
 	if argument == 'all':
-		return [0,1]
+		return [0,1,2,3]
 	elif '-' in argument:
 		nodeset = []
 		for i in range (int(argument[0]),int(argument[2])):
@@ -32,7 +32,7 @@ def parseNodes(argument):
 		return [int(argument)]
 
 
-def spawnThreads(command, user = "king", nodeset=[0,1]):
+def spawnThreads(command, user = "king", nodeset=[0,1,2,3]):
 	for node in nodeset:
 		broadcast_thread = BroadcastThread('192.168.0.' + str(210 + node), command, user)
 		broadcast_thread.start()	
