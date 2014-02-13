@@ -160,9 +160,9 @@ public class MetadataStore extends AbstractStorageEngine<ByteArray, byte[], byte
             if(stat == null)
                 throw new IllegalArgumentException("/config dir does not exist in ZK!");
 
-            List<String> dirlisting = vc.getZooKeeper().getChildren("/config/", false);
+            List<String> dirlisting = vc.getZooKeeper().getChildren("/config", false);
             if(dirlisting.size() < 1) {
-                throw new IllegalArgumentException("No files in config dir /config/");
+                throw new IllegalArgumentException("No files in config dir /config");
             }
         } catch (InterruptedException | KeeperException e) {
             throw new IllegalArgumentException("Metadata directory " + "/config"
