@@ -157,18 +157,18 @@ public class MetadataStore extends AbstractStorageEngine<ByteArray, byte[], byte
 
         try {
             Stat stat = vc.getZooKeeper().exists("/config", false);
-            if(stat == null)
+            if (stat == null)
                 throw new IllegalArgumentException("/config dir does not exist in ZK!");
 
             List<String> dirlisting = vc.getZooKeeper().getChildren("/config", false);
-            if(dirlisting.size() < 1) {
+            if (dirlisting.size() < 1) {
                 throw new IllegalArgumentException("No files in config dir /config");
             }
         } catch (InterruptedException | KeeperException e) {
             throw new IllegalArgumentException("Metadata directory " + "/config"
                     + " does not exist or can not be read.");
         }
-        Store<String, String, String> innerstore = new ZooKeeperStorageEngine(MetadataStore.METADATA_STORE_NAME, "/config", vc);
+        Store<String, String, String> innerstore = new ZooKeeperStorageEngine(MetadataStore.METADATA_STORE_NAME, vc.getMetadataDirectory(), vc);
         return new MetadataStore(innerstore, vc.getNodeId());
     }
 

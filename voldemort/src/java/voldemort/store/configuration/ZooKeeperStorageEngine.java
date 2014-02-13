@@ -58,6 +58,7 @@ public class ZooKeeperStorageEngine extends AbstractStorageEngine<String, String
     private final static Logger logger = Logger.getLogger(ConfigurationStorageEngine.class);
     private VoldemortZooKeeperConfig voldemortZooKeeperConfig;
     private String configdir;
+    private String zkconfigdir = "/config";
 
     public ZooKeeperStorageEngine(String name, String configDir, VoldemortZooKeeperConfig vc) {
         super(name);
@@ -86,9 +87,9 @@ public class ZooKeeperStorageEngine extends AbstractStorageEngine<String, String
 
         String path = "";
         try {
-            Stat stat = voldemortZooKeeperConfig.getZooKeeper().exists(configdir + "/" + key, false);
+            Stat stat = voldemortZooKeeperConfig.getZooKeeper().exists(zkconfigdir + "/" + key, false);
             if(stat != null) {
-                voldemortZooKeeperConfig.getZooKeeper().delete(configdir + "/" + key, stat.getVersion());
+                voldemortZooKeeperConfig.getZooKeeper().delete(zkconfigdir + "/" + key, stat.getVersion());
                 return true;
             }
         } catch (InvalidPathException | InterruptedException | KeeperException e) {
@@ -187,10 +188,10 @@ public class ZooKeeperStorageEngine extends AbstractStorageEngine<String, String
         } else {
             // is zookeeper key
             try {
-                voldemortZooKeeperConfig.getZooKeeper().setData(this.configdir+"/"+key, value.getValue().getBytes(), value.getVersion().hashCode());
+                voldemortZooKeeperConfig.getZooKeeper().setData(this.zkconfigdir+"/"+key, value.getValue().getBytes(), value.getVersion().hashCode());
             } catch (InterruptedException | KeeperException e) {
-                logger.info("Error with zookeeper setData to key: " + this.configdir + "/" + key);
-                throw new VoldemortException("Error with zookeeper setData to key: " + this.configdir + "/" + key, e);
+                logger.info("Error with zookeeper setData to key: " + this.zkconfigdir + "/" + key);
+                throw new VoldemortException("Error with zookeeper setData to key: " + this.zkconfigdir + "/" + key, e);
             }
         }
 
@@ -201,24 +202,23 @@ public class ZooKeeperStorageEngine extends AbstractStorageEngine<String, String
         List<Versioned<String>> found = new ArrayList<Versioned<String>>();
 
         try {
-            children = voldemortZooKeeperConfig.getZooKeeper().getChildren(this.configdir, false);
+            children = voldemortZooKeeperConfig.getZooKeeper().getChildren(this.zkconfigdir, false);
             for(String child : children) {
                 if(child.equals(key)) {
-//                    logger.info("Getting zookey: " + this.configdir + "/" + key);
-                    logger.info("Getting zookey: " + this.configdir + "/" + child);
+                    logger.info("Getting zookey: " + this.zkconfigdir + "/" + child);
 
-                    Stat childStat = voldemortZooKeeperConfig.getZooKeeper().exists(this.configdir + "/" + child, false);
+                    Stat childStat = voldemortZooKeeperConfig.getZooKeeper().exists(this.zkconfigdir + "/" + child, false);
 
                     VectorClock clock = new VectorClock(childStat.getCtime());
 
-                    String data = new String(voldemortZooKeeperConfig.getZooKeeper().getData(this.configdir + "/" + child, false, childStat));
+                    String data = new String(voldemortZooKeeperConfig.getZooKeeper().getData(this.zkconfigdir + "/" + child, false, childStat));
                     Versioned<String> stringVersioned = new Versioned<String>(data, clock);
                     found.add(stringVersioned);
                 }
             }
         } catch (InterruptedException | KeeperException e) {
-            logger.info("failed getting key: " + this.configdir + "/" + key);
-            throw new VoldemortException("failed getting key: " + this.configdir + "/" + key, e);
+            logger.info("failed getting key: " + this.zkconfigdir + "/" + key);
+            throw new VoldemortException("failed getting key: " + this.zkconfigdir + "/" + key, e);
         }
         return found;
     }
