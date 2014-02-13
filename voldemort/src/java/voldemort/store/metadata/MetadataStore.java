@@ -34,6 +34,9 @@ import javax.management.MBeanOperationInfo;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
+import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.data.Stat;
 import voldemort.VoldemortException;
 import voldemort.annotations.jmx.JmxOperation;
 import voldemort.client.rebalance.RebalanceTaskInfo;
@@ -41,6 +44,8 @@ import voldemort.cluster.Cluster;
 import voldemort.routing.RouteToAllStrategy;
 import voldemort.routing.RoutingStrategy;
 import voldemort.routing.RoutingStrategyFactory;
+import voldemort.server.VoldemortConfig;
+import voldemort.server.VoldemortZooKeeperConfig;
 import voldemort.server.rebalance.RebalancerState;
 import voldemort.store.AbstractStorageEngine;
 import voldemort.store.Store;
@@ -48,6 +53,7 @@ import voldemort.store.StoreCapabilityType;
 import voldemort.store.StoreDefinition;
 import voldemort.store.StoreUtils;
 import voldemort.store.configuration.ConfigurationStorageEngine;
+import voldemort.store.configuration.ZooKeeperStorageEngine;
 import voldemort.store.system.SystemStoreConstants;
 import voldemort.utils.ByteArray;
 import voldemort.utils.ByteUtils;
@@ -145,6 +151,25 @@ public class MetadataStore extends AbstractStorageEngine<ByteArray, byte[], byte
             throw new VoldemortException("MetadataStoreListener must be non-null");
 
         this.storeNameTolisteners.remove(storeName);
+    }
+
+    public static MetadataStore readFromZooKeeper(VoldemortZooKeeperConfig vc) {
+
+        try {
+            Stat stat = vc.getZooKeeper().exists("/config", false);
+            if(stat == null)
+                throw new IllegalArgumentException("/config dir does not exist in ZK!");
+
+            List<String> dirlisting = vc.getZooKeeper().getChildren("/config/", false);
+            if(dirlisting.size() < 1) {
+                throw new IllegalArgumentException("No files in config dir /config/");
+            }
+        } catch (InterruptedException | KeeperException e) {
+            throw new IllegalArgumentException("Metadata directory " + "/config"
+                    + " does not exist or can not be read.");
+        }
+        Store<String, String, String> innerstore = new ZooKeeperStorageEngine(MetadataStore.METADATA_STORE_NAME, "/config", vc);
+        return new MetadataStore(innerstore, vc.getNodeId());
     }
 
     public static MetadataStore readFromDirectory(File dir, int nodeId) {
