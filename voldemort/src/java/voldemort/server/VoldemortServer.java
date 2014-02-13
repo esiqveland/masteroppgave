@@ -86,8 +86,12 @@ public class VoldemortServer extends AbstractService {
         super(ServiceType.VOLDEMORT);
         this.voldemortConfig = config;
         this.storeRepository = new StoreRepository(config.isJmxEnabled());
-        this.metadata = MetadataStore.readFromDirectory(new File(this.voldemortConfig.getMetadataDirectory()),
+        if(config instanceof VoldemortZooKeeperConfig) {
+            this.metadata = MetadataStore.readFromZooKeeper((VoldemortZooKeeperConfig) config);
+        } else {
+            this.metadata = MetadataStore.readFromDirectory(new File(this.voldemortConfig.getMetadataDirectory()),
                                                         voldemortConfig.getNodeId());
+        }
         this.identityNode = metadata.getCluster().getNodeById(voldemortConfig.getNodeId());
         this.checkHostName();
         this.validateRestServiceConfiguration();
