@@ -106,7 +106,6 @@ public class ZooKeeperStorageEngine extends AbstractStorageEngine<String, String
             return get(key, getDirectory(key).listFiles());
         }
         return get(key);
-
     }
 
     private boolean isLocalDir (String key) {
@@ -200,8 +199,10 @@ public class ZooKeeperStorageEngine extends AbstractStorageEngine<String, String
     private List<Versioned<String>> get(String key) {
         List<String> children;
         List<Versioned<String>> found = new ArrayList<Versioned<String>>();
+        logger.info("Getting zookey: " + this.configdir + "/" + key);
+
         try {
-            children = voldemortZooKeeperConfig.getZooKeeper().getChildren(this.configdir+"/"+key, false);
+            children = voldemortZooKeeperConfig.getZooKeeper().getChildren(this.configdir, false);
             for(String child : children) {
                 if(child.equals(key)) {
                     Stat childStat = voldemortZooKeeperConfig.getZooKeeper().exists(child, false);
@@ -215,7 +216,8 @@ public class ZooKeeperStorageEngine extends AbstractStorageEngine<String, String
                 }
             }
         } catch (InterruptedException | KeeperException e) {
-            e.printStackTrace();
+            logger.info("failed getting key: " + this.configdir + "/" + key);
+            throw new VoldemortException("failed getting key: " + this.configdir + "/" + key, e);
         }
         return found;
     }
