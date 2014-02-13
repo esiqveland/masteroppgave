@@ -9,6 +9,7 @@ import org.apache.zookeeper.data.Stat;
 import voldemort.utils.ConfigurationException;
 import voldemort.utils.Props;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.InetAddress;
@@ -20,10 +21,15 @@ public class VoldemortZooKeeperConfig extends VoldemortConfig implements Watcher
     private ZooKeeper zk = null;
     private String zkURI = "localhost:3000";
 
-    public VoldemortZooKeeperConfig(String voldemorthome, String zkurl) throws ConfigurationException {
+    public VoldemortZooKeeperConfig(String voldemortHome, String zkurl) throws ConfigurationException {
         this.zk = VoldemortZooKeeperConfig.setupZooKeeper(zkurl, this);
+
         Props props = loadConfigs(this.zk);
-        props.put("voldemort.home", voldemorthome);
+        props.put("voldemort.home", voldemortHome);
+
+        String voldemortConfigDir = voldemortHome + File.separator + "config";
+        props.put("metadata.directory", voldemortConfigDir);
+
         setProps(props);
     }
 
@@ -89,5 +95,18 @@ public class VoldemortZooKeeperConfig extends VoldemortConfig implements Watcher
         String hostname = new String(InetAddress.getLocalHost().getCanonicalHostName().toString());
 
         return getFileFromZooKeeper(zk, "/voldemort/config/"+hostname+".properties");
+    }
+
+    private boolean isZooKeeperAlive() {
+        if(zk == null || !zk.getState().isAlive()) {
+            return false;
+        }
+        return true;
+    }
+    public ZooKeeper getZooKeeper() {
+        if (isZooKeeperAlive())
+            return this.zk;
+        zk = setupZooKeeper(zkURI, this);
+        return zk;
     }
 }
