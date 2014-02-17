@@ -68,7 +68,7 @@ public class ZooKeeperStorageEngine extends AbstractStorageEngine<String, String
 
     @Override
     public ClosableIterator<Pair<String, Versioned<String>>> entries() {
-        throw new VoldemortException("Iteration  not supported in ZooKeeperStorageEngine");
+        throw new VoldemortException("Iteration not supported in ZooKeeperStorageEngine");
     }
 
     @Override
@@ -91,7 +91,10 @@ public class ZooKeeperStorageEngine extends AbstractStorageEngine<String, String
             if(stat != null) {
                 voldemortZooKeeperConfig.getZooKeeper().delete(zkconfigdir + "/" + key, stat.getVersion());
                 return true;
+            } else {
+                throw new VoldemortException("Error while deleting key: " + key + ", key does not exist");
             }
+
         } catch (InvalidPathException | InterruptedException | KeeperException e) {
             logger.error("Error while attempting to delete key:" + key, e);
         }
@@ -217,7 +220,12 @@ public class ZooKeeperStorageEngine extends AbstractStorageEngine<String, String
 
                     VectorClock clock = new VectorClock(childStat.getCtime());
 
-                    String data = new String(voldemortZooKeeperConfig.getZooKeeper().getData(this.zkconfigdir + "/" + child, false, childStat));
+                    boolean watch = false;
+                    if (MetadataStore.REQUIRED_KEYS.contains(key)) {
+                        watch = true;
+                    }
+                    String data = new String(voldemortZooKeeperConfig.getZooKeeper().getData(this.zkconfigdir + "/" + child, watch, childStat));
+
                     Versioned<String> stringVersioned = new Versioned<String>(data, clock);
                     found.add(stringVersioned);
                 }
