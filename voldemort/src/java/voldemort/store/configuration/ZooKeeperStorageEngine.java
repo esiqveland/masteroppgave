@@ -18,6 +18,7 @@ package voldemort.store.configuration;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.nio.file.InvalidPathException;
 import java.util.ArrayList;
 import java.util.List;
@@ -41,6 +42,7 @@ import voldemort.store.StoreCapabilityType;
 import voldemort.store.StoreUtils;
 import voldemort.store.metadata.MetadataStore;
 import voldemort.utils.ByteArray;
+import voldemort.utils.ByteUtils;
 import voldemort.utils.ClosableIterator;
 import voldemort.utils.Pair;
 import voldemort.versioning.ObsoleteVersionException;
@@ -339,8 +341,8 @@ public class ZooKeeperStorageEngine extends AbstractStorageEngine<String, String
                     byte[] data = voldemortZooKeeperConfig.getZooKeeper().getData(event.getPath(), true, stat);
 
                     Version version = new VectorClock(stat.getMtime());
-                    Versioned<byte[]> versioned = new Versioned<byte[]>(data, version);
-                    ByteArray byteKey = new ByteArray(data);
+                    Versioned<byte[]> versioned = new Versioned<>(data, version);
+                    ByteArray byteKey = new ByteArray(ByteUtils.getBytes(key, "UTF-8"));
 
                     metadataStore.put(byteKey, versioned, null);
                 }
