@@ -168,8 +168,14 @@ public class MetadataStore extends AbstractStorageEngine<ByteArray, byte[], byte
             throw new IllegalArgumentException("Metadata directory " + "/config"
                     + " does not exist or can not be read.");
         }
-        Store<String, String, String> innerstore = new ZooKeeperStorageEngine(MetadataStore.METADATA_STORE_NAME, vc.getMetadataDirectory(), vc);
-        return new MetadataStore(innerstore, vc.getNodeId());
+        ZooKeeperStorageEngine zke = new ZooKeeperStorageEngine(MetadataStore.METADATA_STORE_NAME, vc.getMetadataDirectory(), vc);
+        Store<String, String, String> innerstore = zke;
+
+        MetadataStore ms = new MetadataStore(innerstore, vc.getNodeId());
+        zke.setMetadataStore(ms);
+
+        return ms;
+
     }
 
     public static MetadataStore readFromDirectory(File dir, int nodeId) {

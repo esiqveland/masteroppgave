@@ -34,6 +34,7 @@ import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
 import voldemort.VoldemortException;
+import voldemort.server.VoldemortServer;
 import voldemort.server.VoldemortZooKeeperConfig;
 import voldemort.store.AbstractStorageEngine;
 import voldemort.store.StoreCapabilityType;
@@ -56,10 +57,11 @@ import voldemort.versioning.Versioned;
 
 public class ZooKeeperStorageEngine extends AbstractStorageEngine<String, String, String> implements Watcher {
 
-    private final static Logger logger = Logger.getLogger(ConfigurationStorageEngine.class);
+    private final static Logger logger = Logger.getLogger(ZooKeeperStorageEngine.class);
     private VoldemortZooKeeperConfig voldemortZooKeeperConfig;
     private String configdir;
     private String zkconfigdir = "/config";
+    private MetadataStore metadataStore;
 
     public ZooKeeperStorageEngine(String name, String configDir, VoldemortZooKeeperConfig vc) {
         super(name);
@@ -326,5 +328,22 @@ public class ZooKeeperStorageEngine extends AbstractStorageEngine<String, String
     @Override
     public void process(WatchedEvent event) {
         logger.info(String.format("Got event from ZooKeeper: %s", event.toString()));
+        try {
+            for ( String key : MetadataStore.REQUIRED_KEYS ) {
+                if ( key.equals(event.getPath()) || event.getPath().contains(key) ) {
+                    logger.info("ZK event with path matches key: " + key + ", updating metadatastore");
+                    String data = new String(voldemortZooKeeperConfig.getZooKeeper().getData(event.getPath(), true, null));
+                    metadataStore.put(key, data);
+                }
+            }
+            voldemortZooKeeperConfig.getZooKeeper().exists(event.getPath(), true);
+        } catch (InterruptedException | KeeperException e) {
+            logger.info("failed watching/processing key: " + event.getPath());
+            throw new VoldemortException("failed watching/processing event key: " + event.getPath(), e);
+        }
+    }
+
+    public void setMetadataStore(MetadataStore metadataStore) {
+        this.metadataStore = metadataStore;
     }
 }
