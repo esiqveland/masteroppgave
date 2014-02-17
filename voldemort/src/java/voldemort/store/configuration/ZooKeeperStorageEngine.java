@@ -40,6 +40,7 @@ import voldemort.store.AbstractStorageEngine;
 import voldemort.store.StoreCapabilityType;
 import voldemort.store.StoreUtils;
 import voldemort.store.metadata.MetadataStore;
+import voldemort.utils.ByteArray;
 import voldemort.utils.ClosableIterator;
 import voldemort.utils.Pair;
 import voldemort.versioning.ObsoleteVersionException;
@@ -332,14 +333,20 @@ public class ZooKeeperStorageEngine extends AbstractStorageEngine<String, String
             for ( String key : MetadataStore.REQUIRED_KEYS ) {
                 if ( key.equals(event.getPath()) || event.getPath().contains(key) ) {
                     logger.info("ZK event with path matches key: " + key + ", updating metadatastore");
+
                     Stat stat = voldemortZooKeeperConfig.getZooKeeper().exists(event.getPath(), true);
+
                     byte[] data = voldemortZooKeeperConfig.getZooKeeper().getData(event.getPath(), true, stat);
-                    String store = new String(data);
-                    metadataStore.put(key, store);
+
+                    Version version = new VectorClock(stat.getMtime());
+                    Versioned<byte[]> versioned = new Versioned<byte[]>(data, version);
+                    ByteArray byteKey = new ByteArray(data);
+
+                    metadataStore.put(byteKey, versioned, null);
                 }
             }
             voldemortZooKeeperConfig.getZooKeeper().exists(event.getPath(), true);
-        } catch (InterruptedException | KeeperException e) {
+        } catch (InterruptedException | VoldemortException | KeeperException e) {
             logger.info("failed watching/processing key: " + event.getPath());
             throw new VoldemortException("failed watching/processing event key: " + event.getPath(), e);
         }
