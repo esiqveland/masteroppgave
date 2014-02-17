@@ -32,6 +32,9 @@ public class ZooKeeperFileWriter implements Watcher {
 
     private void uploadAndUpdateFile() {
         byte[] data = getFileData();
+        if(data == null) {
+            throw new RuntimeException("File data returned null");
+        }
         try {
             Stat stat = zooKeeper.exists(targetnode, false);
             zooKeeper.setData(targetnode, data, stat.getVersion());
@@ -65,6 +68,8 @@ public class ZooKeeperFileWriter implements Watcher {
             System.out.println("usage: " + args[0] + " [zookeeper url] [target znode] [file to upload]");
             System.exit(-1);
         }
+
+        System.out.println("will connect to " + zkurl + " upload to znode " + node + " with data from file:\n" + targetfile);
 
         ZooKeeperFileWriter zkw = new ZooKeeperFileWriter(zkurl, node, targetfile);
 
