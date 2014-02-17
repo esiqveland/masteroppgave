@@ -332,8 +332,10 @@ public class ZooKeeperStorageEngine extends AbstractStorageEngine<String, String
             for ( String key : MetadataStore.REQUIRED_KEYS ) {
                 if ( key.equals(event.getPath()) || event.getPath().contains(key) ) {
                     logger.info("ZK event with path matches key: " + key + ", updating metadatastore");
-                    String data = new String(voldemortZooKeeperConfig.getZooKeeper().getData(event.getPath(), true, null));
-                    metadataStore.put(key, data);
+                    Stat stat = voldemortZooKeeperConfig.getZooKeeper().exists(event.getPath(), true);
+                    byte[] data = voldemortZooKeeperConfig.getZooKeeper().getData(event.getPath(), true, stat);
+                    String store = new String(data);
+                    metadataStore.put(key, store);
                 }
             }
             voldemortZooKeeperConfig.getZooKeeper().exists(event.getPath(), true);
