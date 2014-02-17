@@ -19,7 +19,7 @@ import java.net.UnknownHostException;
 import java.util.Properties;
 
 public class VoldemortZooKeeperConfig extends VoldemortConfig implements Watcher {
-    private final static Logger logger = Logger.getLogger(ConfigurationStorageEngine.class);
+    private final static Logger logger = Logger.getLogger(VoldemortZooKeeperConfig.class);
 
     private ZooKeeper zk = null;
     private String zkURL;
