@@ -188,7 +188,13 @@ public class ZooKeeperStorageEngine extends AbstractStorageEngine<String, String
         } else {
             // is zookeeper key
             try {
-                voldemortZooKeeperConfig.getZooKeeper().setData(this.zkconfigdir+"/"+key, value.getValue().getBytes(), value.getVersion().hashCode());
+                Stat stat = voldemortZooKeeperConfig.getZooKeeper().exists(this.zkconfigdir + "/" + key, false);
+                if (stat != null) {
+                    voldemortZooKeeperConfig.getZooKeeper().setData(this.zkconfigdir + "/" + key, value.getValue().getBytes(), -1);
+                } else {
+                    voldemortZooKeeperConfig.getZooKeeper().create(this.zkconfigdir + "/" + key, value.getValue().getBytes(), null, null);
+                }
+
             } catch (InterruptedException | KeeperException e) {
                 logger.info("Error with zookeeper setData to key: " + this.zkconfigdir + "/" + key);
                 throw new VoldemortException("Error with zookeeper setData to key: " + this.zkconfigdir + "/" + key, e);
