@@ -53,6 +53,7 @@ import voldemort.versioning.Versioned;
  *
  *
  */
+
 public class ZooKeeperStorageEngine extends AbstractStorageEngine<String, String, String> implements Watcher {
 
     private final static Logger logger = Logger.getLogger(ConfigurationStorageEngine.class);
@@ -64,6 +65,7 @@ public class ZooKeeperStorageEngine extends AbstractStorageEngine<String, String
         super(name);
         this.configdir = configDir;
         this.voldemortZooKeeperConfig = vc;
+        vc.getZooKeeper().register(this);
     }
 
     @Override

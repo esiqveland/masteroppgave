@@ -1,11 +1,13 @@
 package voldemort.server;
 
 
+import org.apache.log4j.Logger;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
+import voldemort.store.configuration.ConfigurationStorageEngine;
 import voldemort.utils.ConfigurationException;
 import voldemort.utils.Props;
 
@@ -17,6 +19,7 @@ import java.net.UnknownHostException;
 import java.util.Properties;
 
 public class VoldemortZooKeeperConfig extends VoldemortConfig implements Watcher {
+    private final static Logger logger = Logger.getLogger(ConfigurationStorageEngine.class);
 
     private ZooKeeper zk = null;
     private String zkURL;
@@ -91,7 +94,7 @@ public class VoldemortZooKeeperConfig extends VoldemortConfig implements Watcher
 
     @Override
     public void process(WatchedEvent event) {
-
+        logger.info(String.format("Got event from ZooKeeper: %s", event.toString()));
     }
 
     public static String getNodeConfigFromZooKeeper(ZooKeeper zk) throws UnknownHostException {
