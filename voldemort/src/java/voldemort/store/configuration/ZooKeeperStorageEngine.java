@@ -52,13 +52,15 @@ import voldemort.versioning.Version;
 import voldemort.versioning.Versioned;
 
 /**
- * A FileSystem based Storage Engine to persist configuration metadata.<br>
+ * A combined ZooKeeper and File based Storage Engine to persist configuration metadata.<br>
+ * It uses files for local things, like temp dirs used by Voldemort,
+ * and ZooKeeper for global configuration files.<br>
  * <imp>Used only by {@link MetadataStore}</imp><br>
  *
  *
  */
 
-public class ZooKeeperStorageEngine extends AbstractStorageEngine<String, String, String> implements Watcher {
+public class ZooKeeperStorageEngine extends AbstractStorageEngine<String, String, String> {
 
     private final static Logger logger = Logger.getLogger(ZooKeeperStorageEngine.class);
     private VoldemortZooKeeperConfig voldemortZooKeeperConfig;
@@ -70,7 +72,6 @@ public class ZooKeeperStorageEngine extends AbstractStorageEngine<String, String
         super(name);
         this.configdir = configDir;
         this.voldemortZooKeeperConfig = vc;
-        vc.getZooKeeper().register(this);
     }
 
     @Override
@@ -328,30 +329,9 @@ public class ZooKeeperStorageEngine extends AbstractStorageEngine<String, String
         throw new VoldemortException("Truncate not supported in ZooKeeperStorageEngine");
     }
 
-    @Override
-    public void process(WatchedEvent event) {
-        logger.info(String.format("Got event from ZooKeeper: %s", event.toString()));
-        try {
-            for ( String key : MetadataStore.REQUIRED_KEYS ) {
-                if ( key.equals(event.getPath()) || event.getPath().contains(key) ) {
-                    logger.info("ZK event with path matches key: " + key + ", updating metadatastore");
+    public void addWatcher(Watcher watcher) {
+        voldemortZooKeeperConfig.getZooKeeper().register(watcher);
 
-                    Stat stat = voldemortZooKeeperConfig.getZooKeeper().exists(event.getPath(), true);
-
-                    byte[] data = voldemortZooKeeperConfig.getZooKeeper().getData(event.getPath(), true, stat);
-
-                    Version version = new VectorClock(stat.getMtime());
-                    Versioned<byte[]> versioned = new Versioned<>(data, version);
-                    ByteArray byteKey = new ByteArray(ByteUtils.getBytes(key, "UTF-8"));
-
-                    metadataStore.put(byteKey, versioned, null);
-                }
-            }
-            voldemortZooKeeperConfig.getZooKeeper().exists(event.getPath(), true);
-        } catch (InterruptedException | VoldemortException | KeeperException e) {
-            logger.info("failed watching/processing key: " + event.getPath());
-            throw new VoldemortException("failed watching/processing event key: " + event.getPath(), e);
-        }
     }
 
     public void setMetadataStore(MetadataStore metadataStore) {

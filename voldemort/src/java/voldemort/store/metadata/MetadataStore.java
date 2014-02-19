@@ -35,6 +35,8 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.WatchedEvent;
+import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
 import voldemort.VoldemortException;
@@ -74,7 +76,7 @@ import com.google.common.collect.Lists;
  * Metadata is persisted as strings in inner store for ease of readability.<br>
  * Metadata Store keeps an in memory write-through-cache for performance.
  */
-public class MetadataStore extends AbstractStorageEngine<ByteArray, byte[], byte[]> {
+public class MetadataStore extends AbstractStorageEngine<ByteArray, byte[], byte[]> implements Watcher {
 
     public static final String METADATA_STORE_NAME = "metadata";
 
@@ -173,6 +175,7 @@ public class MetadataStore extends AbstractStorageEngine<ByteArray, byte[], byte
 
         MetadataStore ms = new MetadataStore(innerstore, vc.getNodeId());
         zke.setMetadataStore(ms);
+        zke.addWatcher(ms);
 
         return ms;
 
@@ -854,4 +857,47 @@ public class MetadataStore extends AbstractStorageEngine<ByteArray, byte[], byte
 
         throw new VoldemortException("No metadata found for required key:" + key);
     }
+
+    /**
+     * Called from ZooKeeper when a watched event is triggered.
+     *
+     * @param event
+     */
+
+    @Override
+    public void process(WatchedEvent event) {
+        logger.info(String.format("Got event from ZooKeeper: %s", event.toString()));
+        try {
+            for ( String key : MetadataStore.REQUIRED_KEYS ) {
+                if ( key.equals(event.getPath()) || event.getPath().contains(key) ) {
+                    logger.info("ZK event with path matches key: " + key + ", updating metadatacache");
+
+                    writeLock.lock();
+                    try {
+                        // get new version of the object and re sets watch flag if appropriate for the key
+                        Versioned<String> versioned = innerStore.get(key, null).get(0);
+
+                        Versioned<Object> vObject = convertStringToObject(key, versioned);
+
+                        metadataCache.put(key, vObject);
+
+                        if(key.equals(CLUSTER_KEY)) {
+                            updateRoutingStrategies((Cluster) vObject.getValue(), getStoreDefList());
+                        } else if (key.equals(STORES_KEY)) {
+                            updateRoutingStrategies(getCluster(), (List<StoreDefinition>) vObject.getValue());
+                        } else if(SYSTEM_STORES_KEY.equals(key)) {
+                            throw new VoldemortException("Cannot overwrite system store definitions");
+                        }
+
+                    } finally {
+                        writeLock.unlock();
+                    }
+                }
+            }
+        } catch (VoldemortException e) {
+            logger.info("failed watching/processing key: " + event.getPath());
+            throw new VoldemortException("failed watching/processing event key: " + event.getPath(), e);
+        }
+    }
+
 }
