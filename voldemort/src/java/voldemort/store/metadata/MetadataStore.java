@@ -174,7 +174,6 @@ public class MetadataStore extends AbstractStorageEngine<ByteArray, byte[], byte
         Store<String, String, String> innerstore = zke;
 
         MetadataStore ms = new MetadataStore(innerstore, vc.getNodeId());
-        zke.setMetadataStore(ms);
         zke.addWatcher(ms);
 
         return ms;

@@ -29,10 +29,7 @@ import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.*;
 import org.apache.zookeeper.data.Stat;
 import voldemort.VoldemortException;
 import voldemort.server.VoldemortServer;
@@ -66,7 +63,6 @@ public class ZooKeeperStorageEngine extends AbstractStorageEngine<String, String
     private VoldemortZooKeeperConfig voldemortZooKeeperConfig;
     private String configdir;
     private String zkconfigdir = "/config";
-    private MetadataStore metadataStore;
 
     public ZooKeeperStorageEngine(String name, String configDir, VoldemortZooKeeperConfig vc) {
         super(name);
@@ -199,11 +195,20 @@ public class ZooKeeperStorageEngine extends AbstractStorageEngine<String, String
         } else {
             // is zookeeper key
             try {
+
+                for(String invalidKey : MetadataStore.REQUIRED_KEYS) {
+                    if(key.equals(invalidKey)) {
+                        throw new VoldemortException("Please use ZooKeeper to write new Metadata for data kept in ZooKeeper. Refusing put. " +
+                                "Offending key: "+key);
+                    }
+                }
                 Stat stat = voldemortZooKeeperConfig.getZooKeeper().exists(this.zkconfigdir + "/" + key, false);
                 if (stat != null) {
-                    voldemortZooKeeperConfig.getZooKeeper().setData(this.zkconfigdir + "/" + key, value.getValue().getBytes(), -1);
+                    voldemortZooKeeperConfig.getZooKeeper()
+                            .setData(this.zkconfigdir + "/" + key, value.getValue().getBytes(), stat.getVersion());
                 } else {
-                    voldemortZooKeeperConfig.getZooKeeper().create(this.zkconfigdir + "/" + key, value.getValue().getBytes(), null, null);
+                    voldemortZooKeeperConfig.getZooKeeper()
+                            .create(this.zkconfigdir + "/" + key, value.getValue().getBytes(), null, CreateMode.PERSISTENT);
                 }
 
             } catch (InterruptedException | KeeperException e) {
@@ -332,9 +337,5 @@ public class ZooKeeperStorageEngine extends AbstractStorageEngine<String, String
     public void addWatcher(Watcher watcher) {
         voldemortZooKeeperConfig.getZooKeeper().register(watcher);
 
-    }
-
-    public void setMetadataStore(MetadataStore metadataStore) {
-        this.metadataStore = metadataStore;
     }
 }
