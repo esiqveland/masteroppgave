@@ -335,7 +335,6 @@ public class ZooKeeperStorageEngine extends AbstractStorageEngine<String, String
     }
 
     public void setWatcher(Watcher watcher) {
-        voldemortZooKeeperConfig.getZooKeeper().register(watcher);
-
+        voldemortZooKeeperConfig.setWatcher(watcher);
     }
 }

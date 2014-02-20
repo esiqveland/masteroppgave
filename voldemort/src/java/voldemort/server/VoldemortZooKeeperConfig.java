@@ -23,10 +23,12 @@ public class VoldemortZooKeeperConfig extends VoldemortConfig implements Watcher
 
     private ZooKeeper zk = null;
     private String zkURL;
+    private Watcher watcher;
 
     public VoldemortZooKeeperConfig(String voldemortHome, String voldemortConfigDir, String zkurl) throws ConfigurationException {
         zkURL = zkurl;
-        this.zk = VoldemortZooKeeperConfig.setupZooKeeper(zkurl, this);
+        this.watcher = this;
+        this.zk = VoldemortZooKeeperConfig.setupZooKeeper(zkurl, this.watcher);
 
         Props props = loadConfigs(this.zk);
         props.put("voldemort.home", voldemortHome);
@@ -112,7 +114,12 @@ public class VoldemortZooKeeperConfig extends VoldemortConfig implements Watcher
     public ZooKeeper getZooKeeper() {
         if (isZooKeeperAlive())
             return this.zk;
-        zk = setupZooKeeper(zkURL, this);
+        zk = setupZooKeeper(zkURL, this.watcher);
         return zk;
+    }
+
+    public void setWatcher( Watcher watcher ) {
+        this.watcher = watcher;
+        this.zk.register(watcher);
     }
 }
