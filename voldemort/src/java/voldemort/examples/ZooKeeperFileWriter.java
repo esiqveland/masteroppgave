@@ -1,15 +1,10 @@
 package voldemort.examples;
 
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.*;
 import org.apache.zookeeper.data.Stat;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 
 public class ZooKeeperFileWriter implements Watcher {
@@ -37,7 +32,11 @@ public class ZooKeeperFileWriter implements Watcher {
         }
         try {
             Stat stat = zooKeeper.exists(targetnode, false);
-            zooKeeper.setData(targetnode, data, stat.getVersion());
+            if(stat == null) {
+                zooKeeper.create(targetfile, data, null, CreateMode.PERSISTENT);
+            } else {
+                zooKeeper.setData(targetnode, data, stat.getVersion());
+            }
         } catch (InterruptedException | KeeperException e) {
             e.printStackTrace();
         }
@@ -60,12 +59,12 @@ public class ZooKeeperFileWriter implements Watcher {
         String targetfile = null;
         String node = null;
 
-        if (args.length >= 3) {
+        if (args != null && args.length >= 3) {
             zkurl = args[0];
             node = args[1];
             targetfile = args[2];
         } else {
-            System.out.println("usage: " + args[0] + " [zookeeper url] [target znode] [file to upload]");
+            System.out.println("usage: " + ZooKeeperFileWriter.class.getName() + " [zookeeper url] [target znode] [file to upload]");
             System.exit(-1);
         }
 
