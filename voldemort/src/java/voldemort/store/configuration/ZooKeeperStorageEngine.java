@@ -234,7 +234,7 @@ public class ZooKeeperStorageEngine extends AbstractStorageEngine<String, String
                     VectorClock clock = new VectorClock(childStat.getCtime());
 
                     boolean watch = false;
-                    if (MetadataStore.REQUIRED_KEYS.contains(key)) {
+                    if (MetadataStore.METADATA_KEYS.contains(key)) {
                         watch = true;
                     }
                     String data = new String(voldemortZooKeeperConfig.getZooKeeper().getData(this.zkconfigdir + "/" + child, watch, childStat));
@@ -334,7 +334,7 @@ public class ZooKeeperStorageEngine extends AbstractStorageEngine<String, String
         throw new VoldemortException("Truncate not supported in ZooKeeperStorageEngine");
     }
 
-    public void addWatcher(Watcher watcher) {
+    public void setWatcher(Watcher watcher) {
         voldemortZooKeeperConfig.getZooKeeper().register(watcher);
 
     }

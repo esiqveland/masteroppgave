@@ -174,7 +174,7 @@ public class MetadataStore extends AbstractStorageEngine<ByteArray, byte[], byte
         Store<String, String, String> innerstore = zke;
 
         MetadataStore ms = new MetadataStore(innerstore, vc.getNodeId());
-        zke.addWatcher(ms);
+        zke.setWatcher(ms);
 
         return ms;
 
@@ -862,7 +862,6 @@ public class MetadataStore extends AbstractStorageEngine<ByteArray, byte[], byte
      *
      * @param event
      */
-
     @Override
     public void process(WatchedEvent event) {
         logger.info(String.format("Got event from ZooKeeper: %s", event.toString()));
