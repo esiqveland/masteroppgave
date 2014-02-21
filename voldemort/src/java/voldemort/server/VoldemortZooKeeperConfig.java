@@ -84,12 +84,10 @@ public class VoldemortZooKeeperConfig extends VoldemortConfig implements Watcher
 
     public static ZooKeeper setupZooKeeper(String zkURI, Watcher callback) {
         ZooKeeper zk = null;
-        if(zk == null || !zk.getState().isAlive()) {
-            try {
-                zk = new ZooKeeper(zkURI, 3000, callback);
-            } catch (IOException e) {
-                throw new ConfigurationException("Error setting up ZooKeeper object!", e);
-            }
+        try {
+            zk = new ZooKeeper(zkURI, 3000, callback);
+        } catch (IOException e) {
+            throw new ConfigurationException("Error setting up ZooKeeper object!", e);
         }
         return zk;
     }
@@ -121,5 +119,6 @@ public class VoldemortZooKeeperConfig extends VoldemortConfig implements Watcher
     public void setWatcher( Watcher watcher ) {
         this.watcher = watcher;
         this.zk.register(watcher);
+        logger.info("Registered " + watcher + " as watcher for ZooKeeper instance.");
     }
 }
