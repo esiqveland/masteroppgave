@@ -116,9 +116,9 @@ public class VoldemortZooKeeperConfig extends VoldemortConfig implements Watcher
         return zk;
     }
 
-    public void setWatcher( Watcher watcher ) {
+    public void setWatcher(Watcher watcher) {
         this.watcher = watcher;
-        this.zk.register(watcher);
+        this.getZooKeeper().register(watcher);
         logger.info("Registered " + watcher + " as watcher for ZooKeeper instance.");
     }
 }
