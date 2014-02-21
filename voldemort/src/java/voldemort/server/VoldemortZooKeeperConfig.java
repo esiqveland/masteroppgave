@@ -68,19 +68,19 @@ public class VoldemortZooKeeperConfig extends VoldemortConfig implements Watcher
         return getFileFromZooKeeper(zk, "/config/cluster.xml");
     }
 
-    private static String getFileFromZooKeeper(ZooKeeper zk, String path) {
-        Stat stat = new Stat();
-        String s = null;
-        try {
-            byte[] configdata = zk.getData(path, false, stat);
-            s = new String(configdata);
-        } catch (KeeperException e) {
-            throw new RuntimeException(String.format("Error getting key from ZooKeeper: %s", path), e);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(String.format("Error getting key from ZooKeeper: %s", path), e);
+        private static String getFileFromZooKeeper(ZooKeeper zk, String path) {
+            Stat stat = new Stat();
+            String s = null;
+            try {
+                byte[] configdata = zk.getData(path, false, stat);
+                s = new String(configdata);
+            } catch (KeeperException e) {
+                throw new RuntimeException(String.format("Error getting key from ZooKeeper: %s", path), e);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(String.format("Error getting key from ZooKeeper: %s", path), e);
+            }
+            return s;
         }
-        return s;
-    }
 
     public static ZooKeeper setupZooKeeper(String zkURI, Watcher callback) {
         ZooKeeper zk = null;
