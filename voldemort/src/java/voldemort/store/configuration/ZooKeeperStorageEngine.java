@@ -226,7 +226,7 @@ public class ZooKeeperStorageEngine extends AbstractStorageEngine<String, String
                     }
                     String data;
                     if(watch) {
-                        data = new String(voldemortZooKeeperConfig.getZooKeeper().getData(this.zkconfigdir + "/" + child, this.watcher, childStat));
+                        data = new String(voldemortZooKeeperConfig.getZooKeeper().getData(this.zkconfigdir + "/" + child, watch, childStat));
                         logger.info("setting watch for key: "+this.zkconfigdir+"/"+child + " watcher: "+this.watcher);
                     } else {
                         data = new String(voldemortZooKeeperConfig.getZooKeeper().getData(this.zkconfigdir + "/" + child, false, childStat));

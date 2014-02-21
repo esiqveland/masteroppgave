@@ -96,6 +96,10 @@ public class VoldemortZooKeeperConfig extends VoldemortConfig implements Watcher
     @Override
     public void process(WatchedEvent event) {
         logger.info(String.format("Got event from ZooKeeper: %s", event.toString()));
+        // include this to make sure first event is also passed to watcher
+        if(this != this.watcher) {
+            this.watcher.process(event);
+        }
     }
 
     public static String getNodeConfigFromZooKeeper(ZooKeeper zk) throws UnknownHostException {

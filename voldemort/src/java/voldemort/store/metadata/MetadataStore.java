@@ -175,7 +175,6 @@ public class MetadataStore extends AbstractStorageEngine<ByteArray, byte[], byte
 
         MetadataStore ms = new MetadataStore(innerstore, vc.getNodeId());
         zke.setWatcher(ms);
-        vc.getZooKeeper().register(ms);
 
         logger.info("Setup MetadataStore from ZooKeeper configs.");
         return ms;
