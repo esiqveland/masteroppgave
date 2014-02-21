@@ -63,26 +63,13 @@ public class ZooKeeperStorageEngine extends AbstractStorageEngine<String, String
     private VoldemortZooKeeperConfig voldemortZooKeeperConfig;
     private String configdir;
     private String zkconfigdir = "/config";
+    private Watcher watcher;
 
     public ZooKeeperStorageEngine(String name, String configDir, VoldemortZooKeeperConfig vc) {
         super(name);
+        this.watcher = vc;
         this.configdir = configDir;
         this.voldemortZooKeeperConfig = vc;
-    }
-
-    @Override
-    public ClosableIterator<Pair<String, Versioned<String>>> entries() {
-        throw new VoldemortException("Iteration not supported in ZooKeeperStorageEngine");
-    }
-
-    @Override
-    public ClosableIterator<Pair<String, Versioned<String>>> entries(int partition) {
-        throw new UnsupportedOperationException("Partition based entries scan not supported for this storage type");
-    }
-
-    @Override
-    public ClosableIterator<String> keys(int partition) {
-        throw new UnsupportedOperationException("Partition based key scan not supported for this storage type");
     }
 
     @Override
@@ -147,7 +134,7 @@ public class ZooKeeperStorageEngine extends AbstractStorageEngine<String, String
         StoreUtils.assertValidKeys(keys);
         Map<String, List<Versioned<String>>> result = StoreUtils.newEmptyHashMap(keys);
         for(String key: keys) {
-            //List<Versioned<String>> values = get(key, getDirectory(key).listFiles());
+
             List<Versioned<String>> values = get(key, (String) null);
             if (!values.isEmpty())
                 result.put(key, values);
@@ -237,7 +224,13 @@ public class ZooKeeperStorageEngine extends AbstractStorageEngine<String, String
                     if (MetadataStore.METADATA_KEYS.contains(key)) {
                         watch = true;
                     }
-                    String data = new String(voldemortZooKeeperConfig.getZooKeeper().getData(this.zkconfigdir + "/" + child, watch, childStat));
+                    String data;
+                    if(watch) {
+                        data = new String(voldemortZooKeeperConfig.getZooKeeper().getData(this.zkconfigdir + "/" + child, this.watcher, childStat));
+                        logger.info("setting watch for key: "+this.zkconfigdir+"/"+child + " watcher: "+this.watcher);
+                    } else {
+                        data = new String(voldemortZooKeeperConfig.getZooKeeper().getData(this.zkconfigdir + "/" + child, false, childStat));
+                    }
 
                     Versioned<String> stringVersioned = new Versioned<String>(data, clock);
                     found.add(stringVersioned);
@@ -266,6 +259,11 @@ public class ZooKeeperStorageEngine extends AbstractStorageEngine<String, String
         } catch(IOException e) {
             throw new VoldemortException(e);
         }
+    }
+
+    public void setWatcher(Watcher watcher) {
+        this.watcher = watcher;
+        voldemortZooKeeperConfig.setWatcher(watcher);
     }
 
     private VectorClock readVersion(String key) {
@@ -334,7 +332,19 @@ public class ZooKeeperStorageEngine extends AbstractStorageEngine<String, String
         throw new VoldemortException("Truncate not supported in ZooKeeperStorageEngine");
     }
 
-    public void setWatcher(Watcher watcher) {
-        voldemortZooKeeperConfig.setWatcher(watcher);
+    @Override
+    public ClosableIterator<Pair<String, Versioned<String>>> entries() {
+        throw new VoldemortException("Iteration not supported in ZooKeeperStorageEngine");
     }
+
+    @Override
+    public ClosableIterator<Pair<String, Versioned<String>>> entries(int partition) {
+        throw new UnsupportedOperationException("Partition based entries scan not supported for this storage type");
+    }
+
+    @Override
+    public ClosableIterator<String> keys(int partition) {
+        throw new UnsupportedOperationException("Partition based key scan not supported for this storage type");
+    }
+
 }
