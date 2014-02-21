@@ -112,6 +112,7 @@ public class VoldemortZooKeeperConfig extends VoldemortConfig implements Watcher
     public ZooKeeper getZooKeeper() {
         if (isZooKeeperAlive())
             return this.zk;
+        logger.info("No zookeeper instance found. Starting creating new zookeeper instance");
         zk = setupZooKeeper(zkURL, this.watcher);
         return zk;
     }
