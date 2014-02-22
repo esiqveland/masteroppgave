@@ -43,6 +43,7 @@ import voldemort.VoldemortException;
 import voldemort.annotations.jmx.JmxOperation;
 import voldemort.client.rebalance.RebalanceTaskInfo;
 import voldemort.cluster.Cluster;
+import voldemort.examples.ZooKeeperFileWriter;
 import voldemort.routing.RouteToAllStrategy;
 import voldemort.routing.RoutingStrategy;
 import voldemort.routing.RoutingStrategyFactory;
@@ -132,10 +133,12 @@ public class MetadataStore extends AbstractStorageEngine<ByteArray, byte[], byte
 
     public MetadataStore(Store<String, String, String> innerStore, int nodeId) {
         super(innerStore.getName());
+        if(innerStore instanceof ZooKeeperStorageEngine) {
+            ((ZooKeeperStorageEngine)innerStore).setWatcher(this);
+        }
         this.innerStore = innerStore;
         this.metadataCache = new HashMap<String, Versioned<Object>>();
         this.storeNameTolisteners = new ConcurrentHashMap<String, List<MetadataStoreListener>>();
-
         init(nodeId);
     }
 
@@ -174,7 +177,6 @@ public class MetadataStore extends AbstractStorageEngine<ByteArray, byte[], byte
         Store<String, String, String> innerstore = zke;
 
         MetadataStore ms = new MetadataStore(innerstore, vc.getNodeId());
-        zke.setWatcher(ms);
 
         logger.info("Setup MetadataStore from ZooKeeper configs.");
         return ms;
