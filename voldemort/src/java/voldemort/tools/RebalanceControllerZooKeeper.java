@@ -3,6 +3,7 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
 import voldemort.client.rebalance.RebalanceController;
+import voldemort.client.rebalance.RebalancePlan;
 import voldemort.cluster.Cluster;
 import voldemort.store.StoreDefinition;
 import voldemort.utils.RebalanceUtils;
@@ -57,21 +58,19 @@ public class RebalanceControllerZooKeeper {
         RebalanceUtils.validateCurrentFinalCluster(currentCluster, finalCluster);
 
         int batchSize = Integer.MAX_VALUE;
-        String outputDir = null;
+        String outputDir = "rebalance-out";
 
         System.out.println("Storename: " + currentStoreDefs.get(0).getName());
         System.out.println("Final clustername: " + finalCluster.getName());
         System.out.println("final store def: " + finalStoreDefs.get(0).getName());
 
-
-//
 //        // Plan & execute rebalancing.
-//        rebalanceController.rebalance(new RebalancePlan(currentCluster,
-//                currentStoreDefs,
-//                finalCluster,
-//                finalStoreDefs,
-//                batchSize,
-//                outputDir));
+        rebalanceController.rebalance(new RebalancePlan(currentCluster,
+                currentStoreDefs,
+                finalCluster,
+                finalStoreDefs,
+                batchSize,
+                outputDir));
     }
 
 
