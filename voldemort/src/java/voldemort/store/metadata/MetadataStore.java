@@ -135,6 +135,7 @@ public class MetadataStore extends AbstractStorageEngine<ByteArray, byte[], byte
         super(innerStore.getName());
         if(innerStore instanceof ZooKeeperStorageEngine) {
             ((ZooKeeperStorageEngine)innerStore).setWatcher(this);
+            ((ZooKeeperStorageEngine)innerStore).setMetadatastore(this);
         }
         this.innerStore = innerStore;
         this.metadataCache = new HashMap<String, Versioned<Object>>();
@@ -177,7 +178,6 @@ public class MetadataStore extends AbstractStorageEngine<ByteArray, byte[], byte
         Store<String, String, String> innerstore = zke;
 
         MetadataStore ms = new MetadataStore(innerstore, vc.getNodeId());
-
         logger.info("Setup MetadataStore from ZooKeeper configs.");
         return ms;
 
@@ -213,7 +213,6 @@ public class MetadataStore extends AbstractStorageEngine<ByteArray, byte[], byte
 
         try {
             if(METADATA_KEYS.contains(key)) {
-
                 // try inserting into inner store first
                 putInner(key, convertObjectToString(key, value));
 

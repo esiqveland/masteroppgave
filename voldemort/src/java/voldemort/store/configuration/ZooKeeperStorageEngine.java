@@ -64,12 +64,14 @@ public class ZooKeeperStorageEngine extends AbstractStorageEngine<String, String
     private String configdir;
     private String zkconfigdir = "/config";
     private Watcher watcher;
+    private MetadataStore metadatastore;
 
     public ZooKeeperStorageEngine(String name, String configDir, VoldemortZooKeeperConfig vc) {
         super(name);
         this.watcher = vc;
         this.configdir = configDir;
         this.voldemortZooKeeperConfig = vc;
+        metadatastore = null;
     }
 
     @Override
@@ -183,10 +185,19 @@ public class ZooKeeperStorageEngine extends AbstractStorageEngine<String, String
             // is zookeeper key
             try {
 
-                for(String invalidKey : MetadataStore.REQUIRED_KEYS) {
-                    if(key.equals(invalidKey)) {
-                        throw new VoldemortException("Please use ZooKeeper to write new Metadata for data kept in ZooKeeper. Refusing put. " +
-                                "Offending key: "+key);
+                if(metadatastore.getServerStateLocked().
+                        equals(MetadataStore.VoldemortState.REBALANCING_MASTER_SERVER)) {
+                    // if rebalancing and using zookeeper, do not write to ZK, but delay operation until the file watch
+                    // triggers rereading.
+                    // The new cluster object should be present in metadatacache however.
+                    return;
+                } else {
+
+                    for(String invalidKey : MetadataStore.REQUIRED_KEYS) {
+                        if(key.equals(invalidKey)) {
+                            throw new VoldemortException("Please use ZooKeeper to write new Metadata for data kept in ZooKeeper. Refusing put. " +
+                                    "Offending key: "+key);
+                        }
                     }
                 }
                 Stat stat = voldemortZooKeeperConfig.getZooKeeper().exists(this.zkconfigdir + "/" + key, false);
@@ -347,4 +358,7 @@ public class ZooKeeperStorageEngine extends AbstractStorageEngine<String, String
         throw new UnsupportedOperationException("Partition based key scan not supported for this storage type");
     }
 
+    public void setMetadatastore(MetadataStore metadatastore) {
+        this.metadatastore = metadatastore;
+    }
 }
