@@ -190,6 +190,9 @@ public class ZooKeeperStorageEngine extends AbstractStorageEngine<String, String
                     // if rebalancing and using zookeeper, do not write to ZK, but delay operation until the file watch
                     // triggers rereading.
                     // The new cluster object should be present in metadatacache however.
+
+                    // make sure we have a active watch, then exit
+                    Stat stat = voldemortZooKeeperConfig.getZooKeeper().exists(this.zkconfigdir + "/" + key, true);
                     return;
                 } else {
 
