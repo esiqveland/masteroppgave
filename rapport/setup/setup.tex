@@ -6,7 +6,7 @@
 To be able to utilize the distributed part of Voldemort it was nessesary to 
 
 \subsection{Begrepsavklaring}
-A \tt{write} or \tt{put} in the context of ZooKeeper is considered a ZooKeeper \tt{setData} operation.
+A \texttt{write} or \texttt{put} in the context of ZooKeeper is considered a ZooKeeper \texttt{setData} operation.
 
 A ZooKeeper event, is an event triggered by a watch set in ZooKeeper, giving push information about a change in ZooKeeper about a znode being watched.
 
@@ -16,20 +16,5 @@ In the context of ZooKeeper, the word file might be used for a znode. File used 
 To be able to utilize the 
 
 
-We have 4 virtual machines running on a Mac Mini 2010. Each machine is running \tt{Arch Linux 3.12.9-2-ARCH #1 SMP PREEMPT Fri Jan 31 10:22:54 CET 2014 x86_64 GNU/Linux} with 1 GB of available RAM. 
-
-\section{Implementation}
-Integrating ZooKeeper into Voldemort and taking advantage of the coordination services ZooKeeper provides, proved rather difficult.
-We chose to override and rewrite much of the current MetadataStore implementation to one that uses ZooKeeper as the backend storage engine instead of local files. Local node bookeeping is still kept on the local filesystem.
-This abstraction works rather well for shared data files, but causes some issues with information that is stored locally.
-
-\subsection{Initial configuration}
-
-
-\subsection{Rebalance}
-Another issue we bumped into is related to the architecture of Voldemort.
-In a rebalance, the new config files are pushed (written) to each node separately using Voldemort admin data requests. This causes each node to write the new data given to the MetadataStore.
-Because we would like to be notified about changes to the config using watches, each write causes N watches to trigger, where N is the number of nodes in the Voldemort cluster.
-A write therefore also causes N watches to trigger, and N new watches to be set. So for a full configuration rewrite in a rebalance, N*N re-reads and watches would be set and reset, and also N writes in quick succession.
-We therefore ignores such put requests in the ZooKeeper driven MetadataStore, and just put the new data in the Metadata cache, deferring the admin to use a ZooKeeper write operation to put the new config out, making the nodes do a re-read.
+We have 4 virtual machines running on a Mac Mini 2010. Each machine is running \texttt{Arch Linux 3.12.9-2-ARCH \#1 SMP PREEMPT Fri Jan 31 10:22:54 CET 2014 x86\_64 GNU\/Linux} with 1 GB of available RAM. 
 

@@ -1,10 +1,26 @@
+% introduction.tex
 
 \section{Introduction}
 Voldemort is an implementation of a distributed, highly available key-value store.
 The configuration of the system is however cumbersome and tedious, so we would like to explore the possiblities for using ZooKeeper to coordinate configuration and later some management tasks.
 Such tasks includes extending and reducing the members of the cluster.
 
+\subsection{Techniques and technologies}
+The software used in this project employ many different and important techniques known from distributed computing.
+
+\subsubsection{PAXOS}
+
+\subsubsection{Consistent hashing}
+
+\subsubsection{Membership}
+
+\subsubsection{Failures}
+
+\subsubsection{Tunability}
+
 \subsection{Goals}
+Create a system for automatically including new nodes in a set of member nodes.
+For Voldemort, this includes redistributing partitions and updating routing information without making the system unresponsive, ie. without incurring downtime.
 
 \subsection{}
 
