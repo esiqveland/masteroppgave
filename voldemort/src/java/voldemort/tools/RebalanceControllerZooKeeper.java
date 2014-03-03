@@ -56,6 +56,7 @@ public class RebalanceControllerZooKeeper {
         Cluster finalCluster = new ClusterMapper().readCluster(new StringReader(finalClusterString));
 
         String interrimClusterString = zkHandler.getStringFromZooKeeper("/interrim_cluster.xml");
+        String originalClusterString = zkHandler.getStringFromZooKeeper("/cluster.xml");
 
         List<StoreDefinition> finalStoreDefs;
         String storesXML = zkHandler.getStringFromZooKeeper("/stores.xml");
@@ -73,6 +74,9 @@ public class RebalanceControllerZooKeeper {
         System.out.println("final store def: " + finalStoreDefs.get(0).getName());
 
 
+        //Add new cluster.xml
+        zkHandler.uploadAndUpdateFile("/cluster.xml",finalClusterString);
+
 
         // Plan & execute rebalancing.
         rebalanceController.rebalance(new RebalancePlan(currentCluster,
@@ -82,8 +86,15 @@ public class RebalanceControllerZooKeeper {
                 batchSize,
                 outputDir));
 
+        boolean failure = false;
+        if(failure){
+            //Issue rollback of cluster.xml
+            zkHandler.uploadAndUpdateFile("/cluster.xml", originalClusterString);
+        }
+
+
         //Write cluster_final.xml to zookeeper as cluster.xml
-        zkHandler.uploadAndUpdateFile("/cluster.xml",finalClusterString);
+
 
         //Uncomment to reset cluster.xml to interrim_cluster
 //        zkHandler.uploadAndUpdateFile("/cluster.xml",interrimClusterString);

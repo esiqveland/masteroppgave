@@ -202,12 +202,12 @@ public class Rebalancer implements Runnable {
 
                         // Save up the current cluster and stores def for
                         // Redirecting store
-                        changeClusterAndStores(MetadataStore.REBALANCING_SOURCE_CLUSTER_XML,
-                                               currentCluster,
-                                               // Save the current store defs
-                                               // for Redirecting store
-                                               MetadataStore.REBALANCING_SOURCE_STORES_XML,
-                                               currentStoreDefs);
+//                        changeClusterAndStores(MetadataStore.REBALANCING_SOURCE_CLUSTER_XML,
+//                                currentCluster,
+//                                // Save the current store defs
+//                                // for Redirecting store
+//                                MetadataStore.REBALANCING_SOURCE_STORES_XML,
+//                                currentStoreDefs);
 
                         completedRebalanceSourceClusterChange = true;
 
@@ -218,11 +218,12 @@ public class Rebalancer implements Runnable {
                     } else {
                         // Reset the rebalancing source cluster back to null
 
-                        changeClusterAndStores(MetadataStore.REBALANCING_SOURCE_CLUSTER_XML, null,
-                                               // Reset the rebalancing source
-                                               // stores back to null
-                                               MetadataStore.REBALANCING_SOURCE_STORES_XML,
-                                               null);
+                        logger.info("rollback running... need to roll back cluster.xml");
+//                        changeClusterAndStores(MetadataStore.REBALANCING_SOURCE_CLUSTER_XML, null,
+//                                               // Reset the rebalancing source
+//                                               // stores back to null
+//                                               MetadataStore.REBALANCING_SOURCE_STORES_XML,
+//                                               null);
 
                         completedRebalanceSourceClusterChange = true;
 
@@ -405,6 +406,37 @@ public class Rebalancer implements Runnable {
         } finally {
             metadataStore.writeLock.unlock();
         }
+    }
+    
+    private void changeClusterAndStoresZooKeeper(String clusterKey,
+                                                final Cluster cluster,
+                                                 String storesKey,
+                                                 final List<StoreDefinition> storeDefs) {
+
+        metadataStore.writeLock.lock();
+        try {
+            logger.info("Starting in changeClusterAndStores");
+            VectorClock updatedVectorClock = ((VectorClock) metadataStore.get(clusterKey, null)
+                    .get(0)
+                    .getVersion()).incremented(metadataStore.getNodeId(),
+                    System.currentTimeMillis());
+
+            metadataStore.put(clusterKey, Versioned.value((Object) cluster, updatedVectorClock));
+
+            // now put new stores
+            updatedVectorClock = ((VectorClock) metadataStore.get(storesKey, null)
+                    .get(0)
+                    .getVersion()).incremented(metadataStore.getNodeId(),
+                    System.currentTimeMillis());
+            metadataStore.put(storesKey, Versioned.value((Object) storeDefs, updatedVectorClock));
+
+        } catch(Exception e) {
+            logger.info("Error while changing cluster to " + cluster + "for key " + clusterKey);
+            throw new VoldemortException(e);
+        } finally {
+            metadataStore.writeLock.unlock();
+        }
+
     }
 
     /**
