@@ -2,10 +2,11 @@
 \begin{abstract}
 Voldemort is a distributed key-value storage system. 
 It is an open source implementation of Amazon's Dynamo storage system. 
-It features automatic replication across multiple servers as well as automatic partition of data. 
-Similarly to Dynamo it also includes tunable consistency and there is no single point of failure. 
+Voldemort features redundancy through automatic replication across multiple servers as well as (assisted) partitioning of data. 
+Similarly to Dynamo it also includes tunable consistency.
+It's distributed nature also includes no single point of failure, with no members having a special position (no master or coordinator). 
 
-One proposed fun project in the Voldemort system was improving the configuration system by migrating from current XMLs stored locally to an distributed system like Yahoo's ZooKeeper. 
+One proposed fun project in the Voldemort system was improving the configuration system by migrating from current XMLs stored locally to a distributed system like Yahoo's ZooKeeper. 
 In this project we have set out to explore the configuration requirements of Voldemort and implement and integrate solutions to these with ZooKeeper. 
 
 \end{abstract}
