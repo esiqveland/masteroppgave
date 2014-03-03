@@ -149,6 +149,7 @@ public class Rebalancer implements Runnable {
                                      boolean changeClusterAndStoresMetadata,
                                      boolean changeRebalanceState,
                                      boolean rollback) {
+        logger.info("Starting in rebalanceStateChange");
         Cluster currentCluster = metadataStore.getCluster();
         List<StoreDefinition> currentStoreDefs = metadataStore.getStoreDefList();
 
@@ -384,6 +385,7 @@ public class Rebalancer implements Runnable {
                                         final List<StoreDefinition> storeDefs) {
         metadataStore.writeLock.lock();
         try {
+            logger.info("Starting in changeClusterAndStores");
             VectorClock updatedVectorClock = ((VectorClock) metadataStore.get(clusterKey, null)
                                                                          .get(0)
                                                                          .getVersion()).incremented(metadataStore.getNodeId(),
