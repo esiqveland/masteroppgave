@@ -242,10 +242,10 @@ public class Rebalancer implements Runnable {
                 logger.info("Switching cluster metadata from " + currentCluster + " to " + cluster);
                 logger.info("Switching stores metadata from " + currentStoreDefs + " to "
                             + storeDefs);
-                changeClusterAndStores(MetadataStore.CLUSTER_KEY,
-                                       cluster,
-                                       MetadataStore.STORES_KEY,
-                                       storeDefs);
+//                changeClusterAndStores(MetadataStore.CLUSTER_KEY,
+//                                       cluster,
+//                                       MetadataStore.STORES_KEY,
+//                                       storeDefs);
 
                 completedClusterAndStoresChange = true;
 
