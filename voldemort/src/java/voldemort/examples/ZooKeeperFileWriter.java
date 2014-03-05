@@ -33,7 +33,7 @@ public class ZooKeeperFileWriter implements Watcher {
         try {
             Stat stat = zooKeeper.exists(targetnode, false);
             if(stat == null) {
-                zooKeeper.create(targetfile, data, null, CreateMode.PERSISTENT);
+                zooKeeper.create(targetnode, data, null, CreateMode.PERSISTENT);
             } else {
                 zooKeeper.setData(targetnode, data, stat.getVersion());
             }
