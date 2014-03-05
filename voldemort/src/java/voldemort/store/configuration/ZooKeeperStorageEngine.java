@@ -155,19 +155,25 @@ public class ZooKeeperStorageEngine extends AbstractStorageEngine<String, String
         }
 
         try {
+
             for (String invalidKey : MetadataStore.REQUIRED_KEYS) {
+
                 if (key.equals(invalidKey)) {
                     throw new VoldemortException("Please use ZooKeeper to write new Metadata for data kept in ZooKeeper. Refusing put. " +
                             "Offending key: " + key);
                 }
+
             }
+
             Stat stat = voldemortZooKeeperConfig.getZooKeeper().exists(path + key, false);
-            if (stat != null) {
-                voldemortZooKeeperConfig.getZooKeeper()
-                        .setData(path + key, value.getValue().getBytes(), stat.getVersion());
-            } else {
+
+
+            if (stat == null) {
                 voldemortZooKeeperConfig.getZooKeeper()
                         .create(path + key, value.getValue().getBytes(), null, CreateMode.PERSISTENT);
+            } else {
+                voldemortZooKeeperConfig.getZooKeeper()
+                        .setData(path + key, value.getValue().getBytes(), stat.getVersion());
             }
 
         } catch (InterruptedException | KeeperException e) {
