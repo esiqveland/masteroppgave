@@ -18,13 +18,11 @@ package voldemort.store.configuration;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.nio.file.InvalidPathException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import com.google.common.collect.Lists;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
@@ -32,14 +30,11 @@ import org.apache.log4j.Logger;
 import org.apache.zookeeper.*;
 import org.apache.zookeeper.data.Stat;
 import voldemort.VoldemortException;
-import voldemort.server.VoldemortServer;
 import voldemort.server.VoldemortZooKeeperConfig;
 import voldemort.store.AbstractStorageEngine;
 import voldemort.store.StoreCapabilityType;
 import voldemort.store.StoreUtils;
 import voldemort.store.metadata.MetadataStore;
-import voldemort.utils.ByteArray;
-import voldemort.utils.ByteUtils;
 import voldemort.utils.ClosableIterator;
 import voldemort.utils.Pair;
 import voldemort.versioning.ObsoleteVersionException;
@@ -78,37 +73,26 @@ public class ZooKeeperStorageEngine extends AbstractStorageEngine<String, String
     public synchronized boolean delete(String key, Version version) throws VoldemortException {
         StoreUtils.assertValidKey(key);
 
-        String path = "";
-        if(isLocalDir(key)) {
-            for(File file: getDirectory(key).listFiles()) {
-                if(file.getName().equals(key)) {
-                    try {
-                        // delete the file and the version file
-                        return file.delete()
-                                && new File(getVersionDirectory(), file.getName()).delete();
-                    } catch(Exception e) {
-                        logger.error("Error while attempt to delete file key:" + key, e);
-                    }
-                }
-            }
-            return false;
-        } else {
-
-            try {
-                Stat stat = voldemortZooKeeperConfig.getZooKeeper().exists(zkconfigdir + "/" + key, false);
-                if(stat != null) {
-                    voldemortZooKeeperConfig.getZooKeeper().delete(zkconfigdir + "/" + key, stat.getVersion());
-                    return true;
-                } else {
-                    throw new VoldemortException("Error while deleting key: " + key + ", key does not exist");
-                }
-
-            } catch (InvalidPathException | InterruptedException | KeeperException e) {
-                logger.error("Error while attempting to delete key:" + key, e);
-            }
-            return false;
+        String path = zkconfigdir + "/";
+        if(isLocalKey(key)) {
+            path += "/nodes/" + voldemortZooKeeperConfig.getHostname() + "/";
         }
 
+        try {
+
+            Stat stat = voldemortZooKeeperConfig.getZooKeeper().exists(path + key, false);
+
+            if(stat != null) {
+                voldemortZooKeeperConfig.getZooKeeper().delete(path + key, stat.getVersion());
+                return true;
+            } else {
+                throw new VoldemortException("Error while deleting key: " + key + ", key does not exist");
+            }
+
+        } catch (InvalidPathException | InterruptedException | KeeperException e) {
+            logger.error("Error while attempting to delete key:" + key, e);
+        }
+        return false;
     }
 
     @Override
@@ -116,25 +100,19 @@ public class ZooKeeperStorageEngine extends AbstractStorageEngine<String, String
             throws VoldemortException {
         StoreUtils.assertValidKey(key);
 
-        if(isLocalDir(key)) {
-            return get(key, getDirectory(key).listFiles());
+        if(isLocalKey(key)) {
+            String path = zkconfigdir + "/";
+            path += "/nodes/" + voldemortZooKeeperConfig.getHostname() + "/";
+            key = path + key;
         }
         return get(key);
     }
 
-    private boolean isLocalDir (String key) {
+    private boolean isLocalKey(String key) {
         if(MetadataStore.OPTIONAL_KEYS.contains(key))
             return true;
         return false;
     }
-
-    private File getDirectory(String key) {
-        if(MetadataStore.OPTIONAL_KEYS.contains(key))
-            return getTempDirectory();
-        else
-            return new File(this.configdir);
-    }
-
 
     @Override
     public List<Version> getVersions(String key) {
@@ -171,70 +149,44 @@ public class ZooKeeperStorageEngine extends AbstractStorageEngine<String, String
         }
 
         // if a key stored in a local dir!
-        if(isLocalDir(key)) {
-            // Check for obsolete version
-            File[] files = getDirectory(key).listFiles();
-            for(File file: files) {
-                if(file.getName().equals(key)) {
-                    VectorClock clock = readVersion(key);
-                    if(value.getVersion().compare(clock) == Occurred.AFTER) {
-                        // continue
-                    } else if(value.getVersion().compare(clock) == Occurred.BEFORE) {
-                        throw new ObsoleteVersionException("A successor version " + clock
-                                + "  to this " + value.getVersion()
-                                + " exists for key " + key);
-                    } else if(value.getVersion().compare(clock) == Occurred.CONCURRENTLY) {
-                        throw new ObsoleteVersionException("Concurrent Operation not allowed on Metadata.");
-                    }
-                }
-            }
-            File keyFile = new File(getDirectory(key), key);
-            VectorClock newClock = (VectorClock) value.getVersion();
-            if(!keyFile.exists() || keyFile.delete()) {
-                try {
-                    FileUtils.writeStringToFile(keyFile, value.getValue(), "UTF-8");
-                    writeVersion(key, newClock);
-                } catch(IOException e) {
-                    throw new VoldemortException(e);
-                }
-            }
-        } else {
-            // is zookeeper key
-            try {
-
-                if (metadatastore.getServerStateUnlocked().
-                        equals(MetadataStore.VoldemortState.REBALANCING_MASTER_SERVER) ) {
-                    // if rebalancing and using zookeeper, do not write to ZK, but delay operation until the file watch
-                    // triggers rereading.
-                    // The new cluster object should be present in metadatacache however.
-
-                    // make sure we have a active watch, then exit
-                    Stat stat = voldemortZooKeeperConfig.getZooKeeper().exists(this.zkconfigdir + "/" + key, true);
-                    return;
-                } else {
-
-                    for (String invalidKey : MetadataStore.REQUIRED_KEYS) {
-                        if (key.equals(invalidKey)) {
-                            throw new VoldemortException("Please use ZooKeeper to write new Metadata for data kept in ZooKeeper. Refusing put. " +
-                                    "Offending key: " + key);
-                        }
-                    }
-                }
-                Stat stat = voldemortZooKeeperConfig.getZooKeeper().exists(this.zkconfigdir + "/" + key, false);
-                if (stat != null) {
-                    voldemortZooKeeperConfig.getZooKeeper()
-                            .setData(this.zkconfigdir + "/" + key, value.getValue().getBytes(), stat.getVersion());
-                } else {
-                    voldemortZooKeeperConfig.getZooKeeper()
-                            .create(this.zkconfigdir + "/" + key, value.getValue().getBytes(), null, CreateMode.PERSISTENT);
-                }
-
-            } catch (InterruptedException | KeeperException e) {
-                logger.info("Error with zookeeper setData to key: " + this.zkconfigdir + "/" + key);
-                throw new VoldemortException("Error with zookeeper setData to key: " + this.zkconfigdir + "/" + key, e);
-            }
+        String path = zkconfigdir + "/";
+        if(isLocalKey(key)) {
+            path += "/nodes/" + voldemortZooKeeperConfig.getHostname() + "/";
         }
 
+        try {
+
+            if (metadatastore.getServerStateUnlocked().
+                    equals(MetadataStore.VoldemortState.REBALANCING_MASTER_SERVER) ) {
+                // if rebalancing and using zookeeper, do not write to ZK, but delay operation until the file watch
+                // triggers rereading.
+                // The new cluster object should be present in metadatacache however.
+
+                // make sure we have a active watch, then exit
+                Stat stat = voldemortZooKeeperConfig.getZooKeeper().exists(path + key, true);
+                return;
+            } else {
+
+                for (String invalidKey : MetadataStore.REQUIRED_KEYS) {
+                    if (key.equals(invalidKey)) {
+                        throw new VoldemortException("Please use ZooKeeper to write new Metadata for data kept in ZooKeeper. Refusing put. " +
+                                "Offending key: " + key);
+                    }
+                }
+            }
+            Stat stat = voldemortZooKeeperConfig.getZooKeeper().exists(path + key, false);
+            if (stat != null) {
+                voldemortZooKeeperConfig.getZooKeeper()
+                        .setData(path + key, value.getValue().getBytes(), stat.getVersion());
+            } else {
+                voldemortZooKeeperConfig.getZooKeeper()
+                        .create(path + key, value.getValue().getBytes(), null, CreateMode.PERSISTENT);
+            }
+
+        } catch (InterruptedException | KeeperException e) {
+            logger.info("Error with zookeeper setData to key: " + path + key);
+            throw new VoldemortException("Error with zookeeper setData to key: " + path + key, e);
+        }
     }
 
     private List<Versioned<String>> get(String key) {
@@ -243,11 +195,22 @@ public class ZooKeeperStorageEngine extends AbstractStorageEngine<String, String
 
         try {
             children = voldemortZooKeeperConfig.getZooKeeper().getChildren(this.zkconfigdir, false);
+
+            children.addAll(voldemortZooKeeperConfig.getZooKeeper().getChildren(
+                    this.zkconfigdir + "/nodes/"+voldemortZooKeeperConfig.getHostname(), false));
+
             for(String child : children) {
                 if(child.equals(key)) {
                     logger.info("Getting zookey: " + this.zkconfigdir + "/" + child);
 
-                    Stat childStat = voldemortZooKeeperConfig.getZooKeeper().exists(this.zkconfigdir + "/" + child, false);
+                    String path = this.zkconfigdir + "/" + child;
+                    Stat childStat = voldemortZooKeeperConfig.getZooKeeper().exists(path, false);
+
+                    // if not found, the znode must be in the other directory
+                    if (childStat == null) {
+                        path = this.zkconfigdir + "/nodes/" + voldemortZooKeeperConfig.getHostname() + "/" + child;
+                        childStat = voldemortZooKeeperConfig.getZooKeeper().exists(path, false);
+                    }
 
                     VectorClock clock = new VectorClock(childStat.getCtime());
 
@@ -256,11 +219,9 @@ public class ZooKeeperStorageEngine extends AbstractStorageEngine<String, String
                         watch = true;
                     }
                     String data;
+                    data = new String(voldemortZooKeeperConfig.getZooKeeper().getData(path, watch, childStat));
                     if(watch) {
-                        data = new String(voldemortZooKeeperConfig.getZooKeeper().getData(this.zkconfigdir + "/" + child, watch, childStat));
-                        logger.info("setting watch for key: "+this.zkconfigdir+"/"+child + " watcher: "+this.watcher);
-                    } else {
-                        data = new String(voldemortZooKeeperConfig.getZooKeeper().getData(this.zkconfigdir + "/" + child, false, childStat));
+                        logger.info("setting watch for key: " + path + " watcher: " + this.watcher);
                     }
 
                     Versioned<String> stringVersioned = new Versioned<String>(data, clock);
@@ -268,84 +229,15 @@ public class ZooKeeperStorageEngine extends AbstractStorageEngine<String, String
                 }
             }
         } catch (InterruptedException | KeeperException e) {
-            logger.info("failed getting key: " + this.zkconfigdir + "/" + key);
-            throw new VoldemortException("failed getting key: " + this.zkconfigdir + "/" + key, e);
+            logger.info("failed getting key: " + key);
+            throw new VoldemortException("failed getting key: " + key, e);
         }
         return found;
-    }
-
-    private List<Versioned<String>> get(String key, File[] files) {
-        try {
-            List<Versioned<String>> found = new ArrayList<Versioned<String>>();
-            for(File file: files) {
-                if(file.getName().equals(key)) {
-                    VectorClock clock = readVersion(key);
-                    if(null != clock) {
-                        found.add(new Versioned<String>(FileUtils.readFileToString(file, "UTF-8"),
-                                clock));
-                    }
-                }
-            }
-            return found;
-        } catch(IOException e) {
-            throw new VoldemortException(e);
-        }
     }
 
     public void setWatcher(Watcher watcher) {
         this.watcher = watcher;
         voldemortZooKeeperConfig.setWatcher(watcher);
-    }
-
-    private VectorClock readVersion(String key) {
-        try {
-            File versionFile = new File(getVersionDirectory(), key);
-            if(!versionFile.exists()) {
-                // bootstrap file save default clock as version.
-                VectorClock clock = new VectorClock(0);
-                writeVersion(key, clock);
-                return clock;
-            } else {
-                // read the version file and return version.
-                String hexCode = FileUtils.readFileToString(versionFile, "UTF-8");
-                return new VectorClock(Hex.decodeHex(hexCode.toCharArray()));
-            }
-        } catch(Exception e) {
-            throw new VoldemortException("Failed to read Version for Key:" + key, e);
-        }
-    }
-
-    private void writeVersion(String key, VectorClock version) {
-        try {
-            File versionFile = new File(getVersionDirectory(), key);
-            if(!versionFile.exists() || versionFile.delete()) {
-                // write the version file.
-                String hexCode = new String(Hex.encodeHex(version.toBytes()));
-                FileUtils.writeStringToFile(versionFile, hexCode, "UTF-8");
-            }
-        } catch(Exception e) {
-            throw new VoldemortException("Failed to write Version for Key:" + key, e);
-        }
-    }
-
-    private File getVersionDirectory() {
-        File versionDir = new File(this.configdir, ".version");
-        if(!versionDir.exists() || !versionDir.isDirectory()) {
-            versionDir.delete();
-            versionDir.mkdirs();
-        }
-
-        return versionDir;
-    }
-
-    private File getTempDirectory() {
-        File tempDir = new File(this.configdir, ".temp");
-        if(!tempDir.exists() || !tempDir.isDirectory()) {
-            tempDir.delete();
-            tempDir.mkdirs();
-        }
-
-        return tempDir;
     }
 
     @Override

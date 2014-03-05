@@ -23,12 +23,18 @@ public class VoldemortZooKeeperConfig extends VoldemortConfig implements Watcher
 
     private ZooKeeper zk = null;
     private String zkURL;
+    private String hostname;
     private Watcher watcher;
 
     public VoldemortZooKeeperConfig(String voldemortHome, String voldemortConfigDir, String zkurl) throws ConfigurationException {
         zkURL = zkurl;
         this.watcher = this;
-        this.zk = VoldemortZooKeeperConfig.setupZooKeeper(zkurl, this.watcher);
+        try {
+            this.hostname = InetAddress.getLocalHost().getCanonicalHostName().toString();
+        } catch (UnknownHostException e) {
+            throw new ConfigurationException("Unable to determine hostname of host", e);
+        }
+        this.zk = setupZooKeeper(zkurl, this.watcher);
 
         Props props = loadConfigs(this.zk);
         props.put("voldemort.home", voldemortHome);
@@ -38,13 +44,12 @@ public class VoldemortZooKeeperConfig extends VoldemortConfig implements Watcher
         setProps(props);
     }
 
-    private static Props loadConfigs(ZooKeeper zk) {
+    private Props loadConfigs(ZooKeeper zk) {
 
         Props properties = null;
 
         try {
             String nodeproperties = getNodeConfigFromZooKeeper(zk);
-            //String clusterxml = getClusterConfigFromZooKeeper(zk);
 
             Properties propertiesData = new Properties();
             propertiesData.load(new StringReader(nodeproperties));
@@ -64,25 +69,25 @@ public class VoldemortZooKeeperConfig extends VoldemortConfig implements Watcher
         return voldemortConfig;
     }
 
-    private static String getClusterConfigFromZooKeeper(ZooKeeper zk) {
+    private String getClusterConfigFromZooKeeper(ZooKeeper zk) {
         return getFileFromZooKeeper(zk, "/config/cluster.xml");
     }
 
-        private static String getFileFromZooKeeper(ZooKeeper zk, String path) {
-            Stat stat = new Stat();
-            String s = null;
-            try {
-                byte[] configdata = zk.getData(path, false, stat);
-                s = new String(configdata);
-            } catch (KeeperException e) {
-                throw new RuntimeException(String.format("Error getting key from ZooKeeper: %s", path), e);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(String.format("Error getting key from ZooKeeper: %s", path), e);
-            }
-            return s;
+    private String getFileFromZooKeeper(ZooKeeper zk, String path) {
+        Stat stat = new Stat();
+        String s = null;
+        try {
+            byte[] configdata = zk.getData(path, false, stat);
+            s = new String(configdata);
+        } catch (KeeperException e) {
+            throw new RuntimeException(String.format("Error getting key from ZooKeeper: %s", path), e);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(String.format("Error getting key from ZooKeeper: %s", path), e);
         }
+        return s;
+    }
 
-    public static ZooKeeper setupZooKeeper(String zkURI, Watcher callback) {
+    public ZooKeeper setupZooKeeper(String zkURI, Watcher callback) {
         ZooKeeper zk = null;
         try {
             logger.info("creating a new zookeeper instance");
@@ -98,10 +103,8 @@ public class VoldemortZooKeeperConfig extends VoldemortConfig implements Watcher
         logger.info(String.format("Got event from ZooKeeper: %s", event.toString()));
     }
 
-    public static String getNodeConfigFromZooKeeper(ZooKeeper zk) throws UnknownHostException {
-        String hostname = new String(InetAddress.getLocalHost().getCanonicalHostName().toString());
-
-        return getFileFromZooKeeper(zk, "/config/"+hostname+".properties");
+    public String getNodeConfigFromZooKeeper(ZooKeeper zk) throws UnknownHostException {
+        return getFileFromZooKeeper(zk, "/config/nodes/"+this.hostname+"/server.properties");
     }
 
     private boolean isZooKeeperAlive() {
@@ -124,4 +127,9 @@ public class VoldemortZooKeeperConfig extends VoldemortConfig implements Watcher
 
         logger.info("Registered " + watcher + " as watcher for ZooKeeper instance.");
     }
+
+    public String getHostname() {
+        return hostname;
+    }
+
 }
