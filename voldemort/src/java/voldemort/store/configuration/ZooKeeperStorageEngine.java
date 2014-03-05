@@ -151,7 +151,7 @@ public class ZooKeeperStorageEngine extends AbstractStorageEngine<String, String
         // if a key stored in a local dir!
         String path = zkconfigdir + "/";
         if(isLocalKey(key)) {
-            path += "/nodes/" + voldemortZooKeeperConfig.getHostname() + "/";
+            path += "nodes/" + voldemortZooKeeperConfig.getHostname() + "/";
         }
 
         try {
