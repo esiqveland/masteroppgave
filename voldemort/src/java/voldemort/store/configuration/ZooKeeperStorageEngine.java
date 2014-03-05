@@ -171,8 +171,8 @@ public class ZooKeeperStorageEngine extends AbstractStorageEngine<String, String
             }
 
         } catch (InterruptedException | KeeperException e) {
-            logger.info("Error with zookeeper setData to key: " + path + key);
-            throw new VoldemortException("Error with zookeeper setData to key: " + path + key, e);
+            logger.info("Error with zookeeper setData to key: " + path + key + " value: " + value.getValue());
+            throw new VoldemortException("Error with zookeeper setData to key: " + path + key + " value: " + value.getValue(), e);
         }
     }
 
