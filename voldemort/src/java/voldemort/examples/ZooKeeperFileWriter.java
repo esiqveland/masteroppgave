@@ -1,6 +1,7 @@
 package voldemort.examples;
 
 import org.apache.zookeeper.*;
+import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
 
 import java.io.File;
@@ -33,7 +34,7 @@ public class ZooKeeperFileWriter implements Watcher {
         try {
             Stat stat = zooKeeper.exists(targetnode, false);
             if(stat == null) {
-                zooKeeper.create(targetnode, data, null, CreateMode.PERSISTENT);
+                zooKeeper.create(targetnode, data, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
             } else {
                 zooKeeper.setData(targetnode, data, stat.getVersion());
             }

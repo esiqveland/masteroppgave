@@ -170,7 +170,7 @@ public class ZooKeeperStorageEngine extends AbstractStorageEngine<String, String
 
             if (stat == null) {
                 voldemortZooKeeperConfig.getZooKeeper()
-                        .create(path + key, value.getValue().getBytes(), null, CreateMode.PERSISTENT);
+                        .create(path + key, value.getValue().getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
             } else {
                 voldemortZooKeeperConfig.getZooKeeper()
                         .setData(path + key, value.getValue().getBytes(), stat.getVersion());
