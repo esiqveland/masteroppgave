@@ -79,19 +79,36 @@ public class ZooKeeperStorageEngine extends AbstractStorageEngine<String, String
         StoreUtils.assertValidKey(key);
 
         String path = "";
-        try {
-            Stat stat = voldemortZooKeeperConfig.getZooKeeper().exists(zkconfigdir + "/" + key, false);
-            if(stat != null) {
-                voldemortZooKeeperConfig.getZooKeeper().delete(zkconfigdir + "/" + key, stat.getVersion());
-                return true;
-            } else {
-                throw new VoldemortException("Error while deleting key: " + key + ", key does not exist");
+        if(isLocalDir(key)) {
+            for(File file: getDirectory(key).listFiles()) {
+                if(file.getName().equals(key)) {
+                    try {
+                        // delete the file and the version file
+                        return file.delete()
+                                && new File(getVersionDirectory(), file.getName()).delete();
+                    } catch(Exception e) {
+                        logger.error("Error while attempt to delete file key:" + key, e);
+                    }
+                }
             }
+            return false;
+        } else {
 
-        } catch (InvalidPathException | InterruptedException | KeeperException e) {
-            logger.error("Error while attempting to delete key:" + key, e);
+            try {
+                Stat stat = voldemortZooKeeperConfig.getZooKeeper().exists(zkconfigdir + "/" + key, false);
+                if(stat != null) {
+                    voldemortZooKeeperConfig.getZooKeeper().delete(zkconfigdir + "/" + key, stat.getVersion());
+                    return true;
+                } else {
+                    throw new VoldemortException("Error while deleting key: " + key + ", key does not exist");
+                }
+
+            } catch (InvalidPathException | InterruptedException | KeeperException e) {
+                logger.error("Error while attempting to delete key:" + key, e);
+            }
+            return false;
         }
-        return false;
+
     }
 
     @Override
@@ -185,8 +202,8 @@ public class ZooKeeperStorageEngine extends AbstractStorageEngine<String, String
             // is zookeeper key
             try {
 
-                if(metadatastore.getServerStateLocked().
-                        equals(MetadataStore.VoldemortState.REBALANCING_MASTER_SERVER)) {
+                if (metadatastore.getServerStateUnlocked().
+                        equals(MetadataStore.VoldemortState.REBALANCING_MASTER_SERVER) ) {
                     // if rebalancing and using zookeeper, do not write to ZK, but delay operation until the file watch
                     // triggers rereading.
                     // The new cluster object should be present in metadatacache however.
@@ -196,10 +213,10 @@ public class ZooKeeperStorageEngine extends AbstractStorageEngine<String, String
                     return;
                 } else {
 
-                    for(String invalidKey : MetadataStore.REQUIRED_KEYS) {
-                        if(key.equals(invalidKey)) {
+                    for (String invalidKey : MetadataStore.REQUIRED_KEYS) {
+                        if (key.equals(invalidKey)) {
                             throw new VoldemortException("Please use ZooKeeper to write new Metadata for data kept in ZooKeeper. Refusing put. " +
-                                    "Offending key: "+key);
+                                    "Offending key: " + key);
                         }
                     }
                 }

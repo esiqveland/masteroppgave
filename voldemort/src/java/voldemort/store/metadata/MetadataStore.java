@@ -133,10 +133,12 @@ public class MetadataStore extends AbstractStorageEngine<ByteArray, byte[], byte
 
     public MetadataStore(Store<String, String, String> innerStore, int nodeId) {
         super(innerStore.getName());
+
         if(innerStore instanceof ZooKeeperStorageEngine) {
             ((ZooKeeperStorageEngine)innerStore).setWatcher(this);
             ((ZooKeeperStorageEngine)innerStore).setMetadatastore(this);
         }
+
         this.innerStore = innerStore;
         this.metadataCache = new HashMap<String, Versioned<Object>>();
         this.storeNameTolisteners = new ConcurrentHashMap<String, List<MetadataStoreListener>>();
