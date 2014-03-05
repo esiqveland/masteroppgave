@@ -155,23 +155,10 @@ public class ZooKeeperStorageEngine extends AbstractStorageEngine<String, String
         }
 
         try {
-
-            if (metadatastore.getServerStateUnlocked().
-                    equals(MetadataStore.VoldemortState.REBALANCING_MASTER_SERVER) ) {
-                // if rebalancing and using zookeeper, do not write to ZK, but delay operation until the file watch
-                // triggers rereading.
-                // The new cluster object should be present in metadatacache however.
-
-                // make sure we have a active watch, then exit
-                Stat stat = voldemortZooKeeperConfig.getZooKeeper().exists(path + key, true);
-                return;
-            } else {
-
-                for (String invalidKey : MetadataStore.REQUIRED_KEYS) {
-                    if (key.equals(invalidKey)) {
-                        throw new VoldemortException("Please use ZooKeeper to write new Metadata for data kept in ZooKeeper. Refusing put. " +
-                                "Offending key: " + key);
-                    }
+            for (String invalidKey : MetadataStore.REQUIRED_KEYS) {
+                if (key.equals(invalidKey)) {
+                    throw new VoldemortException("Please use ZooKeeper to write new Metadata for data kept in ZooKeeper. Refusing put. " +
+                            "Offending key: " + key);
                 }
             }
             Stat stat = voldemortZooKeeperConfig.getZooKeeper().exists(path + key, false);
