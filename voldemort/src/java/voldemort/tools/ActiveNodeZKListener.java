@@ -1,5 +1,6 @@
 package voldemort.tools;
 
+import com.google.common.collect.Lists;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
@@ -20,6 +21,8 @@ public class ActiveNodeZKListener implements Watcher {
     private String znode;
     private List<Watcher> watchers;
 
+    private List<String> deferredZnodewatchlist;
+
 
     /**
      * Watches a znode on a given cluster for children events.
@@ -29,6 +32,8 @@ public class ActiveNodeZKListener implements Watcher {
      */
     public ActiveNodeZKListener(String zkConnectionUrl, String znode) {
         connected = false;
+        this.znode = znode;
+        deferredZnodewatchlist = Lists.newArrayList();
         zooKeeper = setupZooKeeper(zkConnectionUrl);
         registerWatch();
     }
@@ -37,7 +42,7 @@ public class ActiveNodeZKListener implements Watcher {
         try {
             List<String> children = zooKeeper.getChildren(znode, true);
         } catch (InterruptedException | KeeperException e) {
-
+            logger.debug("Set watch for children on znode: " + znode + " failed: ", e);
         }
     }
 
@@ -76,6 +81,7 @@ public class ActiveNodeZKListener implements Watcher {
 
             case SyncConnected:
                 this.connected = true;
+                registerWatch();
 
             case Expired:
                 handleExpired();
