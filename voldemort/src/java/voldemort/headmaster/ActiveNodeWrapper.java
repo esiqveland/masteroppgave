@@ -5,7 +5,11 @@ import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import voldemort.tools.ActiveNodeZKListener;
 
+import java.util.logging.Logger;
+
 public class ActiveNodeWrapper implements Watcher {
+
+    private static final org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(ActiveNodeZKListener.class);
 
     private ActiveNodeZKListener anzkl;
     String zkURL = "voldemort1.idi.ntnu.no:2181";
@@ -21,9 +25,7 @@ public class ActiveNodeWrapper implements Watcher {
 
     @Override
     public void process(WatchedEvent event) {
-        System.out.println("There is a new node in active!");
-
-        event.getType().toString();
+        logger.debug("Event: " + event.getType() + " path: " + event.getPath());
 
     }
 
@@ -32,11 +34,6 @@ public class ActiveNodeWrapper implements Watcher {
 
         while(1==1){
 
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException ie) {
-                //Handle exception
-            }
 
         }
 
