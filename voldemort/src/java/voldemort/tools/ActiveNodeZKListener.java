@@ -18,6 +18,7 @@ public class ActiveNodeZKListener implements Watcher {
 
     private static final Logger logger = Logger.getLogger(ActiveNodeZKListener.class);
     private ZooKeeper zooKeeper;
+    private String zkUrl;
     private boolean connected;
     private String znode;
     private List<Watcher> watchers;
@@ -33,6 +34,8 @@ public class ActiveNodeZKListener implements Watcher {
      */
     public ActiveNodeZKListener(String zkConnectionUrl, String znode) {
         connected = false;
+        watchers = Lists.newLinkedList();
+        this.zkUrl = zkConnectionUrl;
         this.znode = znode;
         deferredZnodewatchlist = Lists.newArrayList();
         zooKeeper = setupZooKeeper(zkConnectionUrl);
@@ -93,15 +96,32 @@ public class ActiveNodeZKListener implements Watcher {
 
 
     private void handleExpired() {
-        logger.info("ZooKeeper session expired, not implemented handling yet!");
+        logger.info("ZooKeeper session expired and dead, trying to recreate...");
+        zooKeeper = setupZooKeeper(zkUrl);
+    }
+
+    public List<String> getNodeList() {
+        List<String> children = Lists.newArrayList();
+
+        if(connected) {
+            children = getChildren();
+            // reset watch in case
+            registerWatch();
+        } else {
+            logger.info("Tried fetching children list, but is not in connected state!");
+        }
+
+        return children;
     }
 
     private void handleNodeChildrenChanged(WatchedEvent event) {
         logger.info("Children changed: " + event.getPath());
+
         for (Watcher w : watchers) {
             w.process(event);
         }
 
+        registerWatch();
     }
 
     public void addWatcher(Watcher watcher) {
@@ -113,5 +133,16 @@ public class ActiveNodeZKListener implements Watcher {
         }
 
         watchers.add(watcher);
+    }
+
+    private List<String> getChildren() {
+        List<String> children = Lists.newArrayList();
+
+        try {
+            children = zooKeeper.getChildren(znode, true);
+        } catch (InterruptedException | KeeperException e) {
+            logger.error("Failed getting children on znode: "+znode, e);
+        }
+        return children;
     }
 }
