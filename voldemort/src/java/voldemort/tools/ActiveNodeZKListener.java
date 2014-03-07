@@ -7,6 +7,7 @@ import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.log4j.Level;
@@ -35,6 +36,7 @@ public class ActiveNodeZKListener implements Watcher {
         this.znode = znode;
         deferredZnodewatchlist = Lists.newArrayList();
         zooKeeper = setupZooKeeper(zkConnectionUrl);
+        watchers = new ArrayList<>();
         registerWatch();
     }
 
@@ -103,6 +105,7 @@ public class ActiveNodeZKListener implements Watcher {
     }
 
     public void addWatcher(Watcher watcher) {
+
 
         if(watchers.contains(watcher)) {
             logger.info("Tried to register already registered watcher: " + watcher);

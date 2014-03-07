@@ -1,6 +1,8 @@
 package voldemort.tools;
 
+import org.apache.commons.lang.mutable.Mutable;
 import voldemort.cluster.Cluster;
+import voldemort.cluster.MutableCluster;
 import voldemort.cluster.Node;
 import voldemort.cluster.Zone;
 import voldemort.store.StoreDefinition;
@@ -39,6 +41,12 @@ public class RepartitionerZooKeeper {
 
         String interimClusterXML = new String(currentClusterXML);
         Cluster interimCluster = new ClusterMapper().readCluster(new StringReader(interimClusterXML));
+
+        MutableCluster interimClusterMutable;
+        interimClusterMutable = MutableCluster.MutableClusterFromCluster(interimCluster);
+
+
+
 
         String finalStoresXML = new String(storesXML);
         List<StoreDefinition> finalStoreDefs = new StoreDefinitionsMapper().readStoreList(new StringReader(finalStoresXML));
@@ -96,6 +104,7 @@ public class RepartitionerZooKeeper {
 
 
     }
+
 
     
 }
