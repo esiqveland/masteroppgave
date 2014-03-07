@@ -12,7 +12,7 @@ import java.nio.file.Files;
 /**
  * Created by Knut on 06/03/14.
  */
-class ZooKeeperHandler{
+public class ZooKeeperHandler{
 
     private ZooKeeper zk;
     private String zkURL;
