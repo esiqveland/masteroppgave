@@ -24,42 +24,22 @@ public class ActiveNodeZKListener implements Watcher, Runnable {
     private String zkUrl;
     private boolean connected;
     private String znode;
-    private List<Watcher> watchers;
+    private List<ZKDataListener> zkDataListeners;
 
     /**
      * Watches a znode on a given cluster for children events.
-     * Can pass on certain events to given watchers.
+     * Can pass on certain events to given zkDataListeners.
      * @param zkConnectionUrl
      * @param znode
      */
     public ActiveNodeZKListener(String zkConnectionUrl, String znode) {
         connected = false;
-        watchers = Lists.newLinkedList();
+        zkDataListeners = Lists.newLinkedList();
         this.zkUrl = zkConnectionUrl;
         this.znode = znode;
         zooKeeper = setupZooKeeper(zkConnectionUrl);
-        watchers = new ArrayList<>();
+        zkDataListeners = new ArrayList<>();
         registerWatches();
-    }
-
-    private void registerWatches() {
-        try {
-            List<String> children = zooKeeper.getChildren(znode, true);
-            resetWatch(clusternode);
-        } catch (InterruptedException | KeeperException e) {
-            logger.debug("Setting watches failed: ", e);
-        }
-    }
-
-    private ZooKeeper setupZooKeeper(String zkConnectionUrl) {
-        ZooKeeper zk = null;
-        try {
-            zk = new ZooKeeper(zkConnectionUrl, 4000, this);
-        } catch (IOException e) {
-            logger.error("Could not connect to zooKeeper url: "+zkConnectionUrl);
-            throw new ConfigurationException(e);
-        }
-        return zk;
     }
 
     @Override
@@ -85,7 +65,22 @@ public class ActiveNodeZKListener implements Watcher, Runnable {
 
     private void handleNodeDataChanged(WatchedEvent event) {
         logger.info("nodeData changed: " + event);
+        String data = new String(getData(event.getPath()));
+        for(ZKDataListener zkd : zkDataListeners) {
+            zkd.dataChanged(event.getPath(), data);
+        }
         resetWatch(event.getPath());
+    }
+
+    private byte[] getData(String path) {
+        byte[] data = null;
+        try {
+            Stat stat = zooKeeper.exists(path, false);
+            data = zooKeeper.getData(path, false, stat);
+        } catch (InterruptedException | KeeperException e) {
+            logger.error("error getting znode: " + path, e);
+        }
+        return data;
     }
 
     private void resetWatch(String path) {
@@ -106,7 +101,6 @@ public class ActiveNodeZKListener implements Watcher, Runnable {
 
             case SyncConnected:
                 this.connected = true;
-                registerWatches();
                 break;
 
             case Expired:
@@ -115,7 +109,6 @@ public class ActiveNodeZKListener implements Watcher, Runnable {
         }
 
     }
-
 
     private void handleExpired() {
         logger.info("ZooKeeper session expired and dead, trying to recreate...");
@@ -139,22 +132,20 @@ public class ActiveNodeZKListener implements Watcher, Runnable {
 
     private void handleNodeChildrenChanged(WatchedEvent event) {
         logger.info("Children changed: " + event);
-
-        for (Watcher w : watchers) {
-            w.process(event);
+        List<String> children = getChildren();
+        for (ZKDataListener w : zkDataListeners) {
+            w.childrenList(children);
         }
-
-        registerWatches();
     }
 
-    public void addWatcher(Watcher watcher) {
+    public void addDataListener(ZKDataListener watcher) {
 
-        if(watchers.contains(watcher)) {
+        if(zkDataListeners.contains(watcher)) {
             logger.info("Tried to register already registered watcher: " + watcher);
             return;
         }
 
-        watchers.add(watcher);
+        zkDataListeners.add(watcher);
     }
 
     private List<String> getChildren() {
@@ -166,6 +157,26 @@ public class ActiveNodeZKListener implements Watcher, Runnable {
             logger.error("Failed getting children on znode: "+znode, e);
         }
         return children;
+    }
+
+    private void registerWatches() {
+        try {
+            List<String> children = zooKeeper.getChildren(znode, true);
+            resetWatch(clusternode);
+        } catch (InterruptedException | KeeperException e) {
+            logger.debug("Setting watches failed: ", e);
+        }
+    }
+
+    private synchronized ZooKeeper setupZooKeeper(String zkConnectionUrl) {
+        ZooKeeper zk = null;
+        try {
+            zk = new ZooKeeper(zkConnectionUrl, 4000, this);
+        } catch (IOException e) {
+            logger.error("Could not connect to zooKeeper url: "+zkConnectionUrl);
+            throw new ConfigurationException(e);
+        }
+        return zk;
     }
 
     @Override
