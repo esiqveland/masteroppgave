@@ -10,21 +10,21 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.apache.zookeeper.data.Stat;
 import voldemort.utils.ConfigurationException;
 
-public class ActiveNodeZKListener implements Watcher {
+public class ActiveNodeZKListener implements Watcher, Runnable {
 
     private static final Logger logger = Logger.getLogger(ActiveNodeZKListener.class);
+
+    private static String clusternode = "/config/cluster.xml";
+
     private ZooKeeper zooKeeper;
     private String zkUrl;
     private boolean connected;
     private String znode;
     private List<Watcher> watchers;
-
-    private List<String> deferredZnodewatchlist;
-
 
     /**
      * Watches a znode on a given cluster for children events.
@@ -37,17 +37,17 @@ public class ActiveNodeZKListener implements Watcher {
         watchers = Lists.newLinkedList();
         this.zkUrl = zkConnectionUrl;
         this.znode = znode;
-        deferredZnodewatchlist = Lists.newArrayList();
         zooKeeper = setupZooKeeper(zkConnectionUrl);
         watchers = new ArrayList<>();
-        registerWatch();
+        registerWatches();
     }
 
-    private void registerWatch() {
+    private void registerWatches() {
         try {
             List<String> children = zooKeeper.getChildren(znode, true);
+            resetWatch(clusternode);
         } catch (InterruptedException | KeeperException e) {
-            logger.debug("Set watch for children on znode: " + znode + " failed: ", e);
+            logger.debug("Setting watches failed: ", e);
         }
     }
 
@@ -69,12 +69,31 @@ public class ActiveNodeZKListener implements Watcher {
 
             case None:
                 handleStateChange(event);
+                break;
+
+            case NodeDataChanged:
+                handleNodeDataChanged(event);
+                break;
 
             case NodeChildrenChanged:
                 handleNodeChildrenChanged(event);
+                break;
 
         }
 
+    }
+
+    private void handleNodeDataChanged(WatchedEvent event) {
+        logger.info("nodeData changed: " + event);
+        resetWatch(event.getPath());
+    }
+
+    private void resetWatch(String path) {
+        try {
+            Stat stat = zooKeeper.exists(path, true);
+        } catch (InterruptedException | KeeperException e) {
+            logger.debug("Setting watch failed: " + path + " - ", e);
+        }
     }
 
     private void handleStateChange(WatchedEvent event) {
@@ -83,13 +102,16 @@ public class ActiveNodeZKListener implements Watcher {
 
             case Disconnected:
                 this.connected = false;
+                break;
 
             case SyncConnected:
                 this.connected = true;
-                registerWatch();
+                registerWatches();
+                break;
 
             case Expired:
                 handleExpired();
+                break;
         }
 
     }
@@ -98,6 +120,7 @@ public class ActiveNodeZKListener implements Watcher {
     private void handleExpired() {
         logger.info("ZooKeeper session expired and dead, trying to recreate...");
         zooKeeper = setupZooKeeper(zkUrl);
+        registerWatches();
     }
 
     public List<String> getNodeList() {
@@ -106,7 +129,7 @@ public class ActiveNodeZKListener implements Watcher {
         if(connected) {
             children = getChildren();
             // reset watch in case
-            registerWatch();
+            registerWatches();
         } else {
             logger.info("Tried fetching children list, but is not in connected state!");
         }
@@ -115,17 +138,16 @@ public class ActiveNodeZKListener implements Watcher {
     }
 
     private void handleNodeChildrenChanged(WatchedEvent event) {
-        logger.info("Children changed: " + event.getPath());
+        logger.info("Children changed: " + event);
 
         for (Watcher w : watchers) {
             w.process(event);
         }
 
-        registerWatch();
+        registerWatches();
     }
 
     public void addWatcher(Watcher watcher) {
-
 
         if(watchers.contains(watcher)) {
             logger.info("Tried to register already registered watcher: " + watcher);
@@ -144,5 +166,12 @@ public class ActiveNodeZKListener implements Watcher {
             logger.error("Failed getting children on znode: "+znode, e);
         }
         return children;
+    }
+
+    @Override
+    public void run() {
+        while(true) {
+
+        }
     }
 }
