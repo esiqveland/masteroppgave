@@ -179,6 +179,30 @@ public class ActiveNodeZKListener implements Watcher, Runnable {
         return zk;
     }
 
+    public String getStringFromZooKeeper(String path){
+        Stat stat = new Stat();
+        String s = null;
+        try {
+            byte[] data = zooKeeper.getData(path, false, stat);
+            s = new String(data);
+            if(isBeingWatched(path)) {
+                resetWatch(path);
+            }
+        } catch (KeeperException e) {
+            throw new RuntimeException(String.format("Error getting key from ZooKeeper: %s", path), e);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(String.format("Error getting key from ZooKeeper: %s", path), e);
+        }
+        return s;
+    }
+
+    private boolean isBeingWatched(String path) {
+        if (path.equals(clusternode)) {
+            return true;
+        }
+        return false;
+    }
+
     @Override
     public void run() {
         while(true) {
