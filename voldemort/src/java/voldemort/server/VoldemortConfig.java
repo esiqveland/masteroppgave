@@ -72,6 +72,7 @@ import com.google.common.collect.ImmutableList;
 public class VoldemortConfig implements Serializable {
 
     private static final long serialVersionUID = 1;
+    public static final String NEW_ACTIVE_NODE_STRING = "NEW";
     public static final String VOLDEMORT_HOME_VAR_NAME = "VOLDEMORT_HOME";
     public static final String VOLDEMORT_CONFIG_DIR = "VOLDEMORT_CONFIG_DIR";
     private static final String VOLDEMORT_NODE_ID_VAR_NAME = "VOLDEMORT_NODE_ID";
