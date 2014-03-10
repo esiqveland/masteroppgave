@@ -49,11 +49,10 @@ public class ActiveNodeWrapper implements Runnable, Watcher, ZKDataListener {
         childrenList = Lists.newArrayList();
         String currentClusterString = anzkl.getStringFromZooKeeper("/config/cluster.xml");
         currentCluster = new ClusterMapper().readCluster(new StringReader(currentClusterString));
-        zkhandler = new ZooKeeperHandler(this.zkURL);
-        zkhandler.setupZooKeeper();
+        zkhandler = new ZooKeeperHandler(zkURL, anzkl.getZooKeeper());
 
         for (Node node : currentCluster.getNodes()) {
-            System.out.println("nodeid: " + node.getId());
+            System.out.println("node.id: " + node.getId());
             System.out.println(node.toString());
         }
 
@@ -123,8 +122,6 @@ public class ActiveNodeWrapper implements Runnable, Watcher, ZKDataListener {
             zkhandler.uploadAndUpdateFile("/config/nodes/" + newNode.getHost(), "");
             zkhandler.uploadAndUpdateFile("/config/nodes/" + newNode.getHost() + "/server.properties", serverProp);
         }
-
-
     }
 
     private String createInterimClusterXML(Node newNode) {

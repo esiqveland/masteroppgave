@@ -21,11 +21,11 @@ public class ActiveNodeZKListener implements Watcher, Runnable {
     private static String clusternode = "/config/cluster.xml";
 
     private ZooKeeper zooKeeper;
+
     private String zkUrl;
     private boolean connected;
     private String znode;
     private List<ZKDataListener> zkDataListeners;
-
     /**
      * Watches a znode on a given cluster for children events.
      * Can pass on certain events to given zkDataListeners.
@@ -208,5 +208,9 @@ public class ActiveNodeZKListener implements Watcher, Runnable {
         while(true) {
 
         }
+    }
+
+    public ZooKeeper getZooKeeper() {
+        return zooKeeper;
     }
 }

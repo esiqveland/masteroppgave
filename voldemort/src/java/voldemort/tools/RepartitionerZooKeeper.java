@@ -30,7 +30,6 @@ public class RepartitionerZooKeeper {
         String zkURL = "192.168.0.210:2181/voldemort/config";
 
         ZooKeeperHandler zkHandler = new ZooKeeperHandler(zkURL);
-        zkHandler.setupZooKeeper();
 
         // Required args
         String currentClusterXML = zkHandler.getStringFromZooKeeper("/cluster.xml");
