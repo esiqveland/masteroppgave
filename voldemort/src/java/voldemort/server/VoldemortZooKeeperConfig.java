@@ -55,7 +55,9 @@ public class VoldemortZooKeeperConfig extends VoldemortConfig implements Watcher
             setProps(props);
 
             setReady(true);
-            readyLock.notifyAll();
+            synchronized (readyLock) {
+                readyLock.notifyAll();
+            }
         } catch (Exception e) {
 
             try {
@@ -84,7 +86,7 @@ public class VoldemortZooKeeperConfig extends VoldemortConfig implements Watcher
         String path = "/active/" + this.hostname;
 
         try {
-            stat = this.zk.exists(path, true);
+            stat = this.zk.exists(path, false);
             if (stat == null) {
                 this.zk.create(path,
                         nodeid.getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
@@ -175,7 +177,9 @@ public class VoldemortZooKeeperConfig extends VoldemortConfig implements Watcher
     public void process(WatchedEvent event) {
         logger.info(String.format("Got event from ZooKeeper: %s", event));
 
-        tryToReadConfig();
+        if(!isReady()) {
+            tryToReadConfig();
+        }
 
     }
 
