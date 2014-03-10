@@ -94,9 +94,6 @@ public class ActiveNodeWrapper implements Watcher, ZKDataListener {
 
                 int newId = currentCluster.getNumberOfNodes();
                 zkhandler.uploadAndUpdateFile("/active/" + child, String.valueOf(newId));
-                //Generate server.prop
-
-                //create interim cluster.xml
 
                 Node newNode = new Node(newId, child, DEFAULT_HTTP_PORT, DEFAULT_SOCKET_PORT,DEFAULT_ADMIN_PORT,new ArrayList<Integer>());
                 return newNode;
@@ -147,8 +144,11 @@ public class ActiveNodeWrapper implements Watcher, ZKDataListener {
 
     private String createServerProperties(Node node){
         String sampleServerProp = zkhandler.getStringFromZooKeeper("/config/sample_files/server.properties");
+
         BufferedReader br = new BufferedReader(new StringReader(sampleServerProp));
+
         String line;
+
         StringBuilder sb = new StringBuilder();
         try {
             while((line=br.readLine())!=null)
@@ -167,14 +167,12 @@ public class ActiveNodeWrapper implements Watcher, ZKDataListener {
             e.printStackTrace();
         }
 
-
-
         return sb.toString();
     }
 
     @Override
     public void dataChanged(String path, String content) {
-        logger.info("Path: " + path);
+        logger.info("Path changed: " + path);
         if(path.equals("/config/cluster.xml")){
             this.currentCluster =  new ClusterMapper().readCluster(new StringReader(content));
 
