@@ -5,6 +5,7 @@ import com.google.common.collect.Lists;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
+import org.omg.PortableInterceptor.ACTIVE;
 import voldemort.cluster.Cluster;
 import voldemort.cluster.MutableCluster;
 import voldemort.cluster.Node;
@@ -21,7 +22,7 @@ import java.io.StringReader;
 import java.util.*;
 import java.util.logging.Logger;
 
-public class ActiveNodeWrapper implements Watcher, ZKDataListener {
+public class ActiveNodeWrapper implements Runnable, Watcher, ZKDataListener {
 
     private static final org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(ActiveNodeZKListener.class);
     public static final int DEFAULT_HTTP_PORT = 6881;
@@ -29,27 +30,29 @@ public class ActiveNodeWrapper implements Watcher, ZKDataListener {
     public static final int DEFAULT_SOCKET_PORT = 6666;
 
 
+    public static final String defaultUrl = "voldemort1.idi.ntnu.no:2181/voldemort";
 
     private ActiveNodeZKListener anzkl;
     private ZooKeeperHandler zkhandler;
-    String zkURL = "voldemort1.idi.ntnu.no:2181/voldemort";
+    String zkURL = defaultUrl;
     private String activePath = "/active";
     private Cluster currentCluster;
     private List<String> childrenList;
+    private boolean idle = false;
 
 
 
-
-    public ActiveNodeWrapper(){
-        anzkl = new ActiveNodeZKListener(zkURL,activePath);
+    public ActiveNodeWrapper(String zkURL) {
+        this.zkURL = zkURL;
+        anzkl = new ActiveNodeZKListener(this.zkURL, activePath);
         anzkl.addDataListener(this);
         childrenList = Lists.newArrayList();
         String currentClusterString = anzkl.getStringFromZooKeeper("/config/cluster.xml");
         currentCluster = new ClusterMapper().readCluster(new StringReader(currentClusterString));
-        zkhandler = new ZooKeeperHandler(zkURL);
+        zkhandler = new ZooKeeperHandler(this.zkURL);
         zkhandler.setupZooKeeper();
 
-        for (Node node : currentCluster.getNodes()){
+        for (Node node : currentCluster.getNodes()) {
             System.out.println("nodeid: " + node.getId());
             System.out.println(node.toString());
         }
@@ -68,19 +71,20 @@ public class ActiveNodeWrapper implements Watcher, ZKDataListener {
 
     }
 
-    public static void main(String args[]){
-        ActiveNodeWrapper awn = new ActiveNodeWrapper();
-
-        while(1==1){
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-                // handle the exception...
-                // For example consider calling Thread.currentThread().interrupt(); here.
-            }
-
+    public static void main(String args[]) {
+        String url = defaultUrl;
+        if (args.length == 0) {
+            System.out.println(
+                    String.format(
+                            "usage: %s [zookeeperurl]\nDefaults to %s", ActiveNodeWrapper.class.getCanonicalName(), defaultUrl));
+        } else {
+            url = args[0];
         }
+
+        ActiveNodeWrapper awn = new ActiveNodeWrapper(url);
+
+        Thread worker = new Thread(awn);
+        worker.start();
 
     }
 
@@ -176,6 +180,31 @@ public class ActiveNodeWrapper implements Watcher, ZKDataListener {
         if(path.equals("/config/cluster.xml")){
             this.currentCluster =  new ClusterMapper().readCluster(new StringReader(content));
 
+        }
+    }
+
+    public void setIdle() {
+        synchronized (this) {
+            this.idle = true;
+            // Causes all waiters to wake up.
+            this.notifyAll();
+        }
+    }
+
+    @Override
+    public void run() {
+        synchronized (this) {
+            while (true) {
+                // If the flag is set, we're done.
+                if (this.idle) { break; }
+                // Go to sleep until another thread notifies us.
+                try {
+                    this.wait();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                    setIdle();
+                }
+            }
         }
     }
 }
