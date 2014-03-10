@@ -1,8 +1,7 @@
 package voldemort.tools;
 
-import org.apache.zookeeper.CreateMode;
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.*;
+import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
 
 import java.io.File;
@@ -12,7 +11,7 @@ import java.nio.file.Files;
 /**
  * Created by Knut on 06/03/14.
  */
-public class ZooKeeperHandler{
+public class ZooKeeperHandler implements Watcher{
 
     private ZooKeeper zk;
     private String zkURL;
@@ -26,7 +25,7 @@ public class ZooKeeperHandler{
     public void setupZooKeeper(){
         zk = null;
         try {
-            zk = new ZooKeeper(zkURL, 3000, null);
+            zk = new ZooKeeper(zkURL, 4000, this);
         } catch (IOException e) {
             e.printStackTrace();
             throw new RuntimeException("zkurl failed to setup zookeeper");
@@ -35,7 +34,7 @@ public class ZooKeeperHandler{
 
     public String getStringFromZooKeeper(String path){
         Stat stat = new Stat();
-        String s = null;
+        String s;
         try {
             byte[] data = zk.getData(path, false, stat);
             s = new String(data);
@@ -61,17 +60,22 @@ public class ZooKeeperHandler{
         return null;
     }
 
-    void uploadAndUpdateFile(String target, String content) {
+    public void uploadAndUpdateFile(String target, String content) {
 
         try {
             Stat stat = zk.exists(target, false);
             if(stat == null) {
-                zk.create(target, content.getBytes(), null, CreateMode.PERSISTENT);
+                zk.create(target, content.getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
             } else {
                 zk.setData(target, content.getBytes(), stat.getVersion());
             }
         } catch (InterruptedException | KeeperException e) {
             e.printStackTrace();
         }
+    }
+
+    @Override
+    public void process(WatchedEvent event) {
+
     }
 }
