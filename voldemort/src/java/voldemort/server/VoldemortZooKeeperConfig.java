@@ -2,16 +2,15 @@ package voldemort.server;
 
 
 import org.apache.log4j.Logger;
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.*;
 import org.apache.zookeeper.data.Stat;
+import voldemort.VoldemortException;
 import voldemort.store.configuration.ConfigurationStorageEngine;
 import voldemort.utils.ConfigurationException;
 import voldemort.utils.Props;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.InetAddress;
@@ -21,13 +20,20 @@ import java.util.Properties;
 public class VoldemortZooKeeperConfig extends VoldemortConfig implements Watcher {
     private final static Logger logger = Logger.getLogger(VoldemortZooKeeperConfig.class);
 
+    public final Object readyLock = new Object();
     private ZooKeeper zk = null;
+
+    private boolean isReady = false;
+
     private String zkURL;
     private String hostname;
+    private String voldemortHome;
+    private String voldemortConfigDir;
     private Watcher watcher;
-
     public VoldemortZooKeeperConfig(String voldemortHome, String voldemortConfigDir, String zkurl) throws ConfigurationException {
         zkURL = zkurl;
+        this.voldemortHome = voldemortHome;
+        this.voldemortConfigDir = voldemortConfigDir;
         this.watcher = this;
         try {
             this.hostname = InetAddress.getLocalHost().getCanonicalHostName().toString();
@@ -36,28 +42,85 @@ public class VoldemortZooKeeperConfig extends VoldemortConfig implements Watcher
         }
         this.zk = setupZooKeeper(zkurl, this.watcher);
 
+        tryToReadConfig();
+    }
+
+    private synchronized void tryToReadConfig() {
+        logger.info("Trying to (re?)read config...");
+
+        // try to create a working config, if we exception, set up an exist watch and try to re-read config
+        // after an event happens
+        try {
+            Props props = generateProps();
+            setProps(props);
+
+            setReady(true);
+            readyLock.notifyAll();
+        } catch (Exception e) {
+
+            try {
+                this.zk.exists("/config/nodes/" + this.hostname + "/server.properties", true);
+            } catch (KeeperException e1) {
+                e1.printStackTrace();
+            } catch (InterruptedException e1) {
+                e1.printStackTrace();
+            }
+
+        } finally {
+            registerAliveness();
+        }
+    }
+
+    private void registerAliveness() {
+        Stat stat = null;
+
+        String nodeid;
+        if(isReady()) {
+            nodeid = String.valueOf(getNodeId());
+        } else {
+            nodeid = VoldemortConfig.NEW_ACTIVE_NODE_STRING;
+        }
+
+        String path = "/active/" + this.hostname;
+
+        try {
+            stat = this.zk.exists(path, true);
+            if (stat == null) {
+                this.zk.create(path,
+                        nodeid.getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
+            } else {
+                zk.setData(path, nodeid.getBytes(), stat.getVersion());
+            }
+        } catch (KeeperException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private synchronized void setReady(boolean b) {
+        this.isReady = b;
+    }
+
+    private Props generateProps() throws IOException {
         Props props = loadConfigs(this.zk);
         props.put("voldemort.home", voldemortHome);
 
         props.put("metadata.directory", voldemortConfigDir);
 
-        setProps(props);
+        return props;
     }
 
-    private Props loadConfigs(ZooKeeper zk) {
+    private Props loadConfigs(ZooKeeper zk) throws IOException {
 
         Props properties = null;
 
-        try {
-            String nodeproperties = getNodeConfigFromZooKeeper(zk);
+        String nodeproperties = getNodeConfigFromZooKeeper(zk);
 
-            Properties propertiesData = new Properties();
-            propertiesData.load(new StringReader(nodeproperties));
-            properties = new Props(propertiesData);
+        Properties propertiesData = new Properties();
+        propertiesData.load(new StringReader(nodeproperties));
+        properties = new Props(propertiesData);
 
-        } catch(IOException e) {
-            throw new ConfigurationException("Error reading configs from ZooKeeper",e);
-        }
         return properties;
     }
 
@@ -65,7 +128,17 @@ public class VoldemortZooKeeperConfig extends VoldemortConfig implements Watcher
         if(voldeConfig == null) {
             voldeConfig = voldemorthome + "/config";
         }
-        VoldemortZooKeeperConfig voldemortConfig = new VoldemortZooKeeperConfig( voldemorthome, voldeConfig, zookeeperurl);
+        VoldemortZooKeeperConfig voldemortConfig = new VoldemortZooKeeperConfig(voldemorthome, voldeConfig, zookeeperurl);
+
+        synchronized (voldemortConfig.readyLock) {
+            while(!voldemortConfig.isReady()) {
+                try {
+                    voldemortConfig.readyLock.wait();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
         return voldemortConfig;
     }
 
@@ -73,16 +146,16 @@ public class VoldemortZooKeeperConfig extends VoldemortConfig implements Watcher
         return getFileFromZooKeeper(zk, "/config/cluster.xml");
     }
 
-    private String getFileFromZooKeeper(ZooKeeper zk, String path) {
+    private String getFileFromZooKeeper(ZooKeeper zk, String path) throws VoldemortException {
         Stat stat = new Stat();
         String s = null;
         try {
             byte[] configdata = zk.getData(path, false, stat);
             s = new String(configdata);
         } catch (KeeperException e) {
-            throw new RuntimeException(String.format("Error getting key from ZooKeeper: %s", path), e);
+            throw new VoldemortException(String.format("Error getting key from ZooKeeper: %s", path), e);
         } catch (InterruptedException e) {
-            throw new RuntimeException(String.format("Error getting key from ZooKeeper: %s", path), e);
+            throw new ConfigurationException(String.format("Error getting key from ZooKeeper: %s", path), e);
         }
         return s;
     }
@@ -100,10 +173,13 @@ public class VoldemortZooKeeperConfig extends VoldemortConfig implements Watcher
 
     @Override
     public void process(WatchedEvent event) {
-        logger.info(String.format("Got event from ZooKeeper: %s", event.toString()));
+        logger.info(String.format("Got event from ZooKeeper: %s", event));
+
+        tryToReadConfig();
+
     }
 
-    public String getNodeConfigFromZooKeeper(ZooKeeper zk) throws UnknownHostException {
+    public String getNodeConfigFromZooKeeper(ZooKeeper zk) throws VoldemortException {
         return getFileFromZooKeeper(zk, "/config/nodes/"+this.hostname+"/server.properties");
     }
 
@@ -113,6 +189,7 @@ public class VoldemortZooKeeperConfig extends VoldemortConfig implements Watcher
         }
         return true;
     }
+
     public ZooKeeper getZooKeeper() {
         if (isZooKeeperAlive())
             return this.zk;
@@ -120,7 +197,6 @@ public class VoldemortZooKeeperConfig extends VoldemortConfig implements Watcher
         zk = setupZooKeeper(zkURL, this.watcher);
         return zk;
     }
-
     public void setWatcher(Watcher watcher) {
         this.watcher = watcher;
         this.getZooKeeper().register(watcher);
@@ -130,6 +206,10 @@ public class VoldemortZooKeeperConfig extends VoldemortConfig implements Watcher
 
     public String getHostname() {
         return hostname;
+    }
+
+    public boolean isReady() {
+        return isReady;
     }
 
 }
