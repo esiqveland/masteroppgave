@@ -1,28 +1,16 @@
 package voldemort.tools;
-import org.apache.hadoop.mapred.jobfailures_jsp;
-import org.apache.zookeeper.CreateMode;
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.data.Stat;
-import voldemort.client.protocol.admin.AdminClient;
+
 import voldemort.client.rebalance.RebalanceController;
 import voldemort.client.rebalance.RebalancePlan;
 import voldemort.cluster.Cluster;
-import voldemort.cluster.Node;
 import voldemort.store.StoreDefinition;
 import voldemort.utils.RebalanceUtils;
 import voldemort.xml.ClusterMapper;
 import voldemort.xml.StoreDefinitionsMapper;
 
-import java.io.File;
-import java.io.IOException;
 import java.io.StringReader;
-import java.nio.file.Files;
 import java.util.List;
 
-/**
- * Created by Knut on 20/02/14.
- */
 public class RebalanceControllerZooKeeper {
 
 
