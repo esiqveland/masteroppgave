@@ -8,9 +8,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 
-/**
- * Created by Knut on 06/03/14.
- */
 public class ZooKeeperHandler implements Watcher{
 
     private ZooKeeper zk;
@@ -18,14 +15,23 @@ public class ZooKeeperHandler implements Watcher{
 
     public ZooKeeperHandler(String zkURL) {
         this.zkURL = zkURL;
-
-
+        setupZooKeeper();
     }
 
-    public void setupZooKeeper(){
-        zk = null;
+    public ZooKeeperHandler(String zkURL, ZooKeeper zooKeeper) {
+        this(zkURL);
+        this.zk = zooKeeper;
+    }
+
+    private void setupZooKeeper(){
+        if(isAlive()) {
+            return;
+        }
+
+        ZooKeeper zooKeeper = null;
         try {
-            zk = new ZooKeeper(zkURL, 4000, this);
+            zooKeeper = new ZooKeeper(zkURL, 4000, this);
+            this.zk = zooKeeper;
         } catch (IOException e) {
             e.printStackTrace();
             throw new RuntimeException("zkurl failed to setup zookeeper");
@@ -77,5 +83,12 @@ public class ZooKeeperHandler implements Watcher{
     @Override
     public void process(WatchedEvent event) {
 
+    }
+
+    public boolean isAlive() {
+        if(this.zk == null || !this.zk.getState().isAlive()) {
+            return false;
+        }
+        return true;
     }
 }

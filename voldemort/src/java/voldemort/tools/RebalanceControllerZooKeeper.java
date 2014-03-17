@@ -39,7 +39,6 @@ public class RebalanceControllerZooKeeper {
 
 
         ZooKeeperHandler zkHandler = new ZooKeeperHandler(zkURL);
-        zkHandler.setupZooKeeper();
 
         String finalClusterString = zkHandler.getStringFromZooKeeper("/cluster_final.xml");
         Cluster finalCluster = new ClusterMapper().readCluster(new StringReader(finalClusterString));
