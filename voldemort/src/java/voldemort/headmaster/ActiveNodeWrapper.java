@@ -2,6 +2,7 @@ package voldemort.headmaster;
 
 
 import com.google.common.collect.Lists;
+import no.uio.master.autoscale.Autoscale;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import voldemort.cluster.Cluster;
@@ -72,6 +73,7 @@ public class ActiveNodeWrapper implements Runnable, Watcher, ZKDataListener {
     }
 
     public static void main(String args[]) {
+
         String url = defaultUrl;
         if (args.length == 0) {
             System.out.println(
@@ -83,8 +85,14 @@ public class ActiveNodeWrapper implements Runnable, Watcher, ZKDataListener {
 
         ActiveNodeWrapper awn = new ActiveNodeWrapper(url);
 
+        Autoscale as = new Autoscale("127.0.0.1", 7788);
+
+
+
         Thread worker = new Thread(awn);
         worker.start();
+
+
 
     }
 
