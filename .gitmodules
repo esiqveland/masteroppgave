@@ -4,3 +4,6 @@
 [submodule "autoscale/autoscale-common"]
 	path = autoscale/autoscale-common
 	url = https://github.com/esiqveland/autoscale-common.git
+[submodule "autoscale/autoscale"]
+	path = autoscale/autoscale
+	url = https://github.com/esiqveland/autoscale.git
