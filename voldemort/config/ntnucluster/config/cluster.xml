@@ -1,0 +1,30 @@
+<cluster>
+  <name>ntnucluster</name>
+  <server>
+    <id>0</id>
+    <host>voldemort1.idi.ntnu.no</host>
+    <http-port>8081</http-port>
+    <socket-port>6666</socket-port>
+    <admin-port>6667</admin-port>
+    <rest-port>8085</rest-port>
+    <partitions>4, 3, 8, 0, 13, 11</partitions>
+  </server>
+  <server>
+    <id>1</id>
+    <host>voldemort2.idi.ntnu.no</host>
+    <http-port>8081</http-port>
+    <socket-port>6666</socket-port>
+    <admin-port>6667</admin-port>
+    <rest-port>8085</rest-port>
+    <partitions>7, 1, 6, 15, 9</partitions>
+  </server>
+  <server>
+    <id>2</id>
+    <host>voldemort3.idi.ntnu.no</host>
+    <http-port>8081</http-port>
+    <socket-port>6666</socket-port>
+    <admin-port>6667</admin-port>
+    <rest-port>8085</rest-port>
+    <partitions>12, 2, 10, 14, 5</partitions>
+  </server>
+</cluster>
