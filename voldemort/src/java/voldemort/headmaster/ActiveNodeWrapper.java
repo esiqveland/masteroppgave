@@ -4,13 +4,11 @@ package voldemort.headmaster;
 import com.google.common.collect.Lists;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.ZooKeeper;
-import org.omg.PortableInterceptor.ACTIVE;
 import voldemort.cluster.Cluster;
-import voldemort.cluster.MutableCluster;
 import voldemort.cluster.Node;
 import voldemort.server.VoldemortConfig;
-import voldemort.store.metadata.MetadataStore;
+
+
 import voldemort.tools.ActiveNodeZKListener;
 import voldemort.tools.ZKDataListener;
 import voldemort.tools.ZooKeeperHandler;
@@ -20,7 +18,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.*;
-import java.util.logging.Logger;
+
+
 
 public class ActiveNodeWrapper implements Runnable, Watcher, ZKDataListener {
 
@@ -39,6 +38,7 @@ public class ActiveNodeWrapper implements Runnable, Watcher, ZKDataListener {
     private Cluster currentCluster;
     private List<String> childrenList;
     private boolean idle = false;
+
 
 
 
