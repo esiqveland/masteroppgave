@@ -31,10 +31,9 @@ def parseNodes(argument):
 		return [int(argument)]
 
 
-def spawnThreads(command, user = "knutnyg", nodeset=[1,2,3,4]):
+def spawnThreads(command, user = "king", nodeset=[1,2,3,4]):
+	user = "king"
 	for node in nodeset:
-		if node == 4:
-			user = 'knutnvg'
 		broadcast_thread = BroadcastThread('voldemort' + str(node) + '.idi.ntnu.no', command, user)
 		broadcast_thread.start()	
 
