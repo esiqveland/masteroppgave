@@ -3,7 +3,7 @@
 export VOLD_HOME="/home/king/src/masteroppgave/voldemort"
 
 export VOLDEMORT_HOME="${VOLD_HOME}/config/maccluster/config"
-export ZOOKEEPER_VOLDEMORT="zk:192.168.0.210/voldemort"
+export ZOOKEEPER_VOLDEMORT="zk:voldemort1.idi.ntnu.no/voldemort"
 
 echo "Running from dir: "
 echo ${VOLDEMORT_HOME}
