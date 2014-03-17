@@ -1,0 +1,6 @@
+[submodule "autoscale/autoscale-agent"]
+	path = autoscale/autoscale-agent
+	url = https://github.com/esiqveland/autoscale-agent.git
+[submodule "autoscale/autoscale-common"]
+	path = autoscale/autoscale-common
+	url = https://github.com/esiqveland/autoscale-common.git
