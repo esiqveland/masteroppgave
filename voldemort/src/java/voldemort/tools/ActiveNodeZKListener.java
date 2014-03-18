@@ -34,11 +34,14 @@ public class ActiveNodeZKListener implements Watcher, Runnable {
      */
     public ActiveNodeZKListener(String zkConnectionUrl, String znode) {
         connected = false;
+
         zkDataListeners = Lists.newLinkedList();
+
         this.zkUrl = zkConnectionUrl;
         this.znode = znode;
+
         zooKeeper = setupZooKeeper(zkConnectionUrl);
-        zkDataListeners = new ArrayList<>();
+
         registerWatches();
     }
 
@@ -100,6 +103,11 @@ public class ActiveNodeZKListener implements Watcher, Runnable {
                 break;
 
             case SyncConnected:
+                // make sure to send event of children if we were previously not connected
+                // this is to catch potential change events while we were between sessions
+                if(!this.connected) {
+                    handleNodeChildrenChanged(event);
+                }
                 this.connected = true;
                 break;
 

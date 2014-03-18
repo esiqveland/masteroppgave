@@ -1,5 +1,6 @@
 package voldemort.tools;
 
+import com.google.common.collect.Lists;
 import org.apache.zookeeper.*;
 import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
@@ -7,8 +8,11 @@ import org.apache.zookeeper.data.Stat;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.List;
 
 public class ZooKeeperHandler implements Watcher{
+
+    private static final org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(ActiveNodeZKListener.class);
 
     private ZooKeeper zk;
     private String zkURL;
@@ -66,6 +70,18 @@ public class ZooKeeperHandler implements Watcher{
         return null;
     }
 
+    public List<String> getChildren(String znode) {
+        List<String> children = Lists.newArrayList();
+
+        try {
+            children = zk.getChildren(znode,null);
+        } catch (InterruptedException | KeeperException e) {
+            logger.error("Failed getting children on znode: "+znode, e);
+        }
+        return children;
+    }
+
+
     public void uploadAndUpdateFile(String target, String content) {
 
         try {
@@ -91,4 +107,6 @@ public class ZooKeeperHandler implements Watcher{
         }
         return true;
     }
+
+
 }
