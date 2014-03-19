@@ -187,40 +187,22 @@ public class ZooKeeperStorageEngine extends AbstractStorageEngine<String, String
         List<Versioned<String>> found = new ArrayList<Versioned<String>>();
 
         try {
-            children = voldemortZooKeeperConfig.getZooKeeper().getChildren(this.zkconfigdir, false);
+            Stat childStat = voldemortZooKeeperConfig.getZooKeeper().exists(key, false);
+            VectorClock clock = new VectorClock(childStat.getCtime());
 
-            children.addAll(voldemortZooKeeperConfig.getZooKeeper().getChildren(
-                    this.zkconfigdir + "/nodes/"+voldemortZooKeeperConfig.getHostname(), false));
-
-            for(String child : children) {
-                if(child.equals(key)) {
-                    logger.info("Getting zookey: " + this.zkconfigdir + "/" + child);
-
-                    String path = this.zkconfigdir + "/" + child;
-                    Stat childStat = voldemortZooKeeperConfig.getZooKeeper().exists(path, false);
-
-                    // if not found, the znode must be in the other directory
-                    if (childStat == null) {
-                        path = this.zkconfigdir + "/nodes/" + voldemortZooKeeperConfig.getHostname() + "/" + child;
-                        childStat = voldemortZooKeeperConfig.getZooKeeper().exists(path, false);
-                    }
-
-                    VectorClock clock = new VectorClock(childStat.getCtime());
-
-                    boolean watch = false;
-                    if (MetadataStore.METADATA_KEYS.contains(key)) {
-                        watch = true;
-                    }
-                    String data;
-                    data = new String(voldemortZooKeeperConfig.getZooKeeper().getData(path, watch, childStat));
-                    if(watch) {
-                        logger.info("setting watch for key: " + path + " watcher: " + this.watcher);
-                    }
-
-                    Versioned<String> stringVersioned = new Versioned<String>(data, clock);
-                    found.add(stringVersioned);
-                }
+            boolean watch = false;
+            if (MetadataStore.METADATA_KEYS.contains(key)) {
+                watch = true;
             }
+            String data;
+            data = new String(voldemortZooKeeperConfig.getZooKeeper().getData(key, watch, childStat));
+            if(watch) {
+                logger.info("setting watch for key: " + key + " watcher: " + this.watcher);
+            }
+
+            Versioned<String> stringVersioned = new Versioned<String>(data, clock);
+            found.add(stringVersioned);
+
         } catch (InterruptedException | KeeperException e) {
             logger.info("failed getting key: " + key);
             throw new VoldemortException("failed getting key: " + key, e);
