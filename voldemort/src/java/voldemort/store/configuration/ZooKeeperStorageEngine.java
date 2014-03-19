@@ -75,7 +75,7 @@ public class ZooKeeperStorageEngine extends AbstractStorageEngine<String, String
 
         String path = zkconfigdir + "/";
         if(isLocalKey(key)) {
-            path += "/nodes/" + voldemortZooKeeperConfig.getHostname() + "/";
+            path += "nodes/" + voldemortZooKeeperConfig.getHostname() + "/";
         }
 
         try {
@@ -100,13 +100,13 @@ public class ZooKeeperStorageEngine extends AbstractStorageEngine<String, String
             throws VoldemortException {
         StoreUtils.assertValidKey(key);
 
+        String path = zkconfigdir + "/";
         if(isLocalKey(key)) {
-            String path = zkconfigdir + "/";
-            path += "/nodes/" + voldemortZooKeeperConfig.getHostname() + "/";
+            path += "nodes/" + voldemortZooKeeperConfig.getHostname() + "/";
             key = path + key;
         }
         if (MetadataStore.REQUIRED_KEYS.contains(key)) {
-            key = zkconfigdir + "/" + key;
+            key = path + key;
         }
         return get(key);
     }
