@@ -105,6 +105,9 @@ public class ZooKeeperStorageEngine extends AbstractStorageEngine<String, String
             path += "/nodes/" + voldemortZooKeeperConfig.getHostname() + "/";
             key = path + key;
         }
+        if (MetadataStore.REQUIRED_KEYS.contains(key)) {
+            key = zkconfigdir + "/" + key;
+        }
         return get(key);
     }
 
