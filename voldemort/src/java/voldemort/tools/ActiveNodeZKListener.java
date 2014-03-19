@@ -120,6 +120,7 @@ public class ActiveNodeZKListener implements Watcher, Runnable {
 
     private void handleExpired() {
         logger.info("ZooKeeper session expired and dead, trying to recreate...");
+        this.connected = false;
         zooKeeper = setupZooKeeper(zkUrl);
         registerWatches();
     }
@@ -179,7 +180,7 @@ public class ActiveNodeZKListener implements Watcher, Runnable {
     private synchronized ZooKeeper setupZooKeeper(String zkConnectionUrl) {
         ZooKeeper zk = null;
         try {
-            zk = new ZooKeeper(zkConnectionUrl, 4000, this);
+            zk = new ZooKeeper(zkConnectionUrl, 20000, this);
         } catch (IOException e) {
             logger.error("Could not connect to zooKeeper url: "+zkConnectionUrl);
             throw new ConfigurationException(e);

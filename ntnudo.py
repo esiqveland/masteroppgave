@@ -2,6 +2,7 @@
 import sys
 from broadcastcommand import *
 
+
 commands = {}
 
 # Usable commands. Must be updated
@@ -45,6 +46,7 @@ def wrongUsage():
 	sys.exit(0)		
 
 
+
 if len(sys.argv) > 1:
 	if 'admin' in sys.argv[1]:
 		if len(sys.argv) < 4:
@@ -67,8 +69,15 @@ if len(sys.argv) > 2:
 
 
 elif len(sys.argv) > 1:
+	commandkey = sys.argv[1]
 	if commands.get(sys.argv[1]):
 		command, user = commands.get(sys.argv[1])
+		if commandkey == 'reset':
+			zookeeperpath = "voldemort1.idi.ntnu.no/voldemortntnu"
+			subprocess.call(['zk-shell', zookeeperpath,'--run-once','rmr /config/nodes'])
+			subprocess.call(['zk-shell', zookeeperpath,'--run-once','create /config/nodes \"\"'])
+			subprocess.call(['./voldemort/bin/zookeeper-writer.sh', zookeeperpath, "/config/cluster.xml","voldemort/config/ntnucluster/config/cluster.xml"])
+
 		spawnThreads(command,user)
 	else:
 		wrongUsage()

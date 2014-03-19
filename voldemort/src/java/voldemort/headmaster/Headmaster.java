@@ -5,21 +5,20 @@ import com.google.common.collect.Lists;
 import no.uio.master.autoscale.Autoscale;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
+import voldemort.client.rebalance.RebalancePlan;
 import voldemort.cluster.Cluster;
 import voldemort.cluster.Node;
 import voldemort.server.VoldemortConfig;
 
 
-import voldemort.tools.ActiveNodeZKListener;
-import voldemort.tools.ZKDataListener;
-import voldemort.tools.ZooKeeperHandler;
+import voldemort.tools.*;
 import voldemort.xml.ClusterMapper;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.*;
-
+import java.util.concurrent.ConcurrentHashMap;
 
 
 public class Headmaster implements Runnable, Watcher, ZKDataListener {
@@ -31,6 +30,7 @@ public class Headmaster implements Runnable, Watcher, ZKDataListener {
 
 
     public static final String defaultUrl = "voldemort1.idi.ntnu.no:2181/voldemortntnu";
+    public static final String bootStrapUrl = "tcp://voldemort1.idi.ntnu.no:6667";
 
     private ActiveNodeZKListener anzkl;
     private ZooKeeperHandler zkhandler;
@@ -41,6 +41,8 @@ public class Headmaster implements Runnable, Watcher, ZKDataListener {
     private String sampleServerProperties;
     private boolean idle = false;
 
+    private ConcurrentHashMap<String,Node> handledNodes;
+
 
 
 
@@ -49,6 +51,8 @@ public class Headmaster implements Runnable, Watcher, ZKDataListener {
         this.zkURL = zkURL;
         anzkl = new ActiveNodeZKListener(this.zkURL, activePath);
         anzkl.addDataListener(this);
+
+        handledNodes = new ConcurrentHashMap<>();
 
         String currentClusterString = anzkl.getStringFromZooKeeper("/config/cluster.xml");
         currentCluster = new ClusterMapper().readCluster(new StringReader(currentClusterString));
@@ -65,9 +69,29 @@ public class Headmaster implements Runnable, Watcher, ZKDataListener {
         childrenList = zkhandler.getChildren("/active");
         childrenList(childrenList);
 
+        try {
+            Thread.sleep(30000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
 
+        RebalancePlannerZK rpzk = new RebalancePlannerZK(zkURL,zkhandler);
+        RebalancePlan plan = rpzk.createRebalancePlan();
 
+        try {
+            Thread.sleep(10000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
 
+        System.out.println(plan.toString());
+
+        System.out.println("EXECUTING REBLANCE FOR GLORY AND SHAME");
+
+        RebalancerZK rzk = new RebalancerZK(zkURL,bootStrapUrl,zkhandler);
+        rzk.rebalance();
+
+        System.out.println("DONE!");
 
     }
 
@@ -107,15 +131,12 @@ public class Headmaster implements Runnable, Watcher, ZKDataListener {
         if (id.equals(VoldemortConfig.NEW_ACTIVE_NODE_STRING)){
             for (Node node : currentCluster.getNodes()) {
 
-                if (node.getHost().equals(child)){
+                if (node.getHost().equals(child) && !handledNodes.containsKey(child)){
                     logger.info("existing node with NEW in active: " + child + " node: " + node);
-                    zkhandler.uploadAndUpdateFile("/active/" + child, String.valueOf(node.getId()));
                     return node;
                 }
             }
-
             int newId = currentCluster.getNumberOfNodes();
-            zkhandler.uploadAndUpdateFile("/active/" + child, String.valueOf(newId));
 
             Node newNode = new Node(newId, child, DEFAULT_HTTP_PORT, DEFAULT_SOCKET_PORT,DEFAULT_ADMIN_PORT,new ArrayList<Integer>());
             return newNode;
@@ -126,38 +147,55 @@ public class Headmaster implements Runnable, Watcher, ZKDataListener {
 
     @Override
     public synchronized void childrenList(List<String> children) {
+        HashMap<String,Node> changeMap = new HashMap<>();
+
         logger.info("Start childer changed");
         this.childrenList = children;
         for (String child : children){
             Node newNode = locateNewChildAndHandOutId(child);
             if ( newNode != null ){
-                String interimClusterxml = createInterimClusterXML(newNode);
-
-                //upload cluster.xml
-                zkhandler.uploadAndUpdateFile("/config/cluster.xml", interimClusterxml);
-
-                //create node in nodes and upload server.properties
-                String serverProp = createServerProperties(newNode);
-                zkhandler.uploadAndUpdateFile("/config/nodes/" + newNode.getHost(), "");
-                zkhandler.uploadAndUpdateFile("/config/nodes/" + newNode.getHost() + "/server.properties", serverProp);
-            }
+                changeMap.put(child, newNode);
+            } 
 
         }
+        if (changeMap.isEmpty()) {
+            return;
+        }
+
+        String interimClusterxml = createInterimClusterXML(changeMap);
+        currentCluster = new ClusterMapper().readCluster(new StringReader(interimClusterxml));
+
+        //upload cluster.xml
+        zkhandler.uploadAndUpdateFile("/config/cluster.xml", interimClusterxml);
+
+        //create node in nodes and upload server.properties
+        for (Node node : changeMap.values()){
+            String serverProp = createServerProperties(node);
+            zkhandler.uploadAndUpdateFile("/config/nodes/" + node.getHost(), "");
+            zkhandler.uploadAndUpdateFile("/config/nodes/" + node.getHost() + "/server.properties", serverProp);
+            handledNodes.put(node.getHost(),node);
+        }
+
+
+
 
     }
 
-    private String createInterimClusterXML(Node newNode) {
+    private String createInterimClusterXML(HashMap<String,Node> map) {
         Collection nodeCollection = currentCluster.getNodes();
 
         List<Node> nodeList = Lists.newLinkedList();
         nodeList.addAll(nodeCollection);
 
-        if(!nodeList.contains(newNode)){
-            nodeList.add(newNode);
+        for(Node node : map.values()){
+            if(!nodeList.contains(node)){
+                nodeList.add(node);
+            }
             Cluster interimCluseter = new Cluster("ntnucluster",nodeList);
             String interimClusterXML = new ClusterMapper().writeCluster(interimCluseter);
             return interimClusterXML;
         }
+
         return new ClusterMapper().writeCluster(currentCluster);
     }
 
