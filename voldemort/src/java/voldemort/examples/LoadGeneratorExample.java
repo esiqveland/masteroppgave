@@ -24,7 +24,9 @@ import voldemort.client.StoreClientFactory;
 import voldemort.versioning.Version;
 import voldemort.versioning.Versioned;
 
+import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -51,24 +53,23 @@ public class LoadGeneratorExample implements Runnable {
 
         // In real life this stuff would get wired in
         this.bootstrapUrl = "tcp://192.168.0.104:6666";
+
         StoreClientFactory factory = new SocketStoreClientFactory(new ClientConfig().setBootstrapUrls(bootstrapUrl));
+        this.client = factory.getStoreClient("test");
 
-        StoreClient<String, String> client = factory.getStoreClient("test");
-
-        executorService = Executors.newFixedThreadPool(newFixedThreadPool);
+        this.executorService = Executors.newFixedThreadPool(newFixedThreadPool);
 
     }
 
     @Override
     public void run() {
 
+        long startTime = System.currentTimeMillis();
 
         List<Future> futures = Lists.newLinkedList();
-
-        long startTime = System.currentTimeMillis();
         for (int i = 0; i < numberOfPuts; i++) {
-            Future f = executorService.submit(new PutJob(client, "knut" + i, "toto" + i));
-            futures.add(f);
+            Future future = executorService.submit(new PutJob(client, "knut" + String.valueOf(i), "toto" + String.valueOf(i)));
+            futures.add(future);
         }
 
 //        for (int i = 0; i < numberOfPuts; i++) {
@@ -78,10 +79,12 @@ public class LoadGeneratorExample implements Runnable {
         // dont take any more new tasks
         executorService.shutdown();
         try {
-            while(!executorService.isTerminated()) {
-                Thread.sleep(1000);
+            for (Future f : futures) {
+                f.get();
             }
         } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
             e.printStackTrace();
         }
         long stopTime = System.currentTimeMillis();
@@ -106,7 +109,7 @@ public class LoadGeneratorExample implements Runnable {
             Versioned<String> version = new Versioned<String>(bootstrapUrl);
             Versioned<String> returnVersion;
 
-
+//            System.out.println(key + ": " + value);
             returnVersion = client.get(key);
             if (returnVersion == null) {
                 version.setObject(value);
