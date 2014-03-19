@@ -2,7 +2,6 @@ package voldemort.headmaster;
 
 
 import com.google.common.collect.Lists;
-import no.uio.master.autoscale.Autoscale;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import voldemort.cluster.Cluster;
@@ -22,7 +21,7 @@ import java.util.*;
 
 
 
-public class ActiveNodeWrapper implements Runnable, Watcher, ZKDataListener {
+public class Headmaster implements Runnable, Watcher, ZKDataListener {
 
     private static final org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(ActiveNodeZKListener.class);
     public static final int DEFAULT_HTTP_PORT = 6881;
@@ -45,7 +44,7 @@ public class ActiveNodeWrapper implements Runnable, Watcher, ZKDataListener {
 
 
 
-    public ActiveNodeWrapper(String zkURL) {
+    public Headmaster(String zkURL) {
         this.zkURL = zkURL;
         anzkl = new ActiveNodeZKListener(this.zkURL, activePath);
         anzkl.addDataListener(this);
@@ -88,12 +87,12 @@ public class ActiveNodeWrapper implements Runnable, Watcher, ZKDataListener {
         if (args.length == 0) {
             System.out.println(
                     String.format(
-                            "usage: %s [zookeeperurl]\nDefaults to %s", ActiveNodeWrapper.class.getCanonicalName(), defaultUrl));
+                            "usage: %s [zookeeperurl]\nDefaults to %s", Headmaster.class.getCanonicalName(), defaultUrl));
         } else {
             url = args[0];
         }
 
-        ActiveNodeWrapper awn = new ActiveNodeWrapper(url);
+        Headmaster awn = new Headmaster(url);
         //Autoscale as = new Autoscale("127.0.0.1", 7788);
 
 

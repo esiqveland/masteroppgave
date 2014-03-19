@@ -18,5 +18,5 @@
 
 base_dir=$(dirname $0)/..
 
-$base_dir/bin/run-class.sh voldemort.headmaster.ActiveNodeWrapper $@
+$base_dir/bin/run-class.sh voldemort.headmaster.Headmaster $@
 
