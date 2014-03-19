@@ -2,6 +2,7 @@ package voldemort.headmaster;
 
 
 import com.google.common.collect.Lists;
+import no.uio.master.autoscale.Autoscale;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import voldemort.cluster.Cluster;
@@ -92,17 +93,11 @@ public class Headmaster implements Runnable, Watcher, ZKDataListener {
             url = args[0];
         }
 
-        Headmaster awn = new Headmaster(url);
-        //Autoscale as = new Autoscale("127.0.0.1", 7788);
+        Autoscale as = new Autoscale("127.0.0.1", 7788);
 
-
-
-
-        Thread worker = new Thread(awn);
+        Headmaster headmaster = new Headmaster(url);
+        Thread worker = new Thread(headmaster);
         worker.start();
-
-
-
     }
 
     public Node locateNewChildAndHandOutId(String child){
