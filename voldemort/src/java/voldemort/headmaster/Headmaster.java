@@ -93,9 +93,10 @@ public class Headmaster implements Runnable, Watcher, ZKDataListener {
             url = args[0];
         }
 
+        Headmaster headmaster = new Headmaster(url);
+
         Autoscale as = new Autoscale("127.0.0.1", 7788);
 
-        Headmaster headmaster = new Headmaster(url);
         Thread worker = new Thread(headmaster);
         worker.start();
     }
