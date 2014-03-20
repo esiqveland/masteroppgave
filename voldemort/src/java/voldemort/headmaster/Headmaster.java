@@ -57,7 +57,9 @@ public class Headmaster implements Runnable, Watcher, ZKDataListener {
     public Headmaster(String zkURL) {
 
         this.zkURL = zkURL;
+
         anzkl = new ActiveNodeZKListener(this.zkURL, ACTIVEPATH);
+        anzkl.addDataListener(this);
 
         currentClusterLock = new ReentrantLock();
 
@@ -87,7 +89,6 @@ public class Headmaster implements Runnable, Watcher, ZKDataListener {
         } finally {
             currentClusterLock.unlock();
         }
-        anzkl.addDataListener(this);
         anzkl.setWatch(HEADMASTER_ROOT_PATH+HEADMASTER_REBALANCE_TOKEN);
         //Seed childrenListChanged method with initial children list
         childrenList(ACTIVEPATH);
