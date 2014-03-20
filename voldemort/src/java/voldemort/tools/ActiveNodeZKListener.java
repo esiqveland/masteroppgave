@@ -4,12 +4,12 @@ import com.google.common.collect.Lists;
 import org.apache.zookeeper.*;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.data.Stat;
-import org.omg.SendingContext.RunTime;
 import voldemort.utils.ConfigurationException;
 
 public class ActiveNodeZKListener implements Watcher {
@@ -24,16 +24,20 @@ public class ActiveNodeZKListener implements Watcher {
     private boolean connected;
     private String znode;
     private List<ZKDataListener> zkDataListeners;
+    private Map<String, ZKDataListener> watches;
+
     /**
      * Watches a znode on a given cluster for children events.
      * Can pass on certain events to given zkDataListeners.
      * @param zkConnectionUrl
      * @param znode
      */
+
     public ActiveNodeZKListener(String zkConnectionUrl, String znode) {
         connected = false;
 
         zkDataListeners = Lists.newLinkedList();
+        watches = new ConcurrentHashMap<>();
 
         this.zkUrl = zkConnectionUrl;
         this.znode = znode;
@@ -60,28 +64,29 @@ public class ActiveNodeZKListener implements Watcher {
                 handleNodeChildrenChanged(event);
                 break;
 
+            case NodeDeleted:
+                handleNodeDeleted(event);
+                break;
+
+            default:
+                logger.info("Unhandled event: " + event);
+                break;
         }
 
+    }
+
+    private void handleNodeDeleted(WatchedEvent event) {
+        logger.debug("node deleted: " + event);
+        for (ZKDataListener zkd : zkDataListeners) {
+            zkd.nodeDeleted(event.getPath());
+        }
     }
 
     private void handleNodeDataChanged(WatchedEvent event) {
         logger.info("nodeData changed: " + event);
-        String data = new String(getData(event.getPath()));
         for(ZKDataListener zkd : zkDataListeners) {
-            zkd.dataChanged(event.getPath(), data);
+            zkd.dataChanged(event.getPath());
         }
-        resetWatch(event.getPath());
-    }
-
-    private byte[] getData(String path) {
-        byte[] data = null;
-        try {
-            Stat stat = zooKeeper.exists(path, false);
-            data = zooKeeper.getData(path, false, stat);
-        } catch (InterruptedException | KeeperException e) {
-            logger.error("error getting znode: " + path, e);
-        }
-        return data;
     }
 
     private void resetWatch(String path) {
@@ -101,10 +106,10 @@ public class ActiveNodeZKListener implements Watcher {
                 break;
 
             case SyncConnected:
-                // make sure to send event of children if we were previously not connected
-                // this is to catch potential change events while we were between sessions
-                if(!this.connected) {
-                    handleNodeChildrenChanged(event);
+                // we have reconnected from the dead
+                if (!this.connected) {
+                    this.connected = true;
+                    handleReconnect();
                 }
                 this.connected = true;
                 break;
@@ -116,14 +121,20 @@ public class ActiveNodeZKListener implements Watcher {
 
     }
 
+    private void handleReconnect() {
+        for (ZKDataListener listener : zkDataListeners) {
+            listener.reconnected();
+        }
+    }
+
     private void handleExpired(WatchedEvent event) {
         logger.info("ZooKeeper session expired and dead, trying to recreate...");
         this.connected = false;
-        zooKeeper = setupZooKeeper(zkUrl);
-        registerWatches();
         for(ZKDataListener listener : zkDataListeners) {
             listener.process(event);
         }
+        zooKeeper = setupZooKeeper(zkUrl);
+        registerWatches();
     }
 
     /**
@@ -131,11 +142,11 @@ public class ActiveNodeZKListener implements Watcher {
      * @param path
      * @return
      */
-    public List<String> getNodeList(String path) {
-        return getNodeList(path, false);
+    public List<String> getChildrenList(String path) {
+        return getChildrenList(path, false);
     }
 
-    public List<String> getNodeList(String path, boolean watch) {
+    public List<String> getChildrenList(String path, boolean watch) {
         List<String> children = Lists.newArrayList();
 
         if(connected) {
@@ -155,7 +166,7 @@ public class ActiveNodeZKListener implements Watcher {
         logger.info("Children changed: " + event);
         List<String> children = getChildren(event.getPath(), true);
         for (ZKDataListener zkDataListener : zkDataListeners) {
-            zkDataListener.childrenList(children);
+            zkDataListener.childrenList(event.getPath());
         }
     }
 
@@ -186,6 +197,9 @@ public class ActiveNodeZKListener implements Watcher {
         try {
             List<String> children = zooKeeper.getChildren(znode, true);
             resetWatch(clusternode);
+            for (Map.Entry<String, ZKDataListener> entry : watches.entrySet()) {
+                resetWatch(entry.getKey());
+            }
         } catch (InterruptedException | KeeperException e) {
             logger.debug("Setting watches failed: ", e);
         }
@@ -202,15 +216,15 @@ public class ActiveNodeZKListener implements Watcher {
         return zk;
     }
 
-    public String getStringFromZooKeeper(String path){
+    public String getStringFromZooKeeper(String path) {
+        return getStringFromZooKeeper(path, false);
+    }
+
+    public String getStringFromZooKeeper(String path, boolean watch){
         Stat stat = new Stat();
         String s = null;
         try {
-            boolean resetWatch = false;
-            if (isBeingWatched(path)) {
-                resetWatch = true;
-            }
-            byte[] data = zooKeeper.getData(path, resetWatch, stat);
+            byte[] data = zooKeeper.getData(path, watch, stat);
             s = new String(data);
         } catch (InterruptedException | KeeperException e) {
             throw new RuntimeException(String.format("Error getting key from ZooKeeper: %s", path), e);
@@ -219,23 +233,36 @@ public class ActiveNodeZKListener implements Watcher {
     }
 
     public void uploadAndUpdateFile(String target, String content) {
+        uploadAndUpdateFileWithMode(target, content, CreateMode.PERSISTENT);
+    }
+
+    public String uploadAndUpdateFileWithMode(String target, String content, CreateMode mode){
         try {
             Stat stat = zooKeeper.exists(target, false);
             if(stat == null) {
-                zooKeeper.create(target, content.getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+                String zknodePath = zooKeeper.create(target, content.getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, mode);
+                return zknodePath;
             } else {
                 zooKeeper.setData(target, content.getBytes(), stat.getVersion());
+                return target;
             }
         } catch (InterruptedException | KeeperException e) {
-            e.printStackTrace();
+            logger.error("invalid path", e);
+            throw new RuntimeException(e);
         }
+
     }
 
+    public void setWatch(String path) {
+        resetWatch(path);
+    }
 
     private boolean isBeingWatched(String path) {
         if (path.equals(clusternode)) {
             return true;
         }
+        if(watches.containsKey(path))
+            return true;
         return false;
     }
 

@@ -16,9 +16,6 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Created by Knut on 06/03/14.
- */
 public class RebalancePlannerZK {
     private String zkUrl;
     private ZooKeeperHandler zkHandler;

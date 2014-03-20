@@ -16,10 +16,7 @@
 
 package voldemort.xml;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.Reader;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -94,6 +91,10 @@ public class ClusterMapper {
 
     public Cluster readCluster(Reader input) {
         return readCluster(input, true);
+    }
+
+    public Cluster readCluster(String input) {
+        return readCluster(new StringReader(input));
     }
 
     @SuppressWarnings("unchecked")
