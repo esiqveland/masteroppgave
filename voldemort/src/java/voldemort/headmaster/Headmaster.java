@@ -2,7 +2,10 @@ package voldemort.headmaster;
 
 
 import com.google.common.collect.Lists;
+import joptsimple.internal.Strings;
 import no.uio.master.autoscale.Autoscale;
+import org.apache.log4j.Logger;
+import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import voldemort.client.rebalance.RebalancePlan;
@@ -21,19 +24,22 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 
 public class Headmaster implements Runnable, Watcher, ZKDataListener {
 
-    private static final org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(ActiveNodeZKListener.class);
+    private static final Logger logger = Logger.getLogger(Headmaster.class);
+
     public static final int DEFAULT_HTTP_PORT = 6881;
     public static final int DEFAULT_ADMIN_PORT = 6667;
     public static final int DEFAULT_SOCKET_PORT = 6666;
+    public static final String HEADMASTER_ROOT_PATH = "/headmaster";
+    public static final String HEADMASTER_ELECTION_PATH = "/headmaster_";
 
 
     public static final String defaultUrl = "voldemort1.idi.ntnu.no:2181/voldemortntnu";
     public static final String bootStrapUrl = "tcp://voldemort1.idi.ntnu.no:6667";
+    private static final String HEADMASTER_REBALANCE_TOKEN = "/rebalalance_token";
 
     private ActiveNodeZKListener anzkl;
     private ZooKeeperHandler zkhandler;
@@ -43,15 +49,18 @@ public class Headmaster implements Runnable, Watcher, ZKDataListener {
     private List<String> childrenList;
     private String sampleServerProperties;
     private boolean idle = false;
+    private String myHeadmaster;
+    private String currentHeadmaster;
 
     private ConcurrentHashMap<String,Node> handledNodes;
 
     private Lock currentClusterLock;
 
     public Headmaster(String zkURL) {
+
         this.zkURL = zkURL;
         anzkl = new ActiveNodeZKListener(this.zkURL, activePath);
-        anzkl.addDataListener(this);
+
 
         currentClusterLock = new ReentrantLock();
 
@@ -61,53 +70,78 @@ public class Headmaster implements Runnable, Watcher, ZKDataListener {
         currentCluster = new ClusterMapper().readCluster(new StringReader(currentClusterString));
         zkhandler = new ZooKeeperHandler(zkURL, anzkl.getZooKeeper());
 
-        for (Node node : currentCluster.getNodes()) {
-            System.out.println("node.id: " + node.getId());
-            System.out.println(node.toString());
-        }
 
-        sampleServerProperties = zkhandler.getStringFromZooKeeper("/config/sample_files/server.properties");
+        registerAsHeadmaster();
+        leaderElection();
+        
+        if(isHeadmaster()){
+            beHeadmaster();
+        } 
 
+    }
+
+    private void beHeadmaster() {
+        logger.debug("I AM HEADMASTER");
+        anzkl.addDataListener(this);
         //Seed childrenListChanged method with initial children list
         childrenList = zkhandler.getChildren("/active");
         childrenList(childrenList);
+    }
 
-        try {
-            Thread.sleep(30000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+    public void registerAsHeadmaster(){
+        String zkPath = zkhandler.uploadAndUpdateFileWithMode(HEADMASTER_ROOT_PATH + HEADMASTER_ELECTION_PATH, "", CreateMode.EPHEMERAL_SEQUENTIAL);
+        myHeadmaster = zkPath.split("/")[2];
+        System.out.println(myHeadmaster);
+        logger.debug("Registered in zookeeper :" + myHeadmaster);
+    }
+
+    public boolean isHeadmaster(){
+        return myHeadmaster.equals(currentHeadmaster);
+
+    }
+
+    public String leaderElection(){
+        List<String> headmasters = zkhandler.getChildren(HEADMASTER_ROOT_PATH);
+
+        //determine who is supposed to be leader
+        String winner = "";
+        int lowest_number = Integer.MAX_VALUE;
+        for (String master : headmasters){
+            int sequenceNumber = new Integer(master.split("_")[1]);
+            if (sequenceNumber < lowest_number){
+                lowest_number = sequenceNumber;
+                winner = master;
+            }
         }
+        currentHeadmaster = winner;
+        if (!winner.equals(myHeadmaster)){
+            logger.debug("I did not win, setting watch on winner: " + HEADMASTER_ROOT_PATH+"/"+currentHeadmaster);
+            zkhandler.setWatch(HEADMASTER_ROOT_PATH+"/"+currentHeadmaster,this);
+        }
+        return winner;
+    }
+
+    public void plan (){
+        sampleServerProperties = zkhandler.getStringFromZooKeeper("/config/sample_files/server.properties");
 
         currentClusterLock.lock();
 
         try{
             RebalancePlannerZK rpzk = new RebalancePlannerZK(zkURL,zkhandler);
             RebalancePlan plan = rpzk.createRebalancePlan();
-
-            try {
-                Thread.sleep(10000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-
-            System.out.println(plan.toString());
-
-            System.out.println("EXECUTING REBLANCE FOR GLORY AND SHAME");
-
-            RebalancerZK rzk = new RebalancerZK(zkURL,bootStrapUrl,zkhandler);
-            rzk.rebalance();
-
-            System.out.println("DONE!");
-
         } finally {
             currentClusterLock.unlock();
         }
+    }
 
-
-
-
-
-
+    public void rebalance(){
+        currentClusterLock.lock();
+        try {
+            RebalancerZK rzk = new RebalancerZK(zkURL,bootStrapUrl,zkhandler);
+            rzk.rebalance();
+        } finally {
+            currentClusterLock.unlock();
+        }
     }
 
     @Override
@@ -115,6 +149,29 @@ public class Headmaster implements Runnable, Watcher, ZKDataListener {
         logger.info("Event: " + event.getType() + " path: " + event.getPath());
         if (event.getType() == Event.EventType.NodeChildrenChanged){
 
+        }
+
+        if(event.getType() == Event.EventType.NodeDeleted){
+            if(event.getPath().equals(HEADMASTER_ROOT_PATH+"/" + currentHeadmaster)){
+                //Leader has died, run new election
+                leaderElection();
+
+                if(isHeadmaster()){
+                    beHeadmaster();
+                }
+            }
+        }
+
+        if(event.getType() == Event.EventType.NodeCreated){
+            if(event.getPath().equals(HEADMASTER_ROOT_PATH+HEADMASTER_REBALANCE_TOKEN) && isHeadmaster()){
+                plan();
+                try {
+                    Thread.sleep(20000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                rebalance();
+            }
         }
 
 
@@ -134,7 +191,7 @@ public class Headmaster implements Runnable, Watcher, ZKDataListener {
 
         Headmaster headmaster = new Headmaster(url);
 
-        Autoscale as = new Autoscale("127.0.0.1", 7788);
+//        Autoscale as = new Autoscale("127.0.0.1", 7788);
 
         Thread worker = new Thread(headmaster);
         worker.start();
@@ -258,9 +315,9 @@ public class Headmaster implements Runnable, Watcher, ZKDataListener {
                 } finally {
                     currentClusterLock.unlock();
                 }
-
-
         }
+
+
     }
 
     public void setIdle() {
