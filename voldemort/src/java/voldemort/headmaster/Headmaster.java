@@ -43,41 +43,42 @@ public class Headmaster implements Runnable, Watcher, ZKDataListener {
     public static final String bootStrapUrl = "tcp://voldemort1.idi.ntnu.no:6667";
 
     private ActiveNodeZKListener anzkl;
+
     private ZooKeeperHandler zkhandler;
     String zkURL = defaultUrl;
     private Cluster currentCluster;
     private boolean idle = false;
+
     private String myHeadmaster;
+
     private String currentHeadmaster;
-
     private ConcurrentHashMap<String, Node> handledNodes;
-
     private Lock currentClusterLock;
 
+    public Headmaster(String zkURL, ActiveNodeZKListener activeNodeZKListener) {
+        this(zkURL);
+        this.anzkl = activeNodeZKListener;
+    }
+
     public Headmaster(String zkURL) {
-
         this.zkURL = zkURL;
-
-        anzkl = new ActiveNodeZKListener(this.zkURL, ACTIVEPATH);
-        anzkl.addDataListener(this);
-
         currentClusterLock = new ReentrantLock();
-
         handledNodes = new ConcurrentHashMap<>();
+    }
 
-        String currentClusterString = anzkl.getStringFromZooKeeper("/config/cluster.xml");
-
-        currentCluster = new ClusterMapper().readCluster(new StringReader(currentClusterString));
-
-        zkhandler = new ZooKeeperHandler(zkURL, anzkl.getZooKeeper());
+    public void init() {
+        if(anzkl == null) {
+            anzkl = new ActiveNodeZKListener(zkURL, ACTIVEPATH);
+        }
+        anzkl.addDataListener(this);
 
 
         registerAsHeadmaster();
         leaderElection();
-        
+
         if(isHeadmaster()){
             beHeadmaster();
-        } 
+        }
 
     }
 
@@ -159,9 +160,9 @@ public class Headmaster implements Runnable, Watcher, ZKDataListener {
         }
     }
 
-
     @Override
     public void reconnected() {
+        logger.info("got message that ZK session expiry is OVER.");
         registerAsHeadmaster();
         leaderElection();
 
@@ -195,6 +196,7 @@ public class Headmaster implements Runnable, Watcher, ZKDataListener {
 
     }
 
+
     public static void main(String args[]) {
 
         String url = defaultUrl;
@@ -207,6 +209,7 @@ public class Headmaster implements Runnable, Watcher, ZKDataListener {
         }
 
         Headmaster headmaster = new Headmaster(url);
+        headmaster.init();
 
 //        Autoscale as = new Autoscale("127.0.0.1", 7788);
 
@@ -336,6 +339,7 @@ public class Headmaster implements Runnable, Watcher, ZKDataListener {
             }
         }
     }
+
     private void stopHeadmastering() {
         currentHeadmaster = HEADMASTER_UNKNOWN;
         myHeadmaster = null;
@@ -356,7 +360,6 @@ public class Headmaster implements Runnable, Watcher, ZKDataListener {
         }
 
     }
-
     public void setIdle() {
         synchronized (this) {
             this.idle = true;
@@ -380,6 +383,18 @@ public class Headmaster implements Runnable, Watcher, ZKDataListener {
                 }
             }
         }
+    }
+
+    public void setAnzkl(ActiveNodeZKListener anzkl) {
+        this.anzkl = anzkl;
+    }
+
+    public String getMyHeadmaster() {
+        return myHeadmaster;
+    }
+
+    public String getCurrentHeadmaster() {
+        return currentHeadmaster;
     }
 }
 
