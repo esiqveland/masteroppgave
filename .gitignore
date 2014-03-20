@@ -103,4 +103,5 @@ gc.log
 #server.state
 #.version
 #.temp
+#config/maccluster/
 
