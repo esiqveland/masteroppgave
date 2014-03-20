@@ -1,6 +1,7 @@
 package voldemort.tools;
 
 import org.apache.commons.lang.mutable.Mutable;
+import voldemort.client.rebalance.RebalancePlan;
 import voldemort.cluster.Cluster;
 import voldemort.cluster.MutableCluster;
 import voldemort.cluster.Node;
@@ -18,43 +19,30 @@ import java.util.List;
 /**
  * Created by Knut on 06/03/14.
  */
-public class RepartitionerZooKeeper {
+public class RebalancePlannerZK {
+    private String zkUrl;
+    private ZooKeeperHandler zkHandler;
 
+    public RebalancePlannerZK(String zkUrl, ZooKeeperHandler zkHandler) {
+        this.zkUrl = zkUrl;
+        this.zkHandler = zkHandler;
 
+    }
 
-    public static void main(String[] args) throws Exception {
-
-        boolean debug = true;
-        // Bootstrap & fetch current cluster/stores
-        String bootstrapURL = "tcp://192.168.0.210:6667";
-        String zkURL = "192.168.0.210:2181/voldemort/config";
-
-        ZooKeeperHandler zkHandler = new ZooKeeperHandler(zkURL);
-
-        // Required args
-        String currentClusterXML = zkHandler.getStringFromZooKeeper("/cluster.xml");
+    public RebalancePlan createRebalancePlan() {
+        String currentClusterXML = zkHandler.getStringFromZooKeeper("/config/cluster.xml");
         Cluster currentCluster = new ClusterMapper().readCluster(new StringReader(currentClusterXML));
 
-        String storesXML = zkHandler.getStringFromZooKeeper("/stores.xml");
+        String storesXML = zkHandler.getStringFromZooKeeper("/config/stores.xml");
         List<StoreDefinition> currentStoreDefs = new StoreDefinitionsMapper().readStoreList(new StringReader(storesXML));
 
         String interimClusterXML = new String(currentClusterXML);
         Cluster interimCluster = new ClusterMapper().readCluster(new StringReader(interimClusterXML));
 
-        MutableCluster interimClusterMutable;
-        interimClusterMutable = MutableCluster.MutableClusterFromCluster(interimCluster);
-
-
-
-
         String finalStoresXML = new String(storesXML);
         List<StoreDefinition> finalStoreDefs = new StoreDefinitionsMapper().readStoreList(new StringReader(finalStoresXML));
 
-
-
         RebalanceUtils.validateClusterStores(currentCluster, currentStoreDefs);
-
-
         RebalanceUtils.validateClusterStores(interimCluster, finalStoreDefs);
         RebalanceUtils.validateCurrentInterimCluster(currentCluster, interimCluster);
 
@@ -80,9 +68,9 @@ public class RepartitionerZooKeeper {
         boolean disableNodeBalancing = false;
         boolean disableZoneBalancing = false;
 
-        System.out.println(currentCluster.getName());
+        Cluster final_cluster;
 
-        Repartitioner.repartition(currentCluster,
+        final_cluster = Repartitioner.repartition(currentCluster,
                 currentStoreDefs,
                 interimCluster,
                 finalStoreDefs,
@@ -102,9 +90,16 @@ public class RepartitionerZooKeeper {
                 maxContiguousPartitionsPerZone);
 
 
+        int batch_size = Integer.MAX_VALUE;
+        RebalancePlan plan = new RebalancePlan(currentCluster,currentStoreDefs,final_cluster,finalStoreDefs,batch_size,outputDir+"/planner");
+
+        zkHandler.uploadAndUpdateFile("/config/cluster_final.xml", new ClusterMapper().writeCluster(plan.getFinalCluster()));
+
+        return plan;
+
     }
 
 
-    
-}
 
+
+}
