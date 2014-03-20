@@ -1,10 +1,7 @@
 package voldemort.tools;
 
 import com.google.common.collect.Lists;
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -12,9 +9,10 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.data.Stat;
+import org.omg.SendingContext.RunTime;
 import voldemort.utils.ConfigurationException;
 
-public class ActiveNodeZKListener implements Watcher, Runnable {
+public class ActiveNodeZKListener implements Watcher {
 
     private static final Logger logger = Logger.getLogger(ActiveNodeZKListener.class);
 
@@ -112,58 +110,74 @@ public class ActiveNodeZKListener implements Watcher, Runnable {
                 break;
 
             case Expired:
-                handleExpired();
+                handleExpired(event);
                 break;
         }
 
     }
 
-    private void handleExpired() {
+    private void handleExpired(WatchedEvent event) {
         logger.info("ZooKeeper session expired and dead, trying to recreate...");
         this.connected = false;
         zooKeeper = setupZooKeeper(zkUrl);
         registerWatches();
+        for(ZKDataListener listener : zkDataListeners) {
+            listener.process(event);
+        }
     }
 
-    public List<String> getNodeList() {
+    /**
+     * Gets children list for given bath. Does not leave a watch.
+     * @param path
+     * @return
+     */
+    public List<String> getNodeList(String path) {
+        return getNodeList(path, false);
+    }
+
+    public List<String> getNodeList(String path, boolean watch) {
         List<String> children = Lists.newArrayList();
 
         if(connected) {
-            children = getChildren();
+            children = getChildren(path, watch);
             // reset watch in case
             registerWatches();
         } else {
             logger.info("Tried fetching children list, but is not in connected state!");
+            throw new RuntimeException("not connected when fetching children");
         }
 
         return children;
     }
 
+
     private void handleNodeChildrenChanged(WatchedEvent event) {
         logger.info("Children changed: " + event);
-        List<String> children = getChildren();
-        for (ZKDataListener w : zkDataListeners) {
-            w.childrenList(children);
+        List<String> children = getChildren(event.getPath(), true);
+        for (ZKDataListener zkDataListener : zkDataListeners) {
+            zkDataListener.childrenList(children);
         }
     }
 
-    public void addDataListener(ZKDataListener watcher) {
-
-        if(zkDataListeners.contains(watcher)) {
-            logger.info("Tried to register already registered watcher: " + watcher);
-            return;
+    public void removeDatalistener(ZKDataListener listener) {
+        if(zkDataListeners.contains(listener)) {
+            zkDataListeners.remove(listener);
         }
-
-        zkDataListeners.add(watcher);
     }
 
-    private List<String> getChildren() {
+    public void addDataListener(ZKDataListener listener) {
+        if(!zkDataListeners.contains(listener)) {
+            zkDataListeners.add(listener);
+        }
+    }
+
+    private List<String> getChildren(String path, boolean watch) {
         List<String> children = Lists.newArrayList();
 
         try {
-            children = zooKeeper.getChildren(znode, true);
+            children = zooKeeper.getChildren(path, watch);
         } catch (InterruptedException | KeeperException e) {
-            logger.error("Failed getting children on znode: "+znode, e);
+            logger.error("Failed getting children on znode: " + path, e);
         }
         return children;
     }
@@ -182,7 +196,7 @@ public class ActiveNodeZKListener implements Watcher, Runnable {
         try {
             zk = new ZooKeeper(zkConnectionUrl, 20000, this);
         } catch (IOException e) {
-            logger.error("Could not connect to zooKeeper url: "+zkConnectionUrl);
+            logger.error("Could not connect to zooKeeper url: " + zkConnectionUrl);
             throw new ConfigurationException(e);
         }
         return zk;
@@ -198,13 +212,25 @@ public class ActiveNodeZKListener implements Watcher, Runnable {
             }
             byte[] data = zooKeeper.getData(path, resetWatch, stat);
             s = new String(data);
-        } catch (KeeperException e) {
-            throw new RuntimeException(String.format("Error getting key from ZooKeeper: %s", path), e);
-        } catch (InterruptedException e) {
+        } catch (InterruptedException | KeeperException e) {
             throw new RuntimeException(String.format("Error getting key from ZooKeeper: %s", path), e);
         }
         return s;
     }
+
+    public void uploadAndUpdateFile(String target, String content) {
+        try {
+            Stat stat = zooKeeper.exists(target, false);
+            if(stat == null) {
+                zooKeeper.create(target, content.getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+            } else {
+                zooKeeper.setData(target, content.getBytes(), stat.getVersion());
+            }
+        } catch (InterruptedException | KeeperException e) {
+            e.printStackTrace();
+        }
+    }
+
 
     private boolean isBeingWatched(String path) {
         if (path.equals(clusternode)) {
@@ -213,14 +239,8 @@ public class ActiveNodeZKListener implements Watcher, Runnable {
         return false;
     }
 
-    @Override
-    public void run() {
-        while(true) {
-
-        }
-    }
-
     public ZooKeeper getZooKeeper() {
         return zooKeeper;
     }
+
 }
