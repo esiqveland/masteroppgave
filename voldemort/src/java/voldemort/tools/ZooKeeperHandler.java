@@ -96,6 +96,23 @@ public class ZooKeeperHandler implements Watcher{
         }
     }
 
+    public String uploadAndUpdateFileWithMode(String target, String content, CreateMode mode){
+        try {
+            Stat stat = zk.exists(target, false);
+            if(stat == null) {
+                String zknodePath = zk.create(target, content.getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, mode);
+                return zknodePath;
+            } else {
+                zk.setData(target, content.getBytes(), stat.getVersion());
+                return target;
+            }
+        } catch (InterruptedException | KeeperException e) {
+            logger.error("invalid path", e);
+            throw new RuntimeException(e);
+        }
+
+    }
+
     @Override
     public void process(WatchedEvent event) {
 
@@ -109,4 +126,13 @@ public class ZooKeeperHandler implements Watcher{
     }
 
 
+    public void setWatch(String target, Watcher watcher) {
+        try {
+            zk.exists(target,watcher);
+        } catch (KeeperException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
 }
