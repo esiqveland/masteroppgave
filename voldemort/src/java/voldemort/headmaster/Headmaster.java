@@ -19,6 +19,9 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 
 public class Headmaster implements Runnable, Watcher, ZKDataListener {
@@ -43,14 +46,14 @@ public class Headmaster implements Runnable, Watcher, ZKDataListener {
 
     private ConcurrentHashMap<String,Node> handledNodes;
 
-
-
-
+    private Lock currentClusterLock;
 
     public Headmaster(String zkURL) {
         this.zkURL = zkURL;
         anzkl = new ActiveNodeZKListener(this.zkURL, activePath);
         anzkl.addDataListener(this);
+
+        currentClusterLock = new ReentrantLock();
 
         handledNodes = new ConcurrentHashMap<>();
 
@@ -75,23 +78,35 @@ public class Headmaster implements Runnable, Watcher, ZKDataListener {
             e.printStackTrace();
         }
 
-        RebalancePlannerZK rpzk = new RebalancePlannerZK(zkURL,zkhandler);
-        RebalancePlan plan = rpzk.createRebalancePlan();
+        currentClusterLock.lock();
 
-        try {
-            Thread.sleep(10000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        try{
+            RebalancePlannerZK rpzk = new RebalancePlannerZK(zkURL,zkhandler);
+            RebalancePlan plan = rpzk.createRebalancePlan();
+
+            try {
+                Thread.sleep(10000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            System.out.println(plan.toString());
+
+            System.out.println("EXECUTING REBLANCE FOR GLORY AND SHAME");
+
+            RebalancerZK rzk = new RebalancerZK(zkURL,bootStrapUrl,zkhandler);
+            rzk.rebalance();
+
+            System.out.println("DONE!");
+
+        } finally {
+            currentClusterLock.unlock();
         }
 
-        System.out.println(plan.toString());
 
-        System.out.println("EXECUTING REBLANCE FOR GLORY AND SHAME");
 
-        RebalancerZK rzk = new RebalancerZK(zkURL,bootStrapUrl,zkhandler);
-        rzk.rebalance();
 
-        System.out.println("DONE!");
+
 
     }
 
@@ -147,33 +162,39 @@ public class Headmaster implements Runnable, Watcher, ZKDataListener {
 
     @Override
     public synchronized void childrenList(List<String> children) {
-        HashMap<String,Node> changeMap = new HashMap<>();
+        currentClusterLock.lock();
+        try {
+            HashMap<String,Node> changeMap = new HashMap<>();
 
-        logger.info("Start childer changed");
-        this.childrenList = children;
-        for (String child : children){
-            Node newNode = locateNewChildAndHandOutId(child);
-            if ( newNode != null ){
-                changeMap.put(child, newNode);
-            } 
+            logger.info("Start childer changed");
+            this.childrenList = children;
+            for (String child : children){
+                Node newNode = locateNewChildAndHandOutId(child);
+                if ( newNode != null ){
+                    changeMap.put(child, newNode);
+                }
 
-        }
-        if (changeMap.isEmpty()) {
-            return;
-        }
+            }
+            if (changeMap.isEmpty()) {
+                return;
+            }
 
-        String interimClusterxml = createInterimClusterXML(changeMap);
-        currentCluster = new ClusterMapper().readCluster(new StringReader(interimClusterxml));
+            String interimClusterxml = createInterimClusterXML(changeMap);
+            currentCluster = new ClusterMapper().readCluster(new StringReader(interimClusterxml));
 
-        //upload cluster.xml
-        zkhandler.uploadAndUpdateFile("/config/cluster.xml", interimClusterxml);
+            //upload cluster.xml
 
-        //create node in nodes and upload server.properties
-        for (Node node : changeMap.values()){
-            String serverProp = createServerProperties(node);
-            zkhandler.uploadAndUpdateFile("/config/nodes/" + node.getHost(), "");
-            zkhandler.uploadAndUpdateFile("/config/nodes/" + node.getHost() + "/server.properties", serverProp);
-            handledNodes.put(node.getHost(),node);
+            zkhandler.uploadAndUpdateFile("/config/cluster.xml", interimClusterxml);
+
+            //create node in nodes and upload server.properties
+            for (Node node : changeMap.values()){
+                String serverProp = createServerProperties(node);
+                zkhandler.uploadAndUpdateFile("/config/nodes/" + node.getHost(), "");
+                zkhandler.uploadAndUpdateFile("/config/nodes/" + node.getHost() + "/server.properties", serverProp);
+                handledNodes.put(node.getHost(),node);
+            }
+        } finally {
+            currentClusterLock.unlock();
         }
 
 
@@ -231,7 +252,13 @@ public class Headmaster implements Runnable, Watcher, ZKDataListener {
     public void dataChanged(String path, String content) {
         logger.info("Path changed: " + path);
         if(path.equals("/config/cluster.xml")){
-            this.currentCluster =  new ClusterMapper().readCluster(new StringReader(content));
+                try {
+                    currentClusterLock.lock();
+                    this.currentCluster =  new ClusterMapper().readCluster(new StringReader(content));
+                } finally {
+                    currentClusterLock.unlock();
+                }
+
 
         }
     }
