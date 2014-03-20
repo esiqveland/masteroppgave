@@ -2,8 +2,8 @@ package voldemort.tools;
 
 import com.google.common.collect.Lists;
 import org.apache.zookeeper.*;
-import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
+import voldemort.headmaster.ActiveNodeZKListener;
 
 import java.io.File;
 import java.io.IOException;

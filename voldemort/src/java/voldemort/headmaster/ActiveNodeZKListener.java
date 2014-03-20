@@ -1,4 +1,4 @@
-package voldemort.tools;
+package voldemort.headmaster;
 
 import com.google.common.collect.Lists;
 import org.apache.zookeeper.*;
@@ -10,6 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.data.Stat;
+import voldemort.tools.ZKDataListener;
 import voldemort.utils.ConfigurationException;
 
 public class ActiveNodeZKListener implements Watcher {
@@ -49,6 +50,7 @@ public class ActiveNodeZKListener implements Watcher {
 
     @Override
     public void process(WatchedEvent event) {
+        logger.debug("WatchEvent: " + event);
 
         switch (event.getType()) {
 
@@ -83,7 +85,7 @@ public class ActiveNodeZKListener implements Watcher {
     }
 
     private void handleNodeDataChanged(WatchedEvent event) {
-        logger.info("nodeData changed: " + event);
+        logger.debug("nodeData changed: " + event);
         for(ZKDataListener zkd : zkDataListeners) {
             zkd.dataChanged(event.getPath());
         }
@@ -93,7 +95,7 @@ public class ActiveNodeZKListener implements Watcher {
         try {
             Stat stat = zooKeeper.exists(path, true);
         } catch (InterruptedException | KeeperException e) {
-            logger.debug("Setting watch failed: " + path + " - ", e);
+            logger.info("Setting watch failed: " + path + " - ", e);
         }
     }
 
