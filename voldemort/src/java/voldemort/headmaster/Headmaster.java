@@ -6,6 +6,7 @@ import org.apache.log4j.Logger;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
+import org.jdom.JDOMException;
 import voldemort.client.rebalance.RebalancePlan;
 import voldemort.cluster.Cluster;
 import voldemort.cluster.Node;
@@ -14,6 +15,7 @@ import voldemort.server.VoldemortConfig;
 
 import voldemort.tools.*;
 import voldemort.xml.ClusterMapper;
+import voldemort.xml.MappingException;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -339,7 +341,10 @@ public class Headmaster implements Runnable, Watcher, ZKDataListener {
             currentClusterLock.lock();
             try {
                 String content = anzkl.getStringFromZooKeeper(path, true);
-                this.currentCluster = new ClusterMapper().readCluster(new StringReader(content));
+                Cluster newCluster = new ClusterMapper().readCluster(new StringReader(content));
+                this.currentCluster = newCluster;
+            } catch (MappingException e) {
+                logger.error("error parsing new cluster.xml", e);
             } finally {
                 currentClusterLock.unlock();
             }
