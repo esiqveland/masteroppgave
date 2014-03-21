@@ -407,6 +407,10 @@ public class Headmaster implements Runnable, Watcher, ZKDataListener {
     public String getCurrentHeadmaster() {
         return currentHeadmaster;
     }
+
+    public void setMyHeadmaster(String myHeadmaster) {
+        this.myHeadmaster = myHeadmaster;
+    }
 }
 
 
