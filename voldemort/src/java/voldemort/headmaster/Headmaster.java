@@ -36,10 +36,10 @@ public class Headmaster implements Runnable, Watcher, ZKDataListener {
 
     public static final String HEADMASTER_ROOT_PATH = "/headmaster";
     public static final String HEADMASTER_ELECTION_PATH = "/headmaster_";
-    private static final String HEADMASTER_REBALANCE_TOKEN = "/rebalalance_token";
+    public static final String HEADMASTER_REBALANCE_TOKEN = "/rebalalance_token";
     private static final String HEADMASTER_UNKNOWN = "HEADMASTER_UNKNOWN";
 
-    private static final String ACTIVEPATH= "/active";
+    public static final String ACTIVEPATH= "/active";
 
     public static final String defaultUrl = "voldemort1.idi.ntnu.no:2181/voldemortntnu";
     public static final String bootStrapUrl = "tcp://voldemort1.idi.ntnu.no:6667";
@@ -119,7 +119,7 @@ public class Headmaster implements Runnable, Watcher, ZKDataListener {
 
     }
 
-    public String leaderElection(){
+    private String leaderElection(){
         List<String> headmasters = anzkl.getChildrenList(HEADMASTER_ROOT_PATH);
 
         //determine who is supposed to be leader

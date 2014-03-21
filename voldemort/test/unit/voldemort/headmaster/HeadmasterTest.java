@@ -69,10 +69,7 @@ public class HeadmasterTest {
         headmaster.init();
     }
 
-    @Test
-    public void registerAsHeadmasterTest() {
-        Assert.assertEquals(child, headmaster.getMyHeadmaster());
-    }
+
 
     @Test(expected = MappingException.class)
     public void whenDataChangedToInvalidClusterThrowException() {
