@@ -41,11 +41,12 @@ public class HeadmasterTest {
     @Test
     public void registerAsHeadmaster() {
         String child = "myownheadmaster";
+
         when(activeNodeZKListener.uploadAndUpdateFileWithMode(
-                Headmaster.HEADMASTER_ROOT_PATH + Headmaster.HEADMASTER_ELECTION_PATH, "", CreateMode.EPHEMERAL
+                Headmaster.HEADMASTER_ROOT_PATH + Headmaster.HEADMASTER_ELECTION_PATH, "", CreateMode.EPHEMERAL_SEQUENTIAL
         )).thenReturn("/headmaster/" + child);
 
-        headmaster.init();
+        headmaster.registerAsHeadmaster();
 
         Assert.assertEquals(child, headmaster.getMyHeadmaster());
     }
