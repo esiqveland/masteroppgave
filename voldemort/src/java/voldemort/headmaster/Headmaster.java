@@ -50,6 +50,8 @@ public class Headmaster implements Runnable, Watcher, ZKDataListener {
     private String myHeadmaster;
     private String currentHeadmaster;
 
+    private RebalancePlan plan;
+
     private ConcurrentHashMap<String, Node> handledNodes;
 
     private Lock currentClusterLock;
@@ -68,9 +70,6 @@ public class Headmaster implements Runnable, Watcher, ZKDataListener {
         String currentClusterString = anzkl.getStringFromZooKeeper("/config/cluster.xml");
 
         currentCluster = new ClusterMapper().readCluster(new StringReader(currentClusterString));
-
-        zkhandler = new ZooKeeperHandler(zkURL, anzkl.getZooKeeper());
-
 
         registerAsHeadmaster();
         leaderElection();
@@ -142,8 +141,10 @@ public class Headmaster implements Runnable, Watcher, ZKDataListener {
         currentClusterLock.lock();
 
         try{
-            RebalancePlannerZK rpzk = new RebalancePlannerZK(zkURL, zkhandler);
-            RebalancePlan plan = rpzk.createRebalancePlan();
+            RebalancePlannerZK rpzk = new RebalancePlannerZK(zkURL, anzkl);
+            plan = rpzk.createRebalancePlan();
+
+
         } finally {
             currentClusterLock.unlock();
         }
@@ -153,7 +154,11 @@ public class Headmaster implements Runnable, Watcher, ZKDataListener {
         currentClusterLock.lock();
         try {
             RebalancerZK rzk = new RebalancerZK(zkURL,bootStrapUrl,zkhandler);
-            rzk.rebalance();
+            if(plan != null) {
+                rzk.rebalance(plan);
+            } else {
+                logger.error("Rebalance called without planning being done by this headmaster beforehand");
+            }
         } finally {
             currentClusterLock.unlock();
         }
@@ -190,9 +195,6 @@ public class Headmaster implements Runnable, Watcher, ZKDataListener {
                 rebalance();
             }
         }
-
-
-
     }
 
     public static void main(String args[]) {
@@ -345,7 +347,7 @@ public class Headmaster implements Runnable, Watcher, ZKDataListener {
 
     @Override
     public void nodeDeleted(String path) {
-        logger.debug("node deleted "+path);
+        logger.debug("node deleted " + path);
         if(path.equals(HEADMASTER_ROOT_PATH + "/" + currentHeadmaster)){
             //Leader has died, run new election
             leaderElection();
