@@ -343,8 +343,6 @@ public class Headmaster implements Runnable, Watcher, ZKDataListener {
                 String content = anzkl.getStringFromZooKeeper(path, true);
                 Cluster newCluster = new ClusterMapper().readCluster(new StringReader(content));
                 this.currentCluster = newCluster;
-            } catch (MappingException e) {
-                logger.error("error parsing new cluster.xml", e);
             } finally {
                 currentClusterLock.unlock();
             }

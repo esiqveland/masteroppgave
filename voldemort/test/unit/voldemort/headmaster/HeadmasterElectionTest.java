@@ -8,25 +8,20 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.mockito.internal.matchers.Any;
-import voldemort.xml.MappingException;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
-public class HeadmasterTest {
-
+public class HeadmasterElectionTest {
     private String zkurl = "zkurl";
 
-    private static String child = "myownheadmaster_00000000001";
+    private static String myHeadmaster = "headmaster_0000000071";
+    private static List<String> headmasters = Lists.newArrayList("headmaster_0000000060", "headmaster_0000000071",
+            "headmaster_0000000058");
     private static String EXAMPLE_CLUSTER =
-                    "<cluster>\n" +
+            "<cluster>\n" +
                     "        <name>mycluster</name>\n" +
                     "        <server>\n" +
                     "                <id>0</id>\n" +
@@ -51,49 +46,42 @@ public class HeadmasterTest {
     public void setUp() {
         MockitoAnnotations.initMocks(this);
 
-        List<String> headmasters_children = new ArrayList<String>();
-        headmasters_children.add(child);
-
         when(activeNodeZKListener.getChildrenList("/active")).thenReturn(Lists.newArrayList("head", "feet"));
 
         when(activeNodeZKListener.getStringFromZooKeeper("/config/cluster.xml", true)).thenReturn(EXAMPLE_CLUSTER);
 
+    }
+    @Test
+    public void leaderElectionTest(){
         when(activeNodeZKListener.uploadAndUpdateFileWithMode(
                 Headmaster.HEADMASTER_ROOT_PATH + Headmaster.HEADMASTER_ELECTION_PATH, "", CreateMode.EPHEMERAL_SEQUENTIAL
-        )).thenReturn("/headmaster/" + child);
+        )).thenReturn("/headmaster/" + myHeadmaster);
 
-        when(activeNodeZKListener.getChildrenList(Headmaster.HEADMASTER_ROOT_PATH)).thenReturn(headmasters_children);
+        when(activeNodeZKListener.getChildrenList(Headmaster.HEADMASTER_ROOT_PATH)).thenReturn(headmasters);
 
 
         headmaster = new Headmaster(zkurl, activeNodeZKListener);
         headmaster.init();
-    }
 
-    @Test
-    public void registerAsHeadmasterTest() {
-        Assert.assertEquals(child, headmaster.getMyHeadmaster());
-    }
+        headmaster.nodeDeleted("/headmaster/");
+        //Try one where this headmaster wins election:
 
-    @Test(expected = MappingException.class)
-    public void whenDataChangedToInvalidClusterThrowException() {
-        String path = "/config/cluster.xml";
+        when(activeNodeZKListener.getChildrenList(Headmaster.HEADMASTER_ROOT_PATH)).thenReturn();
 
-        when(activeNodeZKListener.getStringFromZooKeeper(path, true)).thenReturn("<info>");
+        headmaster.leaderElection();
 
-        headmaster.dataChanged(path);
+        Assert.assertEquals(headmaster.getCurrentHeadmaster(), "headmaster_0000000058");
 
-    }
+        verify(activeNodeZKListener,never()).setWatch(anyString());
 
-    @Test
-    public void whenDataChangedTestIfWatchIsRest() {
-        String path = "/config/cluster.xml";
 
-        when(activeNodeZKListener.getStringFromZooKeeper(path, true)).thenReturn(EXAMPLE_CLUSTER);
+        //Try one where this headmaster doesn't win the election:
+        headmaster.setMyHeadmaster("headmaster_0000000060");
 
-        headmaster.dataChanged(path);
+        headmaster.leaderElection();
+        Assert.assertEquals(headmaster.getCurrentHeadmaster(), "headmaster_0000000058");
 
-        verify(activeNodeZKListener, times(1)).getStringFromZooKeeper(path, true);
-
+        verify(activeNodeZKListener,times(1)).setWatch(anyString());
     }
 
 
