@@ -225,7 +225,7 @@ public class Headmaster implements Runnable, Watcher, ZKDataListener {
         worker.start();
     }
 
-    public Node locateNewChildAndHandOutId(String child){
+    private Node locateNewChildAndHandOutId(String child){
         String id = anzkl.getStringFromZooKeeper("/active/" + child);
 
         if (id.equals(VoldemortConfig.NEW_ACTIVE_NODE_STRING)){
