@@ -1,36 +1,31 @@
 package voldemort.tools;
 
-import org.apache.commons.lang.mutable.Mutable;
 import voldemort.client.rebalance.RebalancePlan;
 import voldemort.cluster.Cluster;
-import voldemort.cluster.MutableCluster;
-import voldemort.cluster.Node;
-import voldemort.cluster.Zone;
+import voldemort.headmaster.ActiveNodeZKListener;
 import voldemort.store.StoreDefinition;
 import voldemort.utils.RebalanceUtils;
 import voldemort.xml.ClusterMapper;
 import voldemort.xml.StoreDefinitionsMapper;
 
-import java.io.Serializable;
 import java.io.StringReader;
-import java.util.ArrayList;
 import java.util.List;
 
 public class RebalancePlannerZK {
     private String zkUrl;
-    private ZooKeeperHandler zkHandler;
+    private ActiveNodeZKListener anzkl;
 
-    public RebalancePlannerZK(String zkUrl, ZooKeeperHandler zkHandler) {
+    public RebalancePlannerZK(String zkUrl, ActiveNodeZKListener anzkl) {
         this.zkUrl = zkUrl;
-        this.zkHandler = zkHandler;
+        this.anzkl = anzkl;
 
     }
 
     public RebalancePlan createRebalancePlan() {
-        String currentClusterXML = zkHandler.getStringFromZooKeeper("/config/cluster.xml");
+        String currentClusterXML = anzkl.getStringFromZooKeeper("/config/cluster.xml");
         Cluster currentCluster = new ClusterMapper().readCluster(new StringReader(currentClusterXML));
 
-        String storesXML = zkHandler.getStringFromZooKeeper("/config/stores.xml");
+        String storesXML = anzkl.getStringFromZooKeeper("/config/stores.xml");
         List<StoreDefinition> currentStoreDefs = new StoreDefinitionsMapper().readStoreList(new StringReader(storesXML));
 
         String interimClusterXML = new String(currentClusterXML);
@@ -90,7 +85,7 @@ public class RebalancePlannerZK {
         int batch_size = Integer.MAX_VALUE;
         RebalancePlan plan = new RebalancePlan(currentCluster,currentStoreDefs,final_cluster,finalStoreDefs,batch_size,outputDir+"/planner");
 
-        zkHandler.uploadAndUpdateFile("/config/cluster_final.xml", new ClusterMapper().writeCluster(plan.getFinalCluster()));
+        anzkl.uploadAndUpdateFile("/config/cluster_final.xml", new ClusterMapper().writeCluster(plan.getFinalCluster()));
 
         return plan;
 

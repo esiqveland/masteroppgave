@@ -33,7 +33,7 @@ public class RebalancerZK {
 
     }
 
-    public void rebalance(){
+    public void rebalance(RebalancePlan plan){
         RebalanceController rebalanceController;
         rebalanceController = new RebalanceController(bootstrapUrl,
                 parallelism,
@@ -65,12 +65,7 @@ public class RebalancerZK {
         // Plan & execute rebalancing.
         boolean failure = false;
         try{
-            rebalanceController.rebalance(new RebalancePlan(currentCluster,
-                    currentStoreDefs,
-                    finalCluster,
-                    finalStoreDefs,
-                    batchSize,
-                    outputDir));
+            rebalanceController.rebalance(plan);
         } catch (Exception e){
             failure = true;
         }

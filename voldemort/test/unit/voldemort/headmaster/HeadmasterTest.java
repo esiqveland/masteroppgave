@@ -12,6 +12,9 @@ import org.mockito.internal.matchers.Any;
 
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class HeadmasterTest {
 
@@ -33,6 +36,7 @@ public class HeadmasterTest {
 
         headmaster = new Headmaster(zkurl, activeNodeZKListener);
         //headmaster.init();
+
 
     }
 
@@ -75,8 +79,6 @@ public class HeadmasterTest {
 
         verify(activeNodeZKListener,times(1)).setWatch(anyString());
     }
-
-
 
     @Test
     public void whenDataChangedTestIfWatchIsReset() {
