@@ -4,6 +4,7 @@ import voldemort.client.rebalance.RebalanceController;
 import voldemort.client.rebalance.RebalancePlan;
 import voldemort.cluster.Cluster;
 import voldemort.cluster.Node;
+import voldemort.headmaster.ActiveNodeZKListener;
 import voldemort.store.StoreDefinition;
 import voldemort.store.metadata.MetadataStore;
 import voldemort.utils.RebalanceUtils;
@@ -17,7 +18,7 @@ public class RebalancerZK {
 
     private String bootstrapUrl;
     private String zkUrl;
-    private ZooKeeperHandler zkHandler;
+    private ActiveNodeZKListener zkHandler;
 
     //Rebalance parameters
     private int parallelism = 8;
@@ -25,12 +26,10 @@ public class RebalancerZK {
     private String outputDir = "rebalance-out";
 
 
-    public RebalancerZK(String zkUrl, String bootstrapUrl, ZooKeeperHandler zkHandler){
+    public RebalancerZK(String zkUrl, String bootstrapUrl, ActiveNodeZKListener zkHandler){
         this.bootstrapUrl = bootstrapUrl;
         this.zkUrl = zkUrl;
         this.zkHandler = zkHandler;
-
-
     }
 
     public void rebalance(RebalancePlan plan){

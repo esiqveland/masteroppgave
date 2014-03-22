@@ -4,9 +4,7 @@ import org.apache.log4j.Logger;
 
 import java.util.List;
 
-/**
- * Created by Knut on 21/03/14.
- */
+
 public class HeadmasterTools {
 
     private static final Logger logger = Logger.getLogger(HeadmasterTools.class);

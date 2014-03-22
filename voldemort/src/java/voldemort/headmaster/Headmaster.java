@@ -1,6 +1,5 @@
 package voldemort.headmaster;
 
-
 import com.google.common.collect.Lists;
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.CreateMode;
@@ -27,7 +26,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 
-public class Headmaster implements Runnable, Watcher, ZKDataListener {
+public class Headmaster implements Runnable, ZKDataListener {
 
     private static final Logger logger = Logger.getLogger(Headmaster.class);
 
@@ -39,17 +38,17 @@ public class Headmaster implements Runnable, Watcher, ZKDataListener {
     public static final String HEADMASTER_ELECTION_PATH = "/headmaster_";
     public static final String HEADMASTER_REBALANCE_TOKEN = "/rebalalance_token";
     private static final String HEADMASTER_UNKNOWN = "HEADMASTER_UNKNOWN";
-    public static final String HEADMASTER_SIGAR_LISTENER_PORT = "17777";
+    public static final int HEADMASTER_SIGAR_LISTENER_PORT = 17777;
 
-    public static final String ACTIVEPATH= "/active";
+    public static final String ACTIVEPATH = "/active";
 
     public static final String defaultUrl = "voldemort1.idi.ntnu.no:2181/voldemortntnu";
     public static final String bootStrapUrl = "tcp://voldemort1.idi.ntnu.no:6667";
+
     private String myHostname;
 
     private ActiveNodeZKListener anzkl;
 
-    private ZooKeeperHandler zkhandler;
     String zkURL = defaultUrl;
     private Cluster currentCluster;
     private boolean idle = false;
@@ -80,6 +79,8 @@ public class Headmaster implements Runnable, Watcher, ZKDataListener {
         } catch (UnknownHostException e) {
             e.printStackTrace();
         }
+        sigarListener = new SigarListener(HEADMASTER_SIGAR_LISTENER_PORT);
+
     }
 
 
@@ -88,14 +89,6 @@ public class Headmaster implements Runnable, Watcher, ZKDataListener {
             anzkl = new ActiveNodeZKListener(zkURL);
         }
         anzkl.addDataListener(this);
-
-//        registerAsHeadmaster();
-//        leaderElection();
-
-//        if(isHeadmaster()){
-//            beHeadmaster();
-//        }
-
     }
 
     private void beHeadmaster() {
@@ -171,8 +164,8 @@ public class Headmaster implements Runnable, Watcher, ZKDataListener {
     public void rebalance(){
         currentClusterLock.lock();
         try {
-            RebalancerZK rzk = new RebalancerZK(zkURL,bootStrapUrl,zkhandler);
-            if(plan != null) {
+            RebalancerZK rzk = new RebalancerZK(zkURL, bootStrapUrl, anzkl);
+            if (plan != null) {
                 rzk.rebalance(plan);
             } else {
                 logger.error("Rebalance called without planning being done by this headmaster beforehand");
