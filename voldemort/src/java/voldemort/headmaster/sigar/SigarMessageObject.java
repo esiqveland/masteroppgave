@@ -9,10 +9,11 @@ public class SigarMessageObject implements Serializable{
     private double RAM;
     private String hostname;
 
-    public SigarMessageObject(double CPU, double HDD, double RAM){
+    public SigarMessageObject(double CPU, double HDD, double RAM, String hostname){
         this.CPU = CPU;
         this.HDD = HDD;
         this.RAM = RAM;
+        this.hostname = hostname;
     }
 
     public double getCPU() {
