@@ -160,7 +160,6 @@ public class ActiveNodeZKListener implements Watcher {
 
     private void handleNodeChildrenChanged(WatchedEvent event) {
         logger.info("Children changed: " + event);
-        List<String> children = getChildren(event.getPath(), true);
         for (ZKDataListener zkDataListener : zkDataListeners) {
             zkDataListener.childrenList(event.getPath());
         }
