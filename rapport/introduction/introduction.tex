@@ -9,11 +9,20 @@ We have created a method for managing cluster metadata and configuration for Vol
 
 In this process we have implemented an internal StorageEngine that uses ZooKeeper for node metadata.
 
-We have also implemented a service, Headmaster, that manages configuration, node discovery and node membership in the cluster.
-Headmaster can also decide to and execute rebalance.
+We have also implemented a service, named Headmaster, that manages configuration, node discovery and node membership in the cluster.
+Headmaster can also decide whether to execute a rebalance based on certain criteria.
+
+\subsection{Voldemort and Dynamo}
+Voldemort is a software system based off of Amazon's paper on Dynamo, Amazons highly available key-value store.
+Voldemort and Dynamo sacrifices consistency and isolation requirements to achieve higher availability with satisfactory durability.
+In fact, we will later see that most of this behavior is tunable and left as design choices per implementation.
+
 
 \subsection{Techniques and technologies}
-The software used in this project employ many different and important techniques known from distributed computing.
+The software used in this project employ many different and important techniques known from distributed computing, and will be discussed here.
+
+
+\subsubsection{Durability and conflicts}
 
 \subsubsection{PAXOS}
 
