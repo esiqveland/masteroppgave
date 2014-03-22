@@ -1,4 +1,4 @@
-package voldemort.headmaster;
+package voldemort.headmaster.sigar;
 
 import java.io.Serializable;
 

@@ -1,7 +1,10 @@
-package voldemort.headmaster;
+package voldemort.headmaster.sigar;
 
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.WatchedEvent;
+import voldemort.headmaster.ActiveNodeZKListener;
+import voldemort.headmaster.Headmaster;
+import voldemort.headmaster.HeadmasterTools;
 import voldemort.tools.ZKDataListener;
 
 import java.io.ByteArrayOutputStream;
@@ -145,7 +148,7 @@ public class SigarAgent implements ZKDataListener, Runnable{
 
     private void waitForHeadmaster(){
         //setup watch for children changed
-        anzkl.getChildrenList(Headmaster.HEADMASTER_ROOT_PATH,true);
+        anzkl.getChildrenList(Headmaster.HEADMASTER_ROOT_PATH, true);
     }
 
     private void findHeadmaster(){

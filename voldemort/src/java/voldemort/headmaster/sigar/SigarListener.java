@@ -1,14 +1,16 @@
-package voldemort.headmaster;
+package voldemort.headmaster.sigar;
 
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import voldemort.headmaster.Headmaster;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetSocketAddress;
 import java.net.SocketException;
 
 public class SigarListener implements Runnable {
@@ -20,12 +22,13 @@ public class SigarListener implements Runnable {
     private boolean running;
 
     public SigarListener(int listenPort) {
-        listenPort = listenPort;
+        this.listenPort = listenPort;
 
         try {
             socket = new DatagramSocket(this.listenPort);
 
             this.setRunning(true);
+            logger.debug("running ok");
         } catch (SocketException e) {
             logger.error("Error setting up socket on port: {}", this.listenPort, e);
         }
@@ -37,6 +40,7 @@ public class SigarListener implements Runnable {
         byte[] data = new byte[1024];
         while (isRunning()) {
             DatagramPacket packet = new DatagramPacket(data, data.length);
+            logger.debug("trying to get packet");
             try {
                 socket.receive(packet);
                 byte[] recv = packet.getData();
@@ -51,11 +55,9 @@ public class SigarListener implements Runnable {
 
             } catch (IOException e) {
                 logger.error("Error receiving packet", e);
+                setRunning(false);
             }
-
-
         }
-
     }
 
     public void setRunning(boolean running) {
@@ -64,5 +66,13 @@ public class SigarListener implements Runnable {
 
     public boolean isRunning() {
         return running;
+    }
+
+    public static void main(String[] args) {
+        SigarListener sigarListener = new SigarListener(Integer.valueOf(Headmaster.HEADMASTER_SIGAR_LISTENER_PORT));
+
+        Thread t = new Thread(sigarListener);
+        t.start();
+
     }
 }

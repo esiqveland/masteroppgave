@@ -9,6 +9,7 @@ import org.apache.zookeeper.Watcher;
 import voldemort.client.rebalance.RebalancePlan;
 import voldemort.cluster.Cluster;
 import voldemort.cluster.Node;
+import voldemort.headmaster.sigar.SigarListener;
 import voldemort.server.VoldemortConfig;
 
 
@@ -53,7 +54,7 @@ public class Headmaster implements Runnable, Watcher, ZKDataListener {
     private Cluster currentCluster;
     private boolean idle = false;
 
-
+    private SigarListener sigarListener;
 
     private String myHeadmaster;
 
