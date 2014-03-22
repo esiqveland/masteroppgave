@@ -22,9 +22,13 @@ public class SigarAgent implements ZKDataListener, Runnable{
     String currentHeadmaster;
     InetAddress currentHeadmasterAddress;
     private int currentHeadmasterPort;
+    private NodeStatus nodeStatus;
+    private double monitor_cpu_usage, monitor_hdd_usage, monitor_ram_usage;
+    private String myHostname;
 
 
     public SigarAgent(){
+        nodeStatus = new NodeStatus();
         try {
             ds = new DatagramSocket();
 
@@ -33,6 +37,12 @@ public class SigarAgent implements ZKDataListener, Runnable{
         }
         anzkl = new ActiveNodeZKListener(Headmaster.defaultUrl);
         anzkl.addDataListener(this);
+
+        try {
+            myHostname = InetAddress.getLocalHost().getCanonicalHostName().toString();
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
     }
 
 
@@ -92,13 +102,26 @@ public class SigarAgent implements ZKDataListener, Runnable{
         //DO MONITOR STUFF
 
         monitorCPU();
+        monitorRAM();
+        monitorHDD();
 
-        SigarMessageObject smo = new SigarMessageObject(40.2,10,80.20);
+        SigarMessageObject smo = new SigarMessageObject(monitor_cpu_usage,monitor_hdd_usage,monitor_ram_usage,myHostname);
         send(smo);
 
     }
 
     private void monitorCPU() {
+        monitor_cpu_usage = nodeStatus.getCPUUsage();
+
+    }
+
+    private void monitorRAM() {
+        monitor_ram_usage = nodeStatus.getMemoryUsage();
+
+    }
+
+    private void monitorHDD() {
+        monitor_hdd_usage = nodeStatus.getDiskUsage();
 
     }
 

@@ -1,4 +1,4 @@
-package voldemort.headmaster;
+package voldemort.headmaster.sigar;
 
 import org.apache.log4j.Logger;
 import org.hyperic.sigar.DirUsage;
