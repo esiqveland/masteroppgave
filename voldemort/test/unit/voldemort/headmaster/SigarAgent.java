@@ -1,56 +1,44 @@
 package voldemort.headmaster;
 
-
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.WatchedEvent;
 import voldemort.tools.ZKDataListener;
 
-import java.io.IOException;
 import java.net.*;
 import java.util.List;
 
 public class SigarAgent implements ZKDataListener, Runnable{
 
-
     private static final Logger logger = Logger.getLogger(SigarAgent.class);
     DatagramSocket ds;
-    InetAddress headmasterAddress;
     ActiveNodeZKListener anzkl;
     String currentHeadmaster;
     InetAddress currentHeadmasterAddress;
-    private boolean running;
-
-    public void waitForNewHeadmaster(){
-        while(currentHeadmaster == null){
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-
-    }
 
 
     public SigarAgent(){
-        running = true;
         try {
             ds = new DatagramSocket();
+
         } catch (SocketException e) {
             e.printStackTrace();
         }
         anzkl = new ActiveNodeZKListener(Headmaster.defaultUrl);
-
+        anzkl.addDataListener(this);
     }
+
 
     @Override
     public void childrenList(String path) {
+        logger.debug("Got event of change in headmaster children.");
         //New headmaster arrived or just another node
         if(!path.equals(Headmaster.HEADMASTER_ROOT_PATH)){
             //This message is for someone else
             return;
         }
-
+        synchronized (this){
+            notifyAll();
+        }
         findHeadmaster();
     }
 
@@ -67,12 +55,18 @@ public class SigarAgent implements ZKDataListener, Runnable{
 
     @Override
     public void reconnected() {
+        synchronized (this){
+            notifyAll();
+        }
+
 
     }
 
     @Override
     public void process(WatchedEvent event) {
+        if (event.getState() == Event.KeeperState.Expired) {
 
+        }
     }
 
 
@@ -90,40 +84,40 @@ public class SigarAgent implements ZKDataListener, Runnable{
 
     @Override
     public void run() {
-        while(running){
-            if(hasHeadmaster()){
-                monitor();
-
+        synchronized (this) {
+            while (true) {
                 try {
-                    Thread.sleep(1000);
+                    this.wait();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-            } else {
-                findHeadmaster();
-            }
+                if (hasHeadmaster()) {
+                    monitor();
 
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                } else {
+                    findHeadmaster();
+                }
+
+            }
         }
     }
 
     private void waitForHeadmaster(){
         //setup watch for children changed
-        anzkl.addDataListener(this);
         anzkl.getChildrenList(Headmaster.HEADMASTER_ROOT_PATH,true);
-
-        while(currentHeadmaster == null){
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
     }
 
     private void findHeadmaster(){
+        logger.debug("Finding a new headmaster");
         List<String> headMasters = anzkl.getChildrenList(Headmaster.HEADMASTER_ROOT_PATH,true);
 
         if(headMasters.isEmpty()){
+            logger.debug("Found no headmasters... Going to wait...");
             currentHeadmaster = null;
             waitForHeadmaster();
             return;
@@ -140,7 +134,10 @@ public class SigarAgent implements ZKDataListener, Runnable{
             e.printStackTrace();
         }
 
-        anzkl.setWatch(Headmaster.HEADMASTER_ROOT_PATH+"/"+currentHeadmaster);
+        logger.debug("found new headmaster: " + currentHeadmaster);
+        logger.debug("my headmasterhostname: " + currentHeadmasterAddress);
+
+//        anzkl.setWatch(Headmaster.HEADMASTER_ROOT_PATH+"/"+currentHeadmaster);
 
     }
 

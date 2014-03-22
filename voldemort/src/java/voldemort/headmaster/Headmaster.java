@@ -38,6 +38,7 @@ public class Headmaster implements Runnable, Watcher, ZKDataListener {
     public static final String HEADMASTER_ELECTION_PATH = "/headmaster_";
     public static final String HEADMASTER_REBALANCE_TOKEN = "/rebalalance_token";
     private static final String HEADMASTER_UNKNOWN = "HEADMASTER_UNKNOWN";
+    public static final String HEADMASTER_SIGAR_LISTENER_PORT = "17777";
 
     public static final String ACTIVEPATH= "/active";
 
@@ -87,12 +88,12 @@ public class Headmaster implements Runnable, Watcher, ZKDataListener {
         }
         anzkl.addDataListener(this);
 
-        registerAsHeadmaster();
-        leaderElection();
+//        registerAsHeadmaster();
+//        leaderElection();
 
-        if(isHeadmaster()){
-            beHeadmaster();
-        }
+//        if(isHeadmaster()){
+//            beHeadmaster();
+//        }
 
     }
 
@@ -111,7 +112,7 @@ public class Headmaster implements Runnable, Watcher, ZKDataListener {
 
     public void registerAsHeadmaster(){
         String zkPath = anzkl.uploadAndUpdateFileWithMode(
-                HEADMASTER_ROOT_PATH + HEADMASTER_ELECTION_PATH, myHostname, CreateMode.EPHEMERAL_SEQUENTIAL);
+                HEADMASTER_ROOT_PATH + HEADMASTER_ELECTION_PATH, myHostname+":"+HEADMASTER_SIGAR_LISTENER_PORT, CreateMode.EPHEMERAL_SEQUENTIAL);
 
         myHeadmaster = getNodeNameFromPath(zkPath);
 
