@@ -76,6 +76,8 @@ public class VoldemortConfig implements Serializable {
     public static final String VOLDEMORT_HOME_VAR_NAME = "VOLDEMORT_HOME";
     public static final String VOLDEMORT_CONFIG_DIR = "VOLDEMORT_CONFIG_DIR";
     private static final String VOLDEMORT_NODE_ID_VAR_NAME = "VOLDEMORT_NODE_ID";
+    public static final String VOLDEMORT_DATA_DIR = "/home/king/src/masteroppgave/voldemort/data/bdb";
+
     public static int VOLDEMORT_DEFAULT_ADMIN_PORT = 6660;
     public static final long REPORTING_INTERVAL_BYTES = 25 * 1024 * 1024;
     public static final int DEFAULT_BUFFER_SIZE = 64 * 1024;

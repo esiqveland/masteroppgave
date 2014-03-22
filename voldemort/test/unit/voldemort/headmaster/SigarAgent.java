@@ -4,6 +4,10 @@ import org.apache.log4j.Logger;
 import org.apache.zookeeper.WatchedEvent;
 import voldemort.tools.ZKDataListener;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutput;
+import java.io.ObjectOutputStream;
 import java.net.*;
 import java.util.List;
 
@@ -14,6 +18,7 @@ public class SigarAgent implements ZKDataListener, Runnable{
     ActiveNodeZKListener anzkl;
     String currentHeadmaster;
     InetAddress currentHeadmasterAddress;
+    private int currentHeadmasterPort;
 
 
     public SigarAgent(){
@@ -79,33 +84,64 @@ public class SigarAgent implements ZKDataListener, Runnable{
     }
 
     private void monitor(){
+        logger.debug("Doing one monitor iteration:");
+
+        //DO MONITOR STUFF
+
+        monitorCPU();
+
+        SigarMessageObject smo = new SigarMessageObject(40.2,10,80.20);
+        send(smo);
+
+    }
+
+    private void monitorCPU() {
+
+    }
+
+    private void send(SigarMessageObject smo){
+        // Serialize to a byte array
+        ByteArrayOutputStream bStream = new ByteArrayOutputStream();
+        ObjectOutput oo = null;
+        try {
+            oo = new ObjectOutputStream(bStream);
+            oo.writeObject(smo);
+            oo.close();
+
+            byte[] serializedMessage = bStream.toByteArray();
+
+            ds.send(new DatagramPacket(serializedMessage, serializedMessage.length,currentHeadmasterAddress,currentHeadmasterPort));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
     }
 
     @Override
     public void run() {
         synchronized (this) {
-            while (true) {
+            try {
+                this.wait();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        while (true) {
+            if (hasHeadmaster()) {
+                monitor();
+
                 try {
-                    this.wait();
+                    Thread.sleep(5000);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                if (hasHeadmaster()) {
-                    monitor();
-
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                } else {
-                    findHeadmaster();
-                }
-
+            } else {
+                findHeadmaster();
             }
+
         }
     }
+
 
     private void waitForHeadmaster(){
         //setup watch for children changed
@@ -126,16 +162,22 @@ public class SigarAgent implements ZKDataListener, Runnable{
         currentHeadmaster = HeadmasterTools.findSmallestChild(headMasters);
 
         //Get hostname:
-        String headmasterHostname = anzkl.getStringFromZooKeeper(Headmaster.HEADMASTER_ROOT_PATH+"/"+currentHeadmaster);
+        String[] headmasterHostnameAndPort = anzkl.getStringFromZooKeeper(Headmaster.HEADMASTER_ROOT_PATH+"/"+currentHeadmaster).split(":");
+
+        //Strip leading /
+//        headmasterHostnameAndPort[0] = headmasterHostnameAndPort[0].substring(1);
+
+        currentHeadmasterPort = Integer.parseInt(headmasterHostnameAndPort[1]);
 
         try {
-            currentHeadmasterAddress = InetAddress.getByName(headmasterHostname);
+            currentHeadmasterAddress = InetAddress.getByName(headmasterHostnameAndPort[0]);
         } catch (UnknownHostException e) {
             e.printStackTrace();
         }
 
         logger.debug("found new headmaster: " + currentHeadmaster);
         logger.debug("my headmasterhostname: " + currentHeadmasterAddress);
+        logger.debug("my headmasterport: " + currentHeadmasterPort);
 
 //        anzkl.setWatch(Headmaster.HEADMASTER_ROOT_PATH+"/"+currentHeadmaster);
 
