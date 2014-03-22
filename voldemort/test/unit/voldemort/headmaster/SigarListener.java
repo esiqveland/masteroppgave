@@ -27,7 +27,7 @@ public class SigarListener implements Runnable {
 
             this.setRunning(true);
         } catch (SocketException e) {
-            logger.error("Error setting up socket on port: " + this.listenPort, e);
+            logger.error("Error setting up socket on port: {}", this.listenPort, e);
         }
     }
 
@@ -43,9 +43,10 @@ public class SigarListener implements Runnable {
                 ByteArrayInputStream in = new ByteArrayInputStream(recv);
                 ObjectInputStream is = new ObjectInputStream(in);
                 try {
-                    SigarMessage message = (SigarMessage) is.readObject();
-                } catch (ClassNotFoundException e) {
-                    logger.error("error converting message data", e);
+                    SigarMessageObject message = (SigarMessageObject) is.readObject();
+                    logger.debug("sigar message: {}", message);
+                } catch (ClassCastException | ClassNotFoundException e) {
+                    logger.error("error converting message data from {}", packet.getAddress().getCanonicalHostName(), e);
                 }
 
             } catch (IOException e) {

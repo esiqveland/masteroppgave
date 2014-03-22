@@ -31,6 +31,11 @@ public class SigarMessageObject implements Serializable{
         return hostname;
     }
 
+    @Override
+    public String toString() {
+        return String.format("%s: CPU: %.2f RAM: %.2f HDD: %.2f", hostname,
+                String.valueOf(CPU), String.valueOf(RAM), String.valueOf(HDD));
+    }
 
 
 
