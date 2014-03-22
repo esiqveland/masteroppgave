@@ -64,13 +64,18 @@ public class Headmaster implements Runnable, ZKDataListener {
     private ConcurrentHashMap<String, Node> handledNodes;
     private Lock currentClusterLock;
 
+    public Headmaster(String zkURL, ActiveNodeZKListener activeNodeZKListener, SigarListener sigarListener) {
+        this(zkURL, activeNodeZKListener);
+        this.sigarListener = sigarListener;
+    }
+
     public Headmaster(String zkURL, ActiveNodeZKListener activeNodeZKListener) {
         this(zkURL);
         this.anzkl = activeNodeZKListener;
-
+        this.anzkl.addDataListener(this);
     }
 
-    public Headmaster(String zkURL) {
+   public Headmaster(String zkURL) {
         this.zkURL = zkURL;
         currentClusterLock = new ReentrantLock();
         handledNodes = new ConcurrentHashMap<>();
@@ -79,16 +84,6 @@ public class Headmaster implements Runnable, ZKDataListener {
         } catch (UnknownHostException e) {
             e.printStackTrace();
         }
-        sigarListener = new SigarListener(HEADMASTER_SIGAR_LISTENER_PORT);
-
-    }
-
-
-    public void init() {
-        if(anzkl == null) {
-            anzkl = new ActiveNodeZKListener(zkURL);
-        }
-        anzkl.addDataListener(this);
     }
 
     private void beHeadmaster() {
@@ -147,15 +142,14 @@ public class Headmaster implements Runnable, ZKDataListener {
     }
 
     public void plan (){
+        // make sure of existance so we don't crash in a rebalance
         String sampleServerProperties = anzkl.getStringFromZooKeeper("/config/sample_files/server.properties");
 
         currentClusterLock.lock();
 
-        try{
+        try {
             RebalancePlannerZK rpzk = new RebalancePlannerZK(zkURL, anzkl);
             plan = rpzk.createRebalancePlan();
-
-
         } finally {
             currentClusterLock.unlock();
         }
@@ -192,11 +186,10 @@ public class Headmaster implements Runnable, ZKDataListener {
 
         if (event.getState() == Event.KeeperState.Expired) {
             stopHeadmastering();
-
         }
 
-        if(event.getType() == Event.EventType.NodeCreated){
-            if(isHeadmaster() && event.getPath().equals(HEADMASTER_ROOT_PATH+HEADMASTER_REBALANCE_TOKEN)){
+        if (event.getType() == Event.EventType.NodeCreated) {
+            if (isHeadmaster() && event.getPath().equals(HEADMASTER_ROOT_PATH + HEADMASTER_REBALANCE_TOKEN)) {
                 plan();
                 try {
                     Thread.sleep(20000);
@@ -221,9 +214,6 @@ public class Headmaster implements Runnable, ZKDataListener {
         }
 
         Headmaster headmaster = new Headmaster(url);
-        headmaster.init();
-
-//        Autoscale as = new Autoscale("127.0.0.1", 7788);
 
         Thread worker = new Thread(headmaster);
         worker.start();

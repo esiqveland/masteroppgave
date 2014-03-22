@@ -66,7 +66,6 @@ public class HeadmasterTest {
 
 
         headmaster = new Headmaster(zkurl, activeNodeZKListener);
-        headmaster.init();
     }
 
 

@@ -66,7 +66,8 @@ public class HeadmasterElectionTest {
         when(activeNodeZKListener.getChildrenList(Headmaster.HEADMASTER_ROOT_PATH)).thenReturn(headmasters);
 
         headmaster = new Headmaster(zkurl,activeNodeZKListener);
-        headmaster.init();
+
+        headmaster.reconnected();
 
         Assert.assertEquals(myHeadmaster, headmaster.getCurrentHeadmaster());
 
@@ -85,7 +86,8 @@ public class HeadmasterElectionTest {
         when(activeNodeZKListener.getChildrenList(Headmaster.HEADMASTER_ROOT_PATH)).thenReturn(headmasters);
 
         headmaster = new Headmaster(zkurl,activeNodeZKListener);
-        headmaster.init();
+
+        headmaster.reconnected();
 
         Assert.assertNotSame(myHeadmaster,headmaster.getCurrentHeadmaster());
 
@@ -99,7 +101,7 @@ public class HeadmasterElectionTest {
     @Test
     public void registerAsHeadmasterTest() {
         headmaster = new Headmaster(zkurl,activeNodeZKListener);
-        headmaster.init();
+        headmaster.reconnected();
 
         Assert.assertEquals(myHeadmaster, headmaster.getMyHeadmaster());
     }
@@ -107,7 +109,7 @@ public class HeadmasterElectionTest {
     @Test
     public void beHeadmasterTest(){
         headmaster = new Headmaster(zkurl,activeNodeZKListener);
-        headmaster.init();
+        headmaster.reconnected();
 
         verify(activeNodeZKListener,times(1)).setWatch(headmaster.HEADMASTER_ROOT_PATH+headmaster.HEADMASTER_REBALANCE_TOKEN);
         verify(activeNodeZKListener,times(1)).getStringFromZooKeeper("/config/cluster.xml", true);
