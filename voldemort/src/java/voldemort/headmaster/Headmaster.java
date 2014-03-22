@@ -6,7 +6,6 @@ import org.apache.log4j.Logger;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
-import org.jdom.JDOMException;
 import voldemort.client.rebalance.RebalancePlan;
 import voldemort.cluster.Cluster;
 import voldemort.cluster.Node;
@@ -15,11 +14,12 @@ import voldemort.server.VoldemortConfig;
 
 import voldemort.tools.*;
 import voldemort.xml.ClusterMapper;
-import voldemort.xml.MappingException;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
@@ -43,6 +43,7 @@ public class Headmaster implements Runnable, Watcher, ZKDataListener {
 
     public static final String defaultUrl = "voldemort1.idi.ntnu.no:2181/voldemortntnu";
     public static final String bootStrapUrl = "tcp://voldemort1.idi.ntnu.no:6667";
+    private String myHostname;
 
     private ActiveNodeZKListener anzkl;
 
@@ -50,6 +51,8 @@ public class Headmaster implements Runnable, Watcher, ZKDataListener {
     String zkURL = defaultUrl;
     private Cluster currentCluster;
     private boolean idle = false;
+
+
 
     private String myHeadmaster;
 
@@ -63,18 +66,24 @@ public class Headmaster implements Runnable, Watcher, ZKDataListener {
     public Headmaster(String zkURL, ActiveNodeZKListener activeNodeZKListener) {
         this(zkURL);
         this.anzkl = activeNodeZKListener;
+
     }
 
     public Headmaster(String zkURL) {
         this.zkURL = zkURL;
         currentClusterLock = new ReentrantLock();
         handledNodes = new ConcurrentHashMap<>();
+        try {
+            myHostname = InetAddress.getLocalHost().getCanonicalHostName().toString();
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
     }
 
 
     public void init() {
         if(anzkl == null) {
-            anzkl = new ActiveNodeZKListener(zkURL, ACTIVEPATH);
+            anzkl = new ActiveNodeZKListener(zkURL);
         }
         anzkl.addDataListener(this);
 
@@ -102,7 +111,7 @@ public class Headmaster implements Runnable, Watcher, ZKDataListener {
 
     public void registerAsHeadmaster(){
         String zkPath = anzkl.uploadAndUpdateFileWithMode(
-                HEADMASTER_ROOT_PATH + HEADMASTER_ELECTION_PATH, "", CreateMode.EPHEMERAL_SEQUENTIAL);
+                HEADMASTER_ROOT_PATH + HEADMASTER_ELECTION_PATH, myHostname, CreateMode.EPHEMERAL_SEQUENTIAL);
 
         myHeadmaster = getNodeNameFromPath(zkPath);
 
@@ -250,6 +259,11 @@ public class Headmaster implements Runnable, Watcher, ZKDataListener {
 
         if(!isHeadmaster())
             return;
+
+        if(!path.equals("/active/")){
+            //This message is for someone else
+            return;
+        }
 
         currentClusterLock.lock();
         try {

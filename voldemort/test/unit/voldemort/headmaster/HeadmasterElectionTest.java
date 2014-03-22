@@ -32,6 +32,7 @@ public class HeadmasterElectionTest {
                     "</cluster>\n";
 
     private static String myHeadmaster = "headmaster_0000000060";
+    private static String myHostname = "ahostname";
 
     @Mock
     ZooKeeper zooKeeper;
@@ -49,8 +50,9 @@ public class HeadmasterElectionTest {
 
         when(activeNodeZKListener.getStringFromZooKeeper("/config/cluster.xml", true)).thenReturn(EXAMPLE_CLUSTER);
 
-        when(activeNodeZKListener.uploadAndUpdateFileWithMode(headmaster.HEADMASTER_ROOT_PATH + headmaster.HEADMASTER_ELECTION_PATH,
-                "", CreateMode.EPHEMERAL_SEQUENTIAL)).thenReturn(headmaster.HEADMASTER_ROOT_PATH+"/"+myHeadmaster);
+        when(activeNodeZKListener.uploadAndUpdateFileWithMode(eq(headmaster.HEADMASTER_ROOT_PATH + headmaster.HEADMASTER_ELECTION_PATH),
+                anyString(), eq(CreateMode.EPHEMERAL_SEQUENTIAL))).thenReturn(headmaster.HEADMASTER_ROOT_PATH+"/"+myHeadmaster);
+
 
 
         List<String> headmasters = Lists.newArrayList("headmaster_0000000060", "headmaster_0000000071", "headmaster_0000000072");

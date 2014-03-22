@@ -23,7 +23,6 @@ public class ActiveNodeZKListener implements Watcher {
 
     private String zkUrl;
     private boolean connected;
-    private String znode;
     private List<ZKDataListener> zkDataListeners;
     private Map<String, ZKDataListener> watches;
 
@@ -31,21 +30,19 @@ public class ActiveNodeZKListener implements Watcher {
      * Watches a znode on a given cluster for children events.
      * Can pass on certain events to given zkDataListeners.
      * @param zkConnectionUrl
-     * @param znode
+     *
      */
 
-    public ActiveNodeZKListener(String zkConnectionUrl, String znode) {
+    public ActiveNodeZKListener(String zkConnectionUrl) {
         connected = false;
 
         zkDataListeners = Lists.newLinkedList();
         watches = new ConcurrentHashMap<>();
 
         this.zkUrl = zkConnectionUrl;
-        this.znode = znode;
 
         zooKeeper = setupZooKeeper(zkConnectionUrl);
 
-        registerWatches();
     }
 
     @Override
@@ -136,7 +133,6 @@ public class ActiveNodeZKListener implements Watcher {
             listener.process(event);
         }
         zooKeeper = setupZooKeeper(zkUrl);
-        registerWatches();
     }
 
     /**
@@ -153,8 +149,6 @@ public class ActiveNodeZKListener implements Watcher {
 
         if(connected) {
             children = getChildren(path, watch);
-            // reset watch in case
-            registerWatches();
         } else {
             logger.info("Tried fetching children list, but is not in connected state!");
             throw new RuntimeException("not connected when fetching children");
@@ -195,17 +189,6 @@ public class ActiveNodeZKListener implements Watcher {
         return children;
     }
 
-    private void registerWatches() {
-        try {
-            List<String> children = zooKeeper.getChildren(znode, true);
-            resetWatch(clusternode);
-            for (Map.Entry<String, ZKDataListener> entry : watches.entrySet()) {
-                resetWatch(entry.getKey());
-            }
-        } catch (InterruptedException | KeeperException e) {
-            logger.debug("Setting watches failed: ", e);
-        }
-    }
 
     private synchronized ZooKeeper setupZooKeeper(String zkConnectionUrl) {
         ZooKeeper zk = null;
