@@ -379,9 +379,16 @@ public class Headmaster implements Runnable, ZKDataListener {
     @Override
     public void run() {
         synchronized (this) {
+            if (sigarListener != null) {
+                Thread t = new Thread(sigarListener);
+                t.start();
+            }
+
             while (true) {
                 // If the flag is set, we're done.
-                if (this.idle) { break; }
+                if (this.idle) {
+                    break;
+                }
                 // Go to sleep until another thread notifies us.
                 try {
                     this.wait();

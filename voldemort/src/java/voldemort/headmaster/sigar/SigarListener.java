@@ -42,7 +42,7 @@ public class SigarListener implements Runnable {
         byte[] data = new byte[1024];
         while (isRunning()) {
             DatagramPacket packet = new DatagramPacket(data, data.length);
-            logger.debug("trying to get packet");
+            logger.debug("Listening for packet");
             try {
                 socket.receive(packet);
                 byte[] recv = packet.getData();
@@ -50,7 +50,7 @@ public class SigarListener implements Runnable {
                 ObjectInputStream is = new ObjectInputStream(in);
                 try {
                     SigarMessageObject message = (SigarMessageObject) is.readObject();
-                    logger.debug("sigar message: {}", message);
+                    logger.debug("Sigar message: {}", message);
                 } catch (ClassCastException | ClassNotFoundException e) {
                     logger.error("error converting message data from {}", packet.getAddress().getCanonicalHostName(), e);
                 }
