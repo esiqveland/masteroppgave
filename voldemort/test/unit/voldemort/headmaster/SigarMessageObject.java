@@ -1,6 +1,8 @@
 package voldemort.headmaster;
 
-public class SigarMessageObject {
+import java.io.Serializable;
+
+public class SigarMessageObject implements Serializable{
 
     private double CPU;
     private double HDD;
