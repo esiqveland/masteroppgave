@@ -10,7 +10,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.InetSocketAddress;
 import java.net.SocketException;
 
 public class SigarListener implements Runnable {
@@ -23,7 +22,10 @@ public class SigarListener implements Runnable {
 
     public SigarListener(int listenPort) {
         this.listenPort = listenPort;
+        setupSocket();
+    }
 
+    private void setupSocket() {
         try {
             socket = new DatagramSocket(this.listenPort);
 
@@ -56,6 +58,9 @@ public class SigarListener implements Runnable {
             } catch (IOException e) {
                 logger.error("Error receiving packet", e);
                 setRunning(false);
+                if(socket.isClosed()) {
+
+                }
             }
         }
     }
