@@ -15,3 +15,13 @@ Because we would like to be notified about changes to the config using watches, 
 A write therefore also causes N watches to trigger, and N new watches to be set. So for a full configuration rewrite in a rebalance, N*N re-reads and watches would be set and reset, and also N writes in quick succession.
 We therefore ignores such put requests in the ZooKeeper driven MetadataStore, and just put the new data in the Metadata cache, deferring the admin to use a ZooKeeper write operation to put the new config out, making the nodes do a re-read.
 
+\section{Headmaster}
+Headmaster is our take on managing the cluster.
+
+It is implemented as a standalone service so that it can be run remotely, and independently from Voldemort.
+We later decided to move it closer, so that we could keep better uptime on the service and reduce the chance of conflicts.
+At one point we had inadvertently started two Headmasters, which kept fighting for control.
+We spent a fair amount of time debugging weird race conditions until we realized there was two services listening.
+
+It is now a master based service with leader election through ZooKeeper that can run on any number of nodes.
+
