@@ -75,7 +75,7 @@ public class Headmaster implements Runnable, ZKDataListener {
         this.anzkl.addDataListener(this);
     }
 
-   public Headmaster(String zkURL) {
+   private Headmaster(String zkURL) {
         this.zkURL = zkURL;
         currentClusterLock = new ReentrantLock();
         handledNodes = new ConcurrentHashMap<>();
