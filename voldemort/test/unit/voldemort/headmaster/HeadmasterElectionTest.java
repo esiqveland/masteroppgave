@@ -99,6 +99,21 @@ public class HeadmasterElectionTest {
     }
 
     @Test
+    public void registerAsHeadmasterLeavesWatchOnLeader() {
+        List<String> headmasters = Lists.newArrayList("headmaster_0000000060", "headmaster_0000000055", "headmaster_0000000072");
+
+        when(activeNodeZKListener.getChildrenList(Headmaster.HEADMASTER_ROOT_PATH)).thenReturn(headmasters);
+
+        headmaster = new Headmaster(zkurl,activeNodeZKListener);
+
+        headmaster.reconnected();
+        String winnerZkPath = headmaster.HEADMASTER_ROOT_PATH+"/"+headmaster.getCurrentHeadmaster();
+
+        verify(activeNodeZKListener,times(1)).setWatch(winnerZkPath);
+
+    }
+
+    @Test
     public void registerAsHeadmasterTest() {
         headmaster = new Headmaster(zkurl,activeNodeZKListener);
         headmaster.reconnected();

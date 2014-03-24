@@ -213,7 +213,9 @@ public class Headmaster implements Runnable, ZKDataListener {
             url = args[0];
         }
 
-        Headmaster headmaster = new Headmaster(url);
+        ActiveNodeZKListener activeNodeZKListener = new ActiveNodeZKListener(url);
+
+        Headmaster headmaster = new Headmaster(url, activeNodeZKListener);
 
         Thread worker = new Thread(headmaster);
         worker.start();
