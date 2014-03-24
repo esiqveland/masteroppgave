@@ -7,16 +7,15 @@ Such tasks includes extending and reducing the members of the cluster.
 
 We have created a method for managing cluster metadata and configuration for Voldemort by using Apache ZooKeeper for coordination.
 
-In this process we have implemented an internal StorageEngine that uses ZooKeeper for node metadata.
+In this process we have implemented an internal StorageEngine that uses ZooKeeper for node configuration and metadata.
 
 We have also implemented a service, named Headmaster, that manages configuration, node discovery and node membership in the cluster.
 Headmaster can also decide whether to execute a rebalance based on certain criteria.
 
 \subsection{Voldemort and Dynamo}
-Voldemort is a software system based off of Amazon's paper on Dynamo, Amazons highly available key-value store.
+Voldemort is a software system based off of Amazon's paper on Dynamo, Amazon's highly available key-value store.
 Voldemort and Dynamo sacrifices consistency and isolation requirements to achieve higher availability with satisfactory durability.
 In fact, we will later see that most of this behavior is tunable and left as design choices per implementation.
-
 
 \subsection{Techniques and technologies}
 The software used in this project employ many different and important techniques known from distributed computing, and will be discussed here.
@@ -74,16 +73,4 @@ These are called N,R,W
 Create a system for automatically including new nodes in a set of member nodes.
 For Voldemort, this includes redistributing partitions and updating routing information without making the system unresponsive, ie. without incurring downtime.
 
-\subsection{}
 
-\section{Headmaster}
-Headmaster is our take on managing the cluster.
-
-It is implemented as a standalone service so that it can be run remotely, and independently from Voldemort.
-We later decided to move it closer, so that we could keep better uptime on the service and reduce the chance of conflicts.
-At one point we had inadvertently started two Headmasters, which kept fighting for control.
-We spent a fair amount of time debugging weird race conditions until we realized there was two services listening.
-
-It is now a master based service with leader election through ZooKeeper that can run on any number of nodes.
-
-\section{}
