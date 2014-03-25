@@ -7,8 +7,7 @@ From Apache ZooKeepers own website\cite{zookeeper} they explain ZooKeeper as:
 
 \blockquote{ZooKeeper is a centralized service for maintaining configuration information, naming, providing distributed synchronization, and providing group services. All of these kinds of services are used in some form or another by distributed applications.}
 
-The beauty of ZooKeeper is the simplicity of the design. ZooKeeper provides a powerful service but it is up to each individual application to design how to use it. 
-
+ZooKeeper offers a simple yet powerful set of services. When designing ZooKeeper they decided not to implement specific primitives server side and instead exposing an API allowing application developers to create their own primitives. This allows for ZooKeeper to be adapted to suit the requirements of different applications, instead of constraining developers to a fixed set of primitives. 
 
 \subsection{Znodes}
 ZooKeeper behaves almost like a file system with one key difference. Instead of files and directories - we have znodes. These znodes can contain information in the form of text. One znodes can have children which again can have more children. Together they form an hierarchical structure. 
@@ -22,27 +21,47 @@ Znodes also include version numbers for data changes, ACL changes and timestamps
     \label{fig:zk_namespace}
 \end{figure}
 
-These znodes can have different flags set which control their behavior. These are persistent, ephemeral and sequential. Persistent is self explanatory. When this flag is set during a put operation. The data will remain in ZooKeeper even though the client loses its connection to ZooKeeper. Ephemeral is the opposite. Data placed in ZooKeeper with this flag will be deleted when the client loses its session. If sequential is set to be true then each child of the znode will have a sequence number appended to its path. These numbers will be in strict increasing order according to which node was placed first in ZooKeeper. Ephemeral and sequential are powerful features which enable us to utilize ZooKeeper for leader election, coordination as well as locks. 
+These znodes can have different flags set which control their behavior. These are persistent, ephemeral and sequential. Persistent is self explanatory. When this flag is set during a put operation, the data will remain in ZooKeeper even though the client disconnects. Ephemeral is the opposite. Data placed in ZooKeeper with this flag will be deleted when the client loses its session. If sequential is set to be true then each child of the znode will have a monotonic increasing sequence number appended to its path. This number is relative to the parent znode, so children znodes can have equal or different names. Ephemeral and sequential are powerful features which enable us to utilize ZooKeeper for leader election, coordination as well as locks. 
 
+\subsection{ZooKeeper Guarantees}
+ZooKeeper provides two basic ordering guarantees:
+
+\begin{itemize}
+	\item Asynchronous linearizable writes
+ 	\item FIFO client order
+\end{itemize}
+
+Since we have asynchronous writes a client can have several outstanding operations, but ZooKeeper guarantees that they will be executed in FIFO order. ZooKeeper also provides clients with the option to listen for changes on a znode. ZooKeeper guarantees that a client will receive a changeEvent before see the new state of the system following the change. 
 
 \subsection{Watches}
-Watches is a 
+As mentioned above, a client can request a watch on a znode in ZooKeeper. This watch will give the client a changeEvent the next time this znode changes. These changes includes changes in number of children, change in data of znode or that the znode has been deleted. These watches can also be put on non existing znodes which gives the client an event when the znode is registered in ZooKeeper. It is however important to note that a watch will only trigger once, and it is not possible to request infinite watches. So it is up to each individual client to request a new watch after receiving an event.
 
+Because of ZooKeepers linearizable guarantees a read following one of these watchEvents will always return the new state of the system. In the event of several changes in quick succession it is possible for a client to not be notified of each individual change. It will however always be able to determine the final state of the system after all the changes.
 
+\subsection{Implementation}
 
-
-
-As mentioned ZooKeeper can be used for more than just storing configuration data. In this section we will explain some different ways to use ZooKeeper.
-
+As mentioned ZooKeeper can be used for more than just storing configuration data. In this section we will explain some different ways to use ZooKeeper with short psudo code examples. 
 
 
 \subsubsection{Leader election}
 Leader election is something that frequently needs to be addressed in a distributed system. In our own Headmaster client we used ZooKeeper to handle this issue. 
 
-Implementing leader election using ZooKeeper is quite straight forward. First we create a znode on some path with the sequential flag set. This ensures that each child node now will have a sequence number appended to its path. Any application wanting to act as a leader now simply creates a child znode with a predetermined name and the ephemeral flag set. This ensures that if the application becomes unavailable, the znode will be deleted.   
+To elect a leader we utilize the sequential and ephemeral flags of a znode. We have a znode called leaders in ZooKeeper where potential leaders can register themselves. This znode has the sequential flag set so we get a total order on the potential leaders. We also force each potential leader to use the ephemeral flag when registering. This ensures that when a client disconnects it is removed from the leader znode.By default the znode with the lowest sequence number will be the one that is the leader.
+
+If a potential leader does not win the election (I.E: There is another contender with a lower sequence number) it puts a watch on the winner and waits for changes. If eventually the leader disconnects then there will once again be elected a new leader based on sequence number.
+
+Any client wanting to get a hold of its leader can simply ask ZooKeeper for all the children of the leader znode, and then determine which one is the leader based on sequence numbers. Now the client can put a watch on this leader znode and be notified whenever there is a change in leadership. If said event is received the client simply ask ZooKeeper again for the children and repeat the process.
+
+\subsubsection{Locks}
+Another typical use case for ZooKeeper is handling locks. The way we implement locks is by having a reserved path for a znode called lock in ZooKeeper. To control the lock a client must be the one to create this znode with the ephemeral flag set. We use ephemeral to prevent a client for keeping the lock forever in case of a disconnect. 
+
+Any client wanting to use the resource related to the lock will try to create the lock znode. On success that client have access to the resource while in case of a failure the client will put a watch on the lock and wait for the existing znode to be deleted before trying to create it again.
+
+It is also possible to separate locks into read and write locks. In ZooKeeper their only difference will be in the naming of the znode, but the client now can regard them as read or write locks. The case explained above is a typical write lock. In the case of a read lock, the client will be allowed access to the resource as long as there is no write locks before it. If there is a write lock ahead of the read the client will put a watch on said lock and wait until it is deleted. 
 
 
-\subsection{implementation}
-awd awd awd  adaw a daw
+
+
+
 
  
