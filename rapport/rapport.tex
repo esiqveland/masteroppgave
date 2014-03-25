@@ -9,6 +9,7 @@
 \usepackage{pgfplots}
 \usepackage{pgfplotstable}
 \usepackage{booktabs}
+\usepackage{csquotes}
 %\usepackage{inconsolata}
 
 
@@ -61,13 +62,17 @@
 
 \listoffigures
 \clearpage
+\setcounter{page}{1}
 
 \input{introduction/introduction}
-\setcounter{page}{1}
+
 \clearpage
 
 
 \input{setup/setup.tex}
+\clearpage
+
+\input{software/zookeeper.tex}
 \clearpage
 
 \input{setup/implementation.tex}
