@@ -83,7 +83,7 @@ I.e. nodes B, E and G in Figure \ref{fig:hashring} could be the same \emph{physi
 This approach to locating keys has several advantages:
 
 \begin{itemize}
-\item Like before, we distribute operations on the set of available servers. By having each server take numerous positions on the hash ring, we also gain a more even distribution of the amount of key space among the nodes, compared to giving them a random or fixed position.
+\item Like before, we distribute operations on the set of available servers. By having each server take numerous positions on the hash ring, we also gain a more even distribution of the amount of key space among the nodes, compared to giving them a single random or fixed position.
 
 \item Consistent hashing can also accommodate different types of servers by allowing more powerful nodes to have more points assigned on the ring, and vice versa. 
 
@@ -91,7 +91,7 @@ This approach to locating keys has several advantages:
 
 \item The spread of the key space also avoids rehashing of more than $k/n$ keys when adding a new node. 
 
-\item When a node fails, you move along the ring to the next server. When the nodes occupy several points on the ring, this results in the work from a failing node being distributed among all the nodes in the system.
+\item When a node fails, you move along the ring to the next server. When the nodes occupy several points on the ring, the extra work because of a failing node will be distributed among all the nodes in the system.
 \end{itemize}
 
 Consistent hashing also conveniently allows for easy, tunable replication of data to ensure durability, as used by key-value stores Dynamo\cite{dynamo} and Voldemort\cite{voldemort}. Consider W the number of data replicas to create. Hash the key, then move along the ring, writing key K to the W first nodes encountered on the ring. This will also ensure backups to be available along the ring when a node fails and requests gets passed along.
@@ -127,9 +127,61 @@ By allowing nodes to push written object in the background at a later time to an
 This number \emph{N}, is called the \emph{replication factor}, and designates the number of replicas we \emph{eventually} want to be present.
 I.e. we will have an \emph{eventually consistent} form of replication.
 
+You should also note that this replication has two benefits: 
+\begin{itemize}
+	\item As a data backup should the other node have a hard drive failure
+	\item As a functional backup. If the other node is off line, the replica can take over the workload with all the data available.
+\end{itemize}
 
-\subsubsection{Conflicts}
+In Voldemort, the hash ring is split into X equally sized parts, called \emph{partitions}. Each partition is assigned a unique ID and maps to a node.
+The nodes create a \emph{preference list} over the partitions, which says to which \emph{partitions} it should store the replicas.
+
+Now let N=2 with 12 partitions as in Figure \ref{fig:voldemort_hashring}. 
+Let a key K hash to belong in partition 0. From the preference list, we see that this key should be put in \texttt{node0}, and replicated to the node holding partition 1, which is \texttt{node1}.
+Voldemort also does some sanity checking when replicating, such that replicas are always replicated to N \emph{physical} nodes. 
+I.e. In our example, if both partition 0 and 1 where held by \texttt{node0}, Voldemort would move along the ring until it finds the next partition that is assigned to a different node before storing the replica.
+
+\subsubsection{Dealing with data conflicts}
+Introducing optimistic replication to increase availability of the system, even in cases of nodes being unavailable has it's price. 
+In a distributed system nodes can be unreachable for a number of reasons.
+Network splits, nodes dying, overloaded network and concurrent operations (remember no isolation or locking) may introduce conflicts in the data set.
+These conflicts need to be discovered and resolved at some point.
+
+Deciding how to deal with conflict is an important decision.
+The questions of when to resolve them and who should have the task of doing so all have different properties.
+A traditional approach is to resolve conflicts when they appear, i.e. on writes. 
+This has the benefit of keeping read logic simple, but we may have to reject a write if not all (or a majority of) replicas are reachable. Resolving conflicts on write is also easy for the user to reason with.
+
+Voldemort however wishes to run an always writable store. No data write should fail as far as we can, even during network splits and failing nodes.
+This requirement makes it impossible to resolve conflicts on write, and forces us to do conflict resolution on read.
+
+This leaves the question of who should resolve the conflicts. We can either let the database store do conflict resolution or leave it to the application.
+If the store itself is going to resolve conflicts, it's choices in doing so are relatively limited.
+The store can not include domain knowledge for every possible application, so it can only do simple choices like last write wins or append the difference (which isn't even resolved, and probably destructive to the stored data). Recall that to the store most of the values are considered binary blobs.
+
+The application however has intricate knowledge of the data and is in a much better position to make good decisions. 
+Amazon\cite{dynamo} uses their shopping cart as an example. If two writes are two different products added to a shopping cart, we can record both of the writes even if they are divergent.
+Then at read, the application can use both versions to create a new cart with both products in it, i.e. merge the changes in a reasonable way, and present them to the user.
+This requires a bit of work from the developer, which they may not want or need to do, so there is also the option of doing simple conflict resolution on the server.
+
+\begin{wrapfigure}{r}{0.5\textwidth}
+    \includegraphics[width=0.5\textwidth]{introduction/versioning}
+    \caption{Hash ring with 3 nodes and 12 partitions from Voldemort\cite{dynamo} with N=2.}
+    \label{fig:versioning}
+\end{wrapfigure}
+
+To be able to record all changes (writes), Voldemort uses a versioning system to record the history of all changes. The data are immutable blobs, and each write creates a new version with a history of predecessors.
+To record this version history, Voldemort employs \emph{vector clocks}.
+
+Roughly vector clocks are implemented as a list of \texttt{(node, counter)} pairs and this list is stored with every version of every stored object.
+By evaluating the vector clocks between two versions (or more), we can decide if one follows the other or not. If \texttt{one} followed as a version of \texttt{two}, we can discard \texttt{two} and use \texttt{one} because the changes for two are already included in this object. If the histories are divergent, we have a conflict and need to do some sort of merge or resolution.
+
+Every time a write happens, we increment the version counter for the node who recorded the write, creating a full version history.
+
+
+
 To facilitate the high demand for availability, Voldemort and Dynamo always allow writes.
+
 
 vector clocks
 
