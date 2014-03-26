@@ -59,7 +59,7 @@ I.e. nodes B, E and G in Figure \ref{fig:hashring} could be the same \emph{physi
 This approach to locating keys has several advantages:
 
 \begin{itemize}
-\item Like before, we distribute operations on the set of available servers. By having each server take numerous positions on the hash ring, we also gain a more even distribution of the amount of key space among the nodes, compared to giving them a random or fixed position.
+\item Like before, we distribute operations on the set of available servers. By having each server take numerous positions on the hash ring, we also gain a more even distribution of the amount of key space among the nodes, compared to giving them a single random or fixed position.
 
 \item Consistent hashing can also accommodate different types of servers by allowing more powerful nodes to have more points assigned on the ring, and vice versa. 
 
@@ -67,7 +67,7 @@ This approach to locating keys has several advantages:
 
 \item The spread of the key space also avoids rehashing of more than $k/n$ keys when adding a new node. 
 
-\item When a node fails, you move along the ring to the next server. When the nodes occupy several points on the ring, this results in the work from a failing node being distributed among all the nodes in the system.
+\item When a node fails, you move along the ring to the next server. When the nodes occupy several points on the ring, the extra work because of a failing node will be distributed among all the nodes in the system.
 \end{itemize}
 
 Consistent hashing also conveniently allows for easy, tunable replication of data to ensure durability, as used by key-value stores Dynamo\cite{dynamo} and Voldemort\cite{voldemort}. Consider W the number of data replicas to create. Hash the key, then move along the ring, writing key K to the W first nodes encountered on the ring. This will also ensure backups to be available along the ring when a node fails and requests gets passed along.
@@ -106,7 +106,7 @@ I.e. we will have an \emph{eventually consistent} form of replication.
 You should also note that this replication has two benefits: 
 \begin{itemize}
 	\item As a data backup should the other node have a hard drive failure
-	\item As a functional backup. If the other node is off line, the replica can take over the workload with no extra work.
+	\item As a functional backup. If the other node is off line, the replica can take over the workload with all the data available.
 \end{itemize}
 
 In Voldemort, the hash ring is split into X equally sized parts, called \emph{partitions}. Each partition is assigned a unique ID and maps to a node.
