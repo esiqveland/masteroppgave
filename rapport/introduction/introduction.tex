@@ -32,6 +32,30 @@ You should also note Voldemort (and Dynamo) does not guarantee any form of isola
 The software used in this project employ many different and important techniques known from distributed computing, and will be discussed here.
 
 \subsubsection{PAXOS}
+Whenever you have a distributed system where errors occur and messages get lost, even simple tasks like deciding on a value can become troublesome. Paxos an consensus algorithm made to solve this issue. 
+
+Say we have a set of processes that all can propose values. (The value could be related to leader election). Paxos ensures that a single one of these values is chosen and that all processes involved is notified of this value. If no value is being proposed, then no value should be chosen. 
+
+In Paxos a process can act in three different roles: {\it proposer, acceptor and learner}. A process is not limited to one role at the time. Processes communicate with one another by messages. These massages follow the non-Byzantine model and can take arbitrary long time to be delivered, or they can be lost entirely. They can also be duplicated, however they can not be corrupted. A process acting in a role might also crash, but we assume some critical information will remain through a restart. 
+
+When acting as a proposer, a process will propose a value to a majority subset of acceptors. These acceptors will then accept or deny the proposal according to some rules. Finally if a value is chosen, then all the learners will be informed of this value. This is the process of choosing a value:
+
+\begin{enumerate}
+
+\item A proposer sends a prepare for proposal message to a majority set of acceptors with a number n. This number works like a time stamp represent the last(newest) message this proposer has seen. 
+\item Each acceptor receiving this prepare for proposal message will compare this number n with their own highest observed n. If the proposed number is higher, then a promise of not accepting any proposal lower than n will be sent back to the proposer along with the acceptors highest observed value. If the proposers number is lower than the acceptors observed number, then the value will simply be sent back. 
+\item If the proposer received a promise from majority of acceptors it will send an accept message to the acceptors with the number n along with the value v which is the maximum values received from the acceptors. If the number of promises is less than the majority of acceptors then the attempt has failed, and the proposer must start again with a higher number n.
+\item When an acceptor receives an accept massage it will accept this proposal as long as there has not been issued a new proposal with a higher number in the meantime. 
+\item Finally, when an acceptor has accepted a proposal it informs all learners. Either by sending a massage to all learners, or by sending a message to a designated learner, which in time will inform all other learners. This second step reduces message load but is less reliable.
+
+\end{enumerate}
+
+It is possible to construct a scenario where two proposers keep out proposing each other and no progress is ever made. To combat this a distinguished proposer must be elected. 
+
+Paxos can typically be used in distributed systems to coordinate processes. One example is leader election.
+
+
+
 
 \subsubsection{Consistent hashing}
 \label{sec:consistenthashing}
