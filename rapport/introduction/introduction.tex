@@ -142,17 +142,17 @@ Voldemort also does some sanity checking when replicating, such that replicas ar
 I.e. In our example, if both partition 0 and 1 where held by \texttt{node0}, Voldemort would move along the ring until it finds the next partition that is assigned to a different node before storing the replica.
 
 \subsubsection{Dealing with data conflicts}
-Introducing optimistic replication to increase availability of the system, even in cases of nodes being unavailable has it's price. 
-In a distributed system nodes can be unreachable for a number of reasons.
-Network splits, nodes dying, overloaded network and concurrent operations (remember no isolation or locking) may introduce conflicts in the data set.
-These conflicts need to be discovered and resolved at some point.
+Introducing optimistic replication to increase availability of the system, even in cases of nodes being unavailable for arbitrary reasons, has its price. 
+In a distributed system nodes can be unreachable for a number of different reasons:
+Network splits, nodes dying, overloaded network points and concurrent operations (remember no isolation or locking) may introduce conflicts in the data set.
+These conflicts \emph{will} arise and need to be discovered and resolved at some point.
 
 Deciding how to deal with conflict is an important decision.
 The questions of when to resolve them and who should have the task of doing so all have different properties.
 A traditional approach is to resolve conflicts when they appear, i.e. on writes. 
 This has the benefit of keeping read logic simple, but we may have to reject a write if not all (or a majority of) replicas are reachable. Resolving conflicts on write is also easy for the user to reason with.
 
-Voldemort however wishes to run an always writable store. No data write should fail as far as we can, even during network splits and failing nodes.
+Voldemort however wishes to run an always writable store. No data write should fail as far as we can, even during periods of network splits and failing nodes.
 This requirement makes it impossible to resolve conflicts on write, and forces us to do conflict resolution on read.
 
 This leaves the question of who should resolve the conflicts. We can either let the database store do conflict resolution or leave it to the application.
@@ -164,31 +164,72 @@ Amazon\cite{dynamo} uses their shopping cart as an example. If two writes are tw
 Then at read, the application can use both versions to create a new cart with both products in it, i.e. merge the changes in a reasonable way, and present them to the user.
 This requires a bit of work from the developer, which they may not want or need to do, so there is also the option of doing simple conflict resolution on the server.
 
-\begin{wrapfigure}{r}{0.5\textwidth}
-    \includegraphics[width=0.5\textwidth]{introduction/versioning}
-    \caption{Hash ring with 3 nodes and 12 partitions from Voldemort\cite{dynamo} with N=2.}
-    \label{fig:versioning}
-\end{wrapfigure}
-
 To be able to record all changes (writes), Voldemort uses a versioning system to record the history of all changes. The data are immutable blobs, and each write creates a new version with a history of predecessors.
 To record this version history, Voldemort employs \emph{vector clocks}.
 
 Roughly vector clocks are implemented as a list of \texttt{(node, counter)} pairs and this list is stored with every version of every stored object.
-By evaluating the vector clocks between two versions (or more), we can decide if one follows the other or not. If \texttt{one} followed as a version of \texttt{two}, we can discard \texttt{two} and use \texttt{one} because the changes for two are already included in this object. If the histories are divergent, we have a conflict and need to do some sort of merge or resolution.
+By evaluating the vector clocks between two versions (or more), we can decide if one is an ancestor of the other or not. If \texttt{one} followed as a version of \texttt{two}, we can discard \texttt{two} and use \texttt{one} because the changes for two are already included in this object. 
+If the histories are divergent, we have a conflict and need to do some sort of merge or resolution. More formally an object \texttt{one} is an ancestor of \texttt{two} if all the clocks in \texttt{one} are less than or equal to the clocks in \texttt{two}. 
+If so, we can safely discard \texttt{one}.
 
-Every time a write happens, we increment the version counter for the node who recorded the write, creating a full version history.
+%\begin{wrapfigure}{r}{0.5\textwidth}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.7\textwidth]{introduction/versioning}
+    \caption{Version history for an object\cite{voldemort}.}
+    \label{fig:versioning}
+\end{figure}
 
+To use vector clocks in this manner safely, it is required that all update operations (writes) specify which version we are updating, or we would not be able to infer causality.
+This version information must first be obtained through a read of the object, and then passed along with the write.
+If during a read the database finds multiple divergent versions of the object, all of the objects at the \emph{end} of the divergent paths are returned.
+The application then have to decide what to do, but typically a merged version has to be written. This merged version would specify the union of the versions of its predecessors as its version, creating a merged version.
 
+An example of an objects version history is given in Figure \ref{fig:versioning}. 
+The different objects written are labeled DX and the vector clock associated with the object is given in parenthesis. The distinct nodes are designated with S followed by a char, for example $S_x$ and $S_y$ are two distinct nodes.
 
-To facilitate the high demand for availability, Voldemort and Dynamo always allow writes.
+First a new object, D1 is written to the database. This write is handled by node $S_x$, and it assigns D1 the vector clock \texttt{([$S_x$,1])}.
+This is because it is the first version for this key and node $S_x$ managed the write. If another object, D2, is written to the same key is managed by $S_x$, we increment the counter for the $S_x$ version. We then have the object D2 \texttt{([$S_x$,2])}. Note that this means if somewhere we found D1, we could discard D1 if we are also holding D2 because of the versioning causality.
+Next in Figure \ref{fig:versioning}, we have two more objects written to the key, but they are handled by different nodes.
+First a client reads D2, than writes object D3. The write of D3 is handled by node $S_y$, with the context from D2. We therefore get the object D3 \texttt{([$S_x$,2],[$S_y$,1])}. We can say D3 \emph{decends} from D4.
 
+Another client has also read D2 earlier. This client writes D4, which coincidentally is also written with the context of D2. D4 ends up being handled by $S_z$. D4 gets the vector clock \texttt{([$S_x$,2],[$S_z$,1])}.
 
-vector clocks
+As we can see, D3 and D4 are now on diverging paths, but both are based on D2.
+Now when a read happens, either D3 or D4 could be returned, but ideally, and at some point, \emph{both} D3 and D4 will be returned.
+The application then needs to perform a \emph{merge}, writing an object, D5, which includes the histories of both D3 and D4.
+We see that this indeed occurs, with D5 \texttt{([$S_x$,3],[$S_y$,1],[$S_z$,1])}.
+
+To elaborate, we can see that we will never have to return D2 if we are following vector clocks.
+For both D3 and D4, the counter for $S_x$ version for D2 $<= S_x$ for either D3 or D4. We can therefore discard D2 if we have either D3 or D4.
+
+Over time, we can see that the list with vector clocks can grow significantly. Normally only the nodes in the preference list would write new versions of an object, which would be fine. But especially during network partitions, writes can be handled by many different servers not in the preference list for the target partition.
+According to Giuseppe DeCandia et al. (Dynamo)\cite{dynamo} they solve this with timestamps. A timestamp is stored with the individual version counters. 
+When the number of versions exceeds a number N, the oldest vector clock is deleted.
+While this could remove important information and create issues in the database, Giuseppe DeCandia et al.\cite{dynamo} mentions that this problem has never occurred in production.
 
 \subsubsection{Membership}
 gossip
 
 \subsubsection{Failures}
+
+\subsubsection{Hinted handoff}
+In practice, both nodes and network will fail. During such failures, who might be large, we still want to continue serving requests.
+To satisfy durability during failure, Voldemort perform a form of sloppy quorum. 
+Instead of requiring all N members of the quorum to fulfill a durable write, they use temporary hosts. 
+By this, we mean that in practice, the N nodes in the preference list a write eventually has to reach, are the next N \emph{healthy} nodes on the ring.
+When a node on the preference list is down (marked as not healthy), the request is routed to the next healthy node. 
+This write however contains meta data that says who was the intended target for this replica. 
+The metadata is then used to push the write back to the intended target once he becomes healthy again.
+
+Looking at Figure \ref{fig:voldemort_hashring}, if a key K hashes to partition 0, the preference list contains nodes \texttt{N0} and \texttt{N1} (recall N=2).
+If \texttt{N1} is not responsive, it is not healthy, and assume \texttt{N2} is the next healthy node.
+This means that when \texttt{N1} is not responsive, \texttt{N2} is placed on the preference list, because it is the next \emph{healthy} node.
+Now when \texttt{N0} receives a write, it will push the replica (to satisfy durability N=2) to \texttt{N2} as long as \texttt{N1} is down.
+\texttt{N2} will however receive a write with a hint that this object actually belongs to \texttt{N1}, so \texttt{N2} puts it in a special database to push it to \texttt{N1} at a later time when \texttt{N1} is healthy again. When \texttt{N2} successfully reaches \texttt{N1} and delivers the write, this object is deleted from \texttt{N2}.
+This process is called hinted handoff. 
+
+Using hinted handoff, we can still satisfy durability guarantees during node failures.
 
 \subsubsection{Tunability}
 The system gives the admin the opportunity to fine tune certain parameters after what the system needs.
