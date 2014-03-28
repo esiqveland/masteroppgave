@@ -186,7 +186,17 @@ To facilitate the high demand for availability, Voldemort and Dynamo always allo
 vector clocks
 
 \subsubsection{Membership}
-gossip
+In a distributed system individual nodes sometimes need to know what other nodes are available in the system. We call this group membership. Whenever a node crashes we want its membership removed so that other nodes are aware of the crash. This can be achieved in various ways. 
+
+\begin{itemize}
+\item A central service where nodes register themselves and send keep alive messages to verify that they are alive. When a new member is added or removed the service can simply broadcast a message to all members of the change. A drawback of this strategy is that we now have a single point of failure as well as a solution that does not scale very well. As nodes increase traffic into the central controller will increase as well. ZooKeeper can be used as one such central service as will be explained in the ZooKeeper section.
+\item The Gossip Protocol is a peer-to-peer version. It is modeled after how information spreads in social networks. By having nodes pair up with random partners at a given intervals and exchange information we allow this information to spread throughout the system. This allows the system to reach an eventual consistent state without having any single broad-casted message. To add a node to the group simply pair it with one existing member and let the gossip protocol handle the rest. Similarly if a node is unable to pair up with its partner the partner is marked as unreachable and this will be shared with future partners. This approach scales very efficiently as we only have peer to peer communication, but it is not without drawbacks. It is possible to create temporary logical partitions that exists while the information is being spread. Dynamo uses an external system with seed nodes to counteract these logical partitions. 
+
+\end{itemize}
+
+
+
+
 
 \subsubsection{Failures}
 
