@@ -70,11 +70,7 @@ public class Headmaster implements Runnable, ZKDataListener {
 
     }
 
-<<<<<<< HEAD
    private Headmaster(String zkURL) {
-=======
-    public Headmaster(String zkURL, ActiveNodeZKListener activeNodeZKListener) {
->>>>>>> Headmastering
         this.zkURL = zkURL;
         currentClusterLock = new ReentrantLock();
         handledNodes = new ConcurrentHashMap<>();
@@ -203,7 +199,6 @@ public class Headmaster implements Runnable, ZKDataListener {
     }
 
 
-<<<<<<< HEAD
     public static void main(String args[]) {
 
         String url = defaultUrl;
@@ -223,8 +218,6 @@ public class Headmaster implements Runnable, ZKDataListener {
         worker.start();
     }
 
-=======
->>>>>>> Headmastering
     private Node locateNewChildAndHandOutId(String child){
         String id = anzkl.getStringFromZooKeeper("/active/" + child);
 
