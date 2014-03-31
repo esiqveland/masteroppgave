@@ -1,0 +1,10 @@
+
+\section{Headmaster}
+Headmaster is our take on managing the cluster.
+
+It is implemented as a standalone service so that it can be run remotely, and independently from Voldemort.
+We later decided to move it closer, so that we could keep better uptime on the service and reduce the chance of conflicts.
+At one point we had inadvertently started two Headmasters, which kept fighting for control.
+We spent a fair amount of time debugging weird race conditions until we realized there was two services listening.
+
+It is now a master based service with leader election through ZooKeeper that can run on any number of nodes.
