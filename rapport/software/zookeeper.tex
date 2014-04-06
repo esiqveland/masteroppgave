@@ -43,7 +43,7 @@ Because of ZooKeepers linearizable guarantees a read following one of these watc
 As mentioned ZooKeeper can be used for more than just storing configuration data. In this section we will explain some different ways to use ZooKeeper with short psudo code examples. 
 
 \subsubsection{Group membership}
-
+ZooKeeper can be used to keep track of group membership. To do this we create a znode for the group at a given path. Now members can register their membership by creating a child znode with the ephemeral flag set. As long as they have a session with ZooKeeper they will be listed as a member of the group. When a member registers as a child they also put a watch on the parent node. If there is a change in membership, for example a node is added, then all nodes set to watch for changes will receive an event. Because of ZooKeepers FIFO ordering guarantees we will never have the case that a node is added some existing node is not notified. 
 
 \subsubsection{Leader election}
 Leader election is something that frequently needs to be addressed in a distributed system. In our own Headmaster client we used ZooKeeper to handle this issue. 
