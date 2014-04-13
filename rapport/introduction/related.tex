@@ -17,5 +17,55 @@ picture
 
 
 \subsection{HBase}
+HBase is based on Googles paper on BigTable.
+It is a sparse, distributed, persistent multi-dimensional sorted map.
+
+With regards to the CAP-theorem (Consistency, Availability, Partitioning), HBase provides consistency and tolerance to partitioning, making HBase fault tolerant and easy to reason with in practice.
+
+Important to note is that HBase provides a sparse multi-dimensional \emph{sorted} map.
+Keys in the table are sorted, such that similar items are close to another when scanning a table.
+
+E.g. when storing data about urls, the keys are written in reverse: \texttt{com.google.www/users}. This scheme keeps urls from the same domain and subdomain close to each other in the sorted map.
+
+The \emph{rows} or \emph{entries} are typically sparse, meaning that most of the columns, in the table are empty.
+
+To visualize a HBase record, it can help to think of a map of maps:
+
+\begin{lstlisting}
+{
+	"com.google.www/account": {
+		"family": {
+			"special": "value"
+		},
+		"anchor": {
+			"com.cnn.www": "value"
+		}
+	}
+	"com.google.www/users": {
+		"family": {
+			"": "value"
+		},
+		"anchor": {
+			"no.nrk.www": "value"
+		}
+	}
+}
+\end{lstlisting}
+
+The families for a record is static for the table at creation, but every family can hold any number of columns within, even many or none.
+This is where the sparse property comes from, as most entries will not have a value for the set of all sub-families in the table, leaving most column values empty.
+
+Every \emph{row} or \emph{entry} also has an associated timestamp, used for versioning. This is typically a monotonically increasing number, such as seconds since \emph{epoch}. HBase stores a given number of versions of an entry, and can be queried for these. 
+These different versions are stored in descending order, such that the highest number entry, i.e. the newest, is the first entry.
+
+This gives a possible query structure as such \texttt{<key, family:column, timestamp>}. Timestamp is optional. If no timestamp is given, the newest entry is returned. 
+If the query has a timestamp, the record with version equal to or less than the given timestamp is returned. If there is no such record, null is returned.
+
+I.e. if we have a query \texttt{<no.nrk.www, referrals:no.nrkbeta.www, 999>}, and we have records in the database:
+\begin{lstlisting}
+<no.nrk.www, referrals:no.nrkbeta.www, 1001>
+<no.nrk.www, referrals:no.nrkbeta.www, 777>
+\end{lstlisting}
+\texttt{<no.nrk.www, referrals:no.nrkbeta.www, 777>} will be returned.
 
 \subsection{Bone dry servey that explains performance}
