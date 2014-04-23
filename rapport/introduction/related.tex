@@ -8,14 +8,16 @@ Cassandra scalable NoSQL database now available as open source through the Apach
 In Cassandra all participating nodes can be accessed for writes and reads. To ensure durability all writes are preceded by a write to a commit log. If a node has crashed, a node holding a replica will service reads and writes according to the hinted handoff strategy. As with Voldemort, Cassandra also features tunable consistency. 
 
 \subsubsection{Data model}
-The Cassandra data model is based on a key:value model. However Cassandra extends this model with two levels of nesting. 
+The Cassandra data model is based on a key:value model. However Cassandra extends this model with two levels of nesting. A database consists of column families. These families are comparable to how tables are in a normal relational database. With one level of nesting, which is mandatory, the datamodel will look something like this: key:[key:value, key:value ... key:value]. Now one put like this will act as one record in a normal database. If we take user data as a n example we could see something like this: primary_key:[name:smith, id:24, age:32].
 
-\centering
-\begin{minipage}[b]{0.8\linewidth}
-    \includegraphics[width=1\textwidth]{resources/twitter-schema-user-urls.png}
-    \caption{Back of the cluster}
-    \label{fig:minipage1}
-\end{minipage}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.5\textwidth]{resources/twitter-schema-user-urls.png}
+    \caption{Hash ring with several nodes\cite{dynamo}.}
+    \label{fig:hashring}
+\end{figure}
+
+As mentioned Cassandra also allows one more level of nesting. This 
 
 column family: set of key-value pairs (a table with records)
 
