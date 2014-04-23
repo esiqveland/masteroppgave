@@ -103,9 +103,14 @@ gc.log
 #server.state
 #.version
 #.temp
-#config/maccluster/
-
+out/
+expansion/
+rebalance-out/
 
 rapport/target/rapport.fls
-
 rapport/target/rapport.pdf
+
+
+voldemort/src/java/META-INF/MANIFEST.MF
+
+*.txt
