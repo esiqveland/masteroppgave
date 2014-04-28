@@ -74,7 +74,7 @@ public class SigarListener implements Runnable {
     }
 
     public static void main(String[] args) {
-        SigarListener sigarListener = new SigarListener(Integer.valueOf(Headmaster.HEADMASTER_SIGAR_LISTENER_PORT));
+        SigarListener sigarListener = new SigarListener(Headmaster.HEADMASTER_SIGAR_LISTENER_PORT);
 
         Thread t = new Thread(sigarListener);
         t.start();

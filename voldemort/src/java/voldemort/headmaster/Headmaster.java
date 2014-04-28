@@ -67,12 +67,7 @@ public class Headmaster implements Runnable, ZKDataListener {
     public Headmaster(String zkURL, ActiveNodeZKListener activeNodeZKListener, SigarListener sigarListener) {
         this(zkURL, activeNodeZKListener);
         this.sigarListener = sigarListener;
-    }
 
-    public Headmaster(String zkURL, ActiveNodeZKListener activeNodeZKListener) {
-        this(zkURL);
-        this.anzkl = activeNodeZKListener;
-        this.anzkl.addDataListener(this);
     }
 
    private Headmaster(String zkURL) {
@@ -84,6 +79,8 @@ public class Headmaster implements Runnable, ZKDataListener {
         } catch (UnknownHostException e) {
             e.printStackTrace();
         }
+        this.anzkl = activeNodeZKListener;
+        this.anzkl.addDataListener(this);
     }
 
     private void beHeadmaster() {
@@ -370,6 +367,7 @@ public class Headmaster implements Runnable, ZKDataListener {
         }
 
     }
+
     public void setIdle() {
         synchronized (this) {
             this.idle = true;
@@ -377,7 +375,6 @@ public class Headmaster implements Runnable, ZKDataListener {
             this.notifyAll();
         }
     }
-
     @Override
     public void run() {
         synchronized (this) {
@@ -416,6 +413,25 @@ public class Headmaster implements Runnable, ZKDataListener {
 
     public void setMyHeadmaster(String myHeadmaster) {
         this.myHeadmaster = myHeadmaster;
+    }
+
+    public static void main(String args[]) {
+
+        String url = defaultUrl;
+        if (args.length == 0) {
+            System.out.println(
+                    String.format(
+                            "usage: %s [zookeeperurl]\nDefaults to %s", Headmaster.class.getCanonicalName(), defaultUrl));
+        } else {
+            url = args[0];
+        }
+
+        SigarListener sigarListener = new SigarListener(Integer.valueOf(Headmaster.HEADMASTER_SIGAR_LISTENER_PORT));
+        ActiveNodeZKListener activeNodeZKListener = new ActiveNodeZKListener(url);
+        Headmaster headmaster = new Headmaster(url, activeNodeZKListener, sigarListener);
+        
+        Thread worker = new Thread(headmaster);
+        worker.start();
     }
 }
 
