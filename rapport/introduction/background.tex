@@ -211,7 +211,23 @@ This process is called hinted handoff.
 Using hinted handoff, we can still satisfy durability guarantees during node failures.
 
 \subsubsection{More failures}
-But what do we do when 
+Hinted handoff helps in environments with low churn and where nodes usually come back online. But if a node holding a hinted replica goes down before the intended node comes back up, it may even be permanently down and the hinted object is never returned to the intended owner.
+
+To mitigate such permanent failures, Dynamo\cite{dynamo} employs a method to regularly ensure that datasets common between nodes are consistent. A naive approach to this could be sending your entire key set to the other node and compare the data directly.
+This is however very costly, both in bandwidth used and is both CPU and disk intensive for both.
+
+To minimize the impact on network load and node performance while simultaneously doing replica synchronization, the database uses hashes of the data. Here Voldemort and Dynamo have different approaches. In Voldemort, each key's hash is sent to the other node for comparison.
+
+In Dynamo, Amazon have implemented merkle trees for comparing data sets between nodes. This significantly reduces workload on a replica synchronization.
+A merkle tree is a binary tree of hashes, where the leaf nodes are hashes of the key objects.
+Then to make the parent node, assign the parent the hash of the two hashes of the children until you have the root node. 
+
+Each node keeps a merkle tree for the keyspace that it shares with the other node. The tree is updated whenever a write is commited.
+When a sync happens between two nodes, they only need to compare the value of their root node to know if they have any differences.
+One can also see how this method makes it quick to discover which key differs. Each comparison will half the search area.
+I.e. we have a binary search for the differing key or even subtree.
+FIGURE MERKLE TREE
+
 TODO: Nodes that are permanently down
 
 TODO: When a hinted off replica node goes down!
@@ -220,7 +236,8 @@ TODO: When a hinted off replica node goes down!
 As we have briefly outlined above, the database system has a three different parameters that are key to operation.
 The system gives the admin the opportunity to fine tune certain trade offs after what the implementation needs.
 
-Internally, these are called N, R, W and controls certain aspects of the quorum that is involved in data operations. N is the \emph{eventual} replication factor. This is the number of nodes we want to store replicas for a key on, and is allowed to happen asynchronously.
+Internally, these are called N, R, W and controls certain aspects of the quorum that is involved in data operations. N is the \emph{eventual} replication factor.
+This is the number of nodes we want to store replicas for a key on, and is allowed to happen asynchronously.
 
 \emph{W} is the write factor. This is the number of nodes that synchronously has to be part when we accept a write, and heavily affects performance. 
 Typically W is set to two, to make sure an object put must have two replicas to be considered successful. 
