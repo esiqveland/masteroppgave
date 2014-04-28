@@ -2,10 +2,14 @@
 \section{Technical background}
 
 The software used in this project employ many different and important techniques known from distributed computing, and will be discussed here.
-We will first discuss PAXOS, a process for reaching consensus in a set of 
+We will first discuss PAXOS, a process for reaching consensus in a set of independent nodes.
+In Section \ref{sec:consistenthashing} we will talk about another key aspect called consistent hashing.
+We will then discuss how these techniques help us build \emph{available} and \emph{durable} databases.
+
+Section \ref{sec:failures} discusses how failures are handled in the system.
 
 \subsection{PAXOS}
-Whenever you have a distributed system where errors occur and messages get lost, even simple tasks like deciding on a value can become troublesome. Paxos an consensus algorithm made to solve this issue. 
+Whenever you have a distributed system where errors occur and messages get lost, even simple tasks like deciding on a value can become troublesome. PAXOS is a consensus algorithm made to solve this issue. 
 
 Say we have a set of processes that all can propose values. (The value could be related to leader election). Paxos ensures that a single one of these values is chosen and that all processes involved is notified of this value. If no value is being proposed, then no value should be chosen. 
 
@@ -15,30 +19,28 @@ When acting as a proposer, a process will propose a value to a majority subset o
 
 \begin{enumerate}
 
-\item A proposer sends a prepare for proposal message to a majority set of acceptors with a number n. This number works like a time stamp represent the last(newest) message this proposer has seen. 
-\item Each acceptor receiving this prepare for proposal message will compare this number n with their own highest observed n. If the proposed number is higher, then a promise of not accepting any proposal lower than n will be sent back to the proposer along with the acceptors highest observed value. If the proposers number is lower than the acceptors observed number, then the value will simply be sent back. 
+\item A proposer sends a prepare for proposal message to a majority set of acceptors with a number n. This number acts as a timestamp, and represents the last(newest) message this proposer has seen. 
+\item Each acceptor receiving this prepare for proposal message will compare the proposed number n with their own highest observed n. If the proposed number is higher, then a promise of not accepting any proposal lower than n will be sent back to the proposer along with the acceptors highest observed value. If the proposers number is lower than the acceptors observed number, then the value will simply be sent back. (The ``new'' highest number is proposed?)
 \item If the proposer received a promise from majority of acceptors it will send an accept message to the acceptors with the number n along with the value v which is the maximum values received from the acceptors. If the number of promises is less than the majority of acceptors then the attempt has failed, and the proposer must start again with a higher number n.
-\item When an acceptor receives an accept massage it will accept this proposal as long as there has not been issued a new proposal with a higher number in the meantime. 
-\item Finally, when an acceptor has accepted a proposal it informs all learners. Either by sending a massage to all learners, or by sending a message to a designated learner, which in time will inform all other learners. This second step reduces message load but is less reliable.
+\item When a acceptor receives an accept message, this acceptor will accept this proposal as long as there has not been issued a new proposal with a higher number in the meantime. 
+\item Finally, when an acceptor has accepted a proposal it informs all learners. Either by sending a message to all learners, or by sending a message to a designated learner, which in time will inform all other learners. This second step reduces message load but is less reliable.
 
 \end{enumerate}
 
 It is possible to construct a scenario where two proposers keep out proposing each other and no progress is ever made. To combat this a distinguished proposer must be elected. 
 
-Paxos can typically be used in distributed systems to coordinate processes. One example is leader election.
-
-
-
+Paxos can typically be used in distributed systems to coordinate processes. One example is leader election, another is deciding on the next action to be taken.
 
 \subsection{Consistent hashing}
 \label{sec:consistenthashing}
-Consistent hashing is a technique introduced in 1997 by David Karger et al.\cite{Karger97consistenthashing}
+Consistent hashing is a technique introduced in 1997 by David Karger\cite{Karger97consistenthashing} et al.
 The technique is used to solve problems with locating a key in a distributed system.
 Let's assume you have $n$ servers in the system, then number these from $0$ to $n-1$.
-The hashspace of the keys are then divided into $n$ partitions. Then do a $\textrm{Hash(key) mod } n$ and you have the server location for the key.
+The \emph{hashspace} of the keys are then divided into $n$ partitions. Then, to find which server to put a key on, do a $$\textrm{Hash(key) mod } n$$ and you have the server number for the key. 
 
 However, with this scheme if a server fails and you now have $n-1=m$ servers, all the failed server's data is gone.
 You have to invalidate all existing servers, renumber your set of servers and start over.
+Analogously, if you add k servers to accommodate higher traffic, you now have $$\textrm{Hash(key) mod } n + k$$ and it is easy to see that all or most keys will have to relocate.
 
 Consistent hashing reduces this problem by assigning each node with a number of points in the hash space.
 The hash space is viewed as a ring by wrapping around \texttt{0000-FFFF}. The nodes are placed at points along the ring as in Figure \ref{fig:hashring}. When a key is looked up, you find it's place on the ring and move clockwise to the first point with an assigned node. In Figure \ref{fig:hashring}, key K is routed to the next node on the ring, node B.
@@ -74,13 +76,13 @@ As explained in \ref{sec:consistenthashing}, both Voldemort and Dynamo use consi
 They are both key-value stores only.
 The goals for the Voldemort project is a database which is highly available and fault tolerant, providing an \emph{always-on} experience.
 
-To allow for safely storing user data, redundancy is required. 
+To safely store user data, redundancy is required. 
 The typical approach to this is synchronously storing replicas at different locations to ensure data replication. 
 In practice though, providing this kind of strong consistency in a database system can prove detrimental to availability in some failure scenarios.
 A common approach to failure is locking down data and making it unavailable until the failure is resolved, so as not to serve potentially stale or erroneous data.
-While this is very convenient for the programmer, it is not ideal for performance.
-In distributed systems network and system failures can be quite common, making strong consistency very costly. In practice, strong consistency can be considered incompatible with high availability.
-This makes traditional replication guarantees unsuitable for highly concurrent distributed systems.
+While it is convenient for the programmer to never have to deal with possibly failed data, locking down doubtful data is not ideal for performance.
+In distributed systems network and system failures can be quite common, making guarantees of strong consistency very costly. In practice, strong consistency can be considered incompatible with high availability.
+This makes traditional replication methods unsuitable for highly concurrent distributed systems.
 
 \begin{wrapfigure}{R}{0.5\textwidth}
     \includegraphics[width=0.5\textwidth]{introduction/hashring_voldemort}
@@ -204,6 +206,7 @@ An example for adding a node with Gossip would be to tell, or \emph{seed} a coup
 \end{itemize}
 
 \subsection{Failures}
+\label{sec:failures}
 As we can see, these highly distributed systems are built to allow for failure. We will here explore how Voldemort and Dynamo try to mitigate for failing nodes while also keeping with the operational requirements for consistency and durability. 
 
 \subsubsection{Hinted handoff}
