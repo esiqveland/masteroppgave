@@ -1,0 +1,13 @@
+\section{Availability and performance}
+In this section we will have a look at how our changes to Voldemort have affected its availability and performance. 
+
+\subsection{Availability of ZooKeeper}
+Our Voldemort instance is now closely tied to an instance of ZooKeeper. From this follows that the availability of Voldemort will be affected by the availability of ZooKeeper. Luckily ZooKeeper is also a configurable highly available system that can consists of multiple nodes. In our implementation we only use one instance of ZooKeeper that resides on one of the nodes running Voldemort, however in a production system one would typically run ZooKeeper on 5 nodes. These nodes could be situated in different data centers to increase availability.
+
+If for any reason a node running Voldemort loses connection to ZooKeeper and is unavailable to recover it, the node will crash. We follow Joe Armstrongs principal of failing early, we would rather have the failing node crash so it can be fixed than running without ZooKeeper and not work. so an error can be fixed rather than having the node run forever trying to regain the connection. 
+
+As the most likely reasons for not being able to access ZooKeeper is network issues and crashes. These network issues would most likely also affect Voldemort. So we don't see any reason for ZooKeeper to affect the availability of Voldemort.
+
+\subsection{Availability of Headmaster}
+
+
