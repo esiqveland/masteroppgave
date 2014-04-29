@@ -86,3 +86,17 @@ I.e. if we have a query \texttt{<no.nrk.www, referrals:no.nrkbeta.www, 999>}, an
 \texttt{<no.nrk.www, referrals:no.nrkbeta.www, 777>} will be returned.
 
 \subsection{Bone dry servey that explains performance}
+
+\subsection{Netflix Priam for Cassandra}
+
+\subsection{Autoscaling Cassandra clusters}
+
+Baakind\cite{baakind} created a system, called Hecuba, for automatic expansion of Cassandra clusters.
+
+The goal of the project is an automatic scaler for Cassandra. The scaler should based on resource usage be able to increase or decrease the cluster size, based on resource usage in each node of the cluster.
+The scaler should not affect the performance of Cassandra. This includes the overall operational capacity for the cluster, as well as only executing scaling when the cluster can handle it, i.e. during times of lower load.
+
+Hecuba includes a master service, which collects information from all the nodes in the cluster, and tries to keep a view of the current status. The Cassandra nodes periodically sends status reports to the master, e.g. one every second. The status report includes size of database, CPU load and memory usage. The master is configured with certain parameters for what loads are allowed, such as maximum memory and CPU load over \emph{a given period of time}.
+
+Like Netflix' Priam, Hecuba does scaling if a threshold is broken for a given period of time. Let's assume a CPU load of 60\%, threshold 55\%, and a period of 10 seconds. Hecuba will then only scale if the CPU load is reported as greater than \emph{threshold} for at least 10 seconds in a row.
+
