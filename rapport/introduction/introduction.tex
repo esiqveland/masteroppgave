@@ -1,5 +1,21 @@
 % introduction.tex
 
+
+\section{Introduction}
+Traditional relational database systems are generally very safe to use, usually providing all of the ACID (\emph{Atomicity, Consistency, Isolation, Durability}) properties.
+This guarantees that all committed transactions are processed reliably.
+
+
+Experience has however shown that databases providing ACID guarantees have trouble scaling. 
+
+
+It is very difficult, if not impossible, to have ACID databases handle the high traffic volumes in addition to the high availability demands of today.
+
+Voldemort and Dynamo sacrifices consistency and isolation requirements to achieve higher availability with satisfactory durability.
+In fact, we will later see that most of this behavior is easily tunable and left as design choices per implementation.
+You should also note Voldemort (and Dynamo) does not guarantee any form of isolation and does not support multiple key updates.
+
+
 \section{Introduction}
 Voldemort is an implementation of a distributed, highly available key-value store.
 The configuration of the system is however cumbersome and tedious, so we would like to explore the possibilities for using ZooKeeper to coordinate configuration and later some management tasks.

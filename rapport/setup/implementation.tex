@@ -16,4 +16,18 @@ A write therefore also causes N watches to trigger, and N new watches to be set.
 We therefore ignores such put requests in the ZooKeeper driven MetadataStore, and just put the new data in the Metadata cache, deferring the admin to use a ZooKeeper write operation to put the new config out, making the nodes do a re-read.
 
 
+\subsection{Begrepsavklaring}
+A \texttt{write} or \texttt{put} in the context of ZooKeeper is considered a ZooKeeper \texttt{setData} operation.
+
+A ZooKeeper event, is an event triggered by a watch set in ZooKeeper, giving push information about a change in ZooKeeper about a znode being watched.
+
+In the context of ZooKeeper, the word file might be used for a znode. File used in the context of a local filesystem is a local file.
+
+\input{setup/setup}
+\clearpage
+
+\input{setup/headmaster}
+\clearpage
+
+
 
