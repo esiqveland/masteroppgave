@@ -1,39 +1,58 @@
 % introduction.tex
 
-
 \section{Introduction}
+This section explains the background for our project, what goals we have and what method we have employed to reach our goals. 
+
+Section \ref{sec:technical_background} explains technology and techniques commonly used in distributed systems.
+
+
+\subsection{Background}
 Traditional relational database systems are generally very safe to use, usually providing all of the ACID (\emph{Atomicity, Consistency, Isolation, Durability}) properties.
-This guarantees that all committed transactions are processed reliably.
+This guarantees that all committed transactions are processed reliably. 
+Today a lot of services needs to support up to millions of users and serve thousands of requests per second, and experience has however shown that databases providing ACID guarantees have trouble scaling. 
+To allow for cost effective scaling commodity hardware is used instead of expensive specialized servers. By adding numerous small servers, applications become increasingly distributed. 
+
+The main reason for ACID databases having troubles scaling is the strong guarantees of atomic operations, isolation and consistency. 
+To allow for atomic operations in a distributed systems a distributed commit log would be required. Similarly to guarantee consistency distributed locks would be required. In a system with thousands of concurrent users lock contention can become a serious issue. 
+Lastly to guarantee consistency across multiple machines requires significant overhead with regards to keeping all replicas consistent. 
+
+Distributed NoSQL databases often sacrifice consistency and isolation requirements to achieve higher availability with satisfactory durability. These systems often provide an highly available service and eventual consistence. These systems are designed so that scale linearly, however managing and scaling these systems are not always trivial.\cite{tellybug} We have chosen to work with Voldemort, which is an open source implementation of Amazon's Dynamo.
+
+Voldemort keep its configuration data in several xml files. These files reside on each individual node in the cluster. The process of executing a repartition or rebalance involves another set of xml files as well as various scripts that must be run. As the number of nodes grows this number of configuration files can get out of hand quickly. As a result, creating a system to handle these configuration files was proposed as a \"fun project\" on the project-voldemort website. Apache ZooKeeper was proposed as a possible service for this system.  
+
+\subsection{Goals}
+We have chosen to implement this proposed configuration system by moving Voldemort's configuration data into ZooKeeper. In addtion we would like to utilize the powerful features of ZooKeeper to create an automated service for managing a running Voldemort cluster. In short our goals are the following:
+
+\begin{enumerate}
+	\item{Move Voldemort configuration data away from each local node and into ZooKeeper}
+	\item{Simplify the rebalance process using ZooKeeper}
+	\item{Create a service for node discovery, membership and automatic management}
+	\item{Create a monitor service to monitor live nodes}
+\end{enumerate}
+
+\subsection{Method}
+We plan to use virtual machines as our cluster nodes. This greatly simplifies setup of environments and scaling. We will rewrite the MetadataStore in Voldemort to utilize ZooKeeper instead of local files. As ZooKeeper does not offer advanced primitives, we need to write the ones we need. Finally we will create a service for node discovery, membership and automatic management. The monitor service will act as decision support system for this automated service. 
+
+\subsection{Voldemort and Dynamo}
+Voldemort is a software system based off of Amazon's paper on Dynamo, Amazon's highly available key-value store\cite{dynamo}. 
+
+what is it
+what does it do
+data model
+uses
 
 
-Experience has however shown that databases providing ACID guarantees have trouble scaling. 
 
 
-It is very difficult, if not impossible, to have ACID databases handle the high traffic volumes in addition to the high availability demands of today.
+
+The supported queries are limited to simple get and put operations on objects uniquely identified by a key. 
+The objects stored are by the system considered binary blobs.
+The database is mainly used to store lots of smaller items, typically less than 1MB in size.
 
 Voldemort and Dynamo sacrifices consistency and isolation requirements to achieve higher availability with satisfactory durability.
 In fact, we will later see that most of this behavior is easily tunable and left as design choices per implementation.
 You should also note Voldemort (and Dynamo) does not guarantee any form of isolation and does not support multiple key updates.
 
-
-\section{Introduction}
-Voldemort is an implementation of a distributed, highly available key-value store.
-The configuration of the system is however cumbersome and tedious, so we would like to explore the possibilities for using ZooKeeper to coordinate configuration and later some management tasks.
-Such tasks includes extending and reducing the members of the cluster.
-
-We have created a method for managing cluster metadata and configuration for Voldemort by using Apache ZooKeeper for coordination.
-
-In this process we have implemented an internal StorageEngine that uses ZooKeeper for node configuration and metadata.
-
-We have also implemented a service, named Headmaster, that manages configuration, node discovery and node membership in the cluster.
-Headmaster can also decide whether to execute a rebalance based on certain criteria.
-
-\subsection{Voldemort and Dynamo}
-Voldemort is a software system based off of Amazon's paper on Dynamo, Amazon's highly available key-value store\cite{dynamo}.
-
-The supported queries are limited to simple get and put operations on objects uniquely identified by a key. 
-The objects stored are by the system considered binary blobs.
-The database is mainly used to store lots of smaller items, typically less than 1MB in size.
 
 \subsubsection{Motivation for these systems}
 Traditional relational database systems are generally very safe to use, usually providing all of the ACID (\emph{Atomicity, Consistency, Isolation, Durability}) properties.
