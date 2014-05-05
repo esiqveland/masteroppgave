@@ -1,5 +1,5 @@
 % -*- root: rapport.tex -*-
-\documentclass[a4paper, 12pt]{article}
+\documentclass[a4paper, 12pt]{report}
 \usepackage{graphicx}
 \DeclareGraphicsExtensions{.pdf,.png,.jpg}
 \usepackage{xcolor}   %May be necessary if you want to color links
@@ -27,6 +27,7 @@
 
 \lstdefinestyle{customc}{
   belowcaptionskip=1\baselineskip,
+  captionpos=b,
   breaklines=true,
   frame=single,
   language=C,
@@ -65,10 +66,12 @@
 \clearpage
 \setcounter{page}{1}
 
-\input{introduction/introduction}
-\clearpage
 
-\input{introduction/related}
+
+
+\chapter{Introduction and theory}
+
+\input{introduction/introduction}
 \clearpage
 
 \input{introduction/background}
@@ -80,7 +83,7 @@
 \input{thereandbackagain/thereandbackagain.tex}
 \clearpage
 
-\input{setup/setup.tex}
+\input{setup/setup}
 \clearpage
 
 \input{software/zookeeper.tex}
@@ -89,8 +92,9 @@
 \input{software/voldemort.tex}
 \clearpage
 
-\input{software/related.tex}
-\clearpage
+
+
+\chapter{Implementation}
 
 \input{setup/implementation.tex}
 \clearpage
@@ -100,6 +104,11 @@
 
 \input{hardware/hardware.tex}
 \clearpage
+
+
+\chapter{Results}
+
+
 
 \bibliographystyle{plain}
 \bibliography{references}
