@@ -48,7 +48,7 @@ The \emph{rows} or \emph{entries} are typically sparse, meaning that most of the
 
 To visualize a HBase record, it can help to think of a map of maps:
 
-\begin{lstlisting}
+\begin{lstlisting}[style=customc, caption=A JSON approach to visualize how rows in HBase are structured. Idea courtesy of Jim R. Wilson\cite{jimbojw}.]
 {
 	"com.google.www/account": {
 		"family": {
@@ -88,15 +88,36 @@ I.e. if we have a query \texttt{<no.nrk.www, referrals:no.nrkbeta.www, 999>}, an
 \subsection{Bone dry servey that explains performance}
 
 \subsection{Netflix Priam for Cassandra}
+Priam is a tool made open source by Netflix in 2012. It is a management tool that seeks to provide backup and recovery, automatic token assignment, a centralized system for configuration, and a RESTful interface for management and monitoring of Cassandra nodes. It is heavily integrated with the Amazon EC2 ecosystem (AWS), where Netflix keeps its clusters.
+Priam runs on every node that runs Cassandra, providing a novel interface to these services.
+
+Backups use Cassandras built in snapshot tool to store SSTable snapshots in a (data center) local Amazon S3 bucket, which conveniently can be accessed everywhere.
+This SSTable backup is done daily. Incremental backups are then stored locally. Recall that SSTables are immutable, and it is easy to see this allows for efficient backup routines. Cassandra can also use these SSTables as a \emph{base} when recovering a node, then use Cassandras internal mechanisms for conflict resolution to bring the new node fully up to speed. Netflix calls this an eventually consistent backup.
+
+For scaling, Priam only allows doubling the size of the cluster. Priam does this by coupling existing nodes with a new node, then splitting the keyspace between them. This split of the keyspace for each node ensures a balanced ring when scaling up, so we don't end up with a imbalanced cluster that requires costly redistribution.
+
+Priams token assignment (position in ring) can also be made aware of zones when distributing tokens. This is to ensure that there is at least one replica in each Amazon data center zone. In case of a network split, or connection issues in a data center, some replica will still be online at another one.
+
+In summary, Priam has two very clear limitations with regards to scaling a cluster: the tool currently only runs on AWS (Amazon Web Services) and can only double the size of the cluster. Priam also makes sure to keep a cluster balanced when scaling.
 
 \subsection{Autoscaling Cassandra clusters}
 
 Baakind\cite{baakind} created a system, called Hecuba, for automatic expansion of Cassandra clusters.
 
-The goal of the project is an automatic scaler for Cassandra. The scaler should based on resource usage be able to increase or decrease the cluster size, based on resource usage in each node of the cluster.
-The scaler should not affect the performance of Cassandra. This includes the overall operational capacity for the cluster, as well as only executing scaling when the cluster can handle it, i.e. during times of lower load.
+The goal of the project is an automatic scaler for Cassandra. The scaler should be able to increase or decrease the cluster size, based on resource usage in each node of the cluster.
+The scaler should not affect the performance of Cassandra. This includes the overall operational capacity for the cluster, as well as only executing scaling when the cluster can handle it, i.e. during times of lower load. The latter has not been implemented yet.
 
 Hecuba includes a master service, which collects information from all the nodes in the cluster, and tries to keep a view of the current status. The Cassandra nodes periodically sends status reports to the master, e.g. one every second. The status report includes size of database, CPU load and memory usage. The master is configured with certain parameters for what loads are allowed, such as maximum memory and CPU load over \emph{a given period of time}.
 
 Like Netflix' Priam, Hecuba does scaling if a threshold is broken for a given period of time. Let's assume a CPU load of 60\%, threshold 55\%, and a period of 10 seconds. Hecuba will then only scale if the CPU load is reported as greater than \emph{threshold} for at least 10 seconds in a row.
+
+This setup leads Hecuba to heavily stressed nodes in the cluster, ie. Hecuba tries to identify hotspots to rebalance. 
+In Cassandra, each node is responsible for a given token range (based on the hash of the key). If a node is under heavy load, Hecuba can split the nodes token range in half, assigning one half to the new node and keeping the other half. This split will hopefully halve the workload on the node.
+
+A problem with this approach is that the data might end up being unevenly distributed. If we start with 4 partitions of the key range and 4 nodes. Assigning each node an equal part of the keyspace, we would ideally end up with ~25\% of the data on each node. Now if we split node 4, we might end up with 25\% of the data on nodes 1-3, and 12.5\% on node 4 and 5, creating an unbalanced cluster. This imbalance might eventually require a total rebalance, a very costly redistribution of the key space at a later stage. Hecuba scales the cluster by adding or deleting nodes one at time, so this fragmentation could quickly become a problem if not administered carefully.
+
+In short, the Autoscale system Hecuba scales a Cassandra cluster by identifying individual nodes that are under heavy load. This is done by having each node report their health to a given master. The master can then take action by splitting the token range for the node by adding a new node.
+
+
+
 
