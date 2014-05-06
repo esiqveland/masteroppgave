@@ -1,5 +1,7 @@
 % implementation.tex
 
+Our work and implementation happened mainly in 3 parts. Part 1 consists of integrating ZooKeeper support and mechanisms into a Voldemort server. Making Voldemort read configurations and storing data in ZooKeeper. Part 2 contains our work towards rebalancing by the help of ZooKeeper. In Part 3 we create the service Headmaster, which is a process to run along side of the Voldemort process. Headmaster listens to active nodes in the cluster, and can generate configuration for new nodes, add them to the cluster, and prepare the members for a rebalance to include the new node.
+
 \section{Part 1}
 Integrating ZooKeeper into Voldemort and taking advantage of the coordination services ZooKeeper provides, proved rather difficult.
 We chose to override and rewrite much of the current MetadataStore implementation to one that uses ZooKeeper as the backend storage engine instead of local files. Local node bookeeping is still kept on the local filesystem.
