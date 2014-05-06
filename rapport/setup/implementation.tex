@@ -1,6 +1,6 @@
 % implementation.tex
 
-\section{Implementation}
+\section{Part 1}
 Integrating ZooKeeper into Voldemort and taking advantage of the coordination services ZooKeeper provides, proved rather difficult.
 We chose to override and rewrite much of the current MetadataStore implementation to one that uses ZooKeeper as the backend storage engine instead of local files. Local node bookeeping is still kept on the local filesystem.
 This abstraction works rather well for shared data files, but causes some issues with information that is stored locally.

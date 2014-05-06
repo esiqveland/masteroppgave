@@ -1,5 +1,6 @@
 
 \section{Technical background}
+\label{sec:technical_background}
 
 The software used in this project employ many different and important techniques known from distributed computing, and will be discussed here.
 We will first discuss PAXOS, a process for reaching consensus in a set of independent nodes.
@@ -236,14 +237,21 @@ This is however very costly, both in bandwidth used and is both CPU and disk int
 To minimize the impact on network load and node performance while simultaneously doing replica synchronization, the database uses hashes of the data. Here Voldemort and Dynamo have different approaches. In Voldemort, each key's hash is sent to the other node for comparison.
 
 In Dynamo, Amazon have implemented merkle trees for comparing data sets between nodes. This significantly reduces workload on a replica synchronization.
-A merkle tree is a binary tree of hashes, where the leaf nodes are hashes of the key objects.
+A merkle tree is a binary tree of hashes, see Figure \ref{fig:merkletree}, where the leaf nodes are hashes of the key objects.
+Now make a hash of the two children nodes
 Then to make the parent node, assign the parent the hash of the two hashes of the children until you have the root node. 
 
 Each node keeps a merkle tree for the keyspace that it shares with the other node. The tree is updated whenever a write is commited.
 When a sync happens between two nodes, they only need to compare the value of their root node to know if they have any differences.
 One can also see how this method makes it quick to discover which key differs. Each comparison will half the search area.
 I.e. we have a binary search for the differing key or even subtree.
-FIGURE MERKLE TREE
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.5\textwidth]{introduction/hashtree}
+    \caption{Structure of a merkle tree. Notice how the root node can be used for comparing two trees, and how the tree can be used for identifying divergent data.}
+    \label{fig:merkletree}
+\end{figure}
 
 TODO: Nodes that are permanently down
 
@@ -269,10 +277,5 @@ Knowing this, when executing a write, the first node to receive the put takes on
 Reads are handled similarly. The first node receiving the request take on the role as coordinator. The coordinator sends the request to his top N other healthy nodes for the key. After R replies, the coordinator returns the latest version this quorum can agree upon. If there are any divergently versioned objects, all of them are returned to the client for reconciliation.
 
 Amazon\cite{dynamo} mention that their most used configuration for Dynamo is a N=3, W=2, R=2 setup.
-
-
-\subsection{Goals}
-Create a system for automatically including new nodes in a set of member nodes.
-For Voldemort, this includes redistributing partitions and updating routing information without making the system unresponsive, ie. without incurring downtime.
 
 
