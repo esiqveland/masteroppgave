@@ -1,5 +1,5 @@
 % -*- root: rapport.tex -*-
-\documentclass[a4paper, 12pt]{article}
+\documentclass[a4paper, 12pt]{report}
 \usepackage{graphicx}
 \DeclareGraphicsExtensions{.pdf,.png,.jpg}
 \usepackage{xcolor}   %May be necessary if you want to color links
@@ -30,6 +30,7 @@
   breaklines=true,
   frame=single,
   language=C,
+  captionpos=b,
   showstringspaces=false,
   basicstyle=\footnotesize\ttfamily,
   keywordstyle=\bfseries\color{green!40!black},
@@ -65,6 +66,8 @@
 \clearpage
 \setcounter{page}{1}
 
+\chapter{Introduction and theory}
+
 \input{introduction/introduction}
 \clearpage
 
@@ -83,6 +86,7 @@
 \input{software/zookeeper.tex}
 \clearpage
 
+\chapter{Implementation}
 
 \input{setup/implementation.tex}
 \clearpage
@@ -92,6 +96,11 @@
 
 \input{hardware/hardware.tex}
 \clearpage
+
+
+\chapter{Results}
+
+
 
 \bibliographystyle{plain}
 \bibliography{references}
