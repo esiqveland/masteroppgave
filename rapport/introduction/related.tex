@@ -1,37 +1,38 @@
 \section{Related software and work}
-In this section we will cover Cassandra and HBase. Two other distributed systems with similar applications as Voldemort. We will also cover some related work on automating scaling in Cassandra. 
+In this section we will cover Cassandra and HBase. Two other distributed systems with similar applications as Voldemort. We will also cover some related work on automated scaling in Cassandra. 
 
 \subsection{Cassandra}
-Cassandra scalable NoSQL database now available as open source through the Apache foundation. It was built from scratch with goal of being a massively scalable NoSQL database. In a cluster running Cassandra there is no sense of a master node, and all communication between nodes use peer to peer and the gossip protocol. As an administrator it is easy to scale Cassandra to meet both current and future system requirements. 
+Cassandra is a scalable NoSQL database now available as open source through the Apache foundation. It was built from scratch with goal of being a massively scalable NoSQL database. In a cluster running Cassandra there is no sense of a master node, and all communication between nodes use peer to peer and the gossip protocol. As an administrator it is easy to scale Cassandra to meet both current and future system requirements. 
 
 \subsubsection{Reads and writes}
 In Cassandra all participating nodes can be accessed for writes and reads. To ensure durability all writes are preceded by a write to a commit log. If a node has crashed, a node holding a replica will service reads and writes according to the hinted handoff strategy. As with Voldemort, Cassandra also features tunable consistency. 
 
 \subsubsection{Data model}
-The Cassandra data model is based on a key:value model, however Cassandra extends this model with up to two levels of nesting. This forms a map structure called columns where the outer row key acts as a primary key and the inner sorted map holds all information: \texttt{Map<RowKey, SortedMap<ColumnKey, ColumnValue>>}. By using maps we achieve easy lookups and range scans. By using one more level of nesting we can group columns. These are called super columns. In Cassandra de-normalization is used to be able to efficiently perform queries that accesses information stored in separate columns. To allow this composite columns can be created to match the need of one or more specific queries. These composite columns simply gather information already stored in various columns for easier access. 
+The Cassandra data model is based on a key:value model, however Cassandra extends this model with up to two levels of nesting. This forms a map structure called columns where the outer row key acts as a primary key and the inner sorted map holds all information: \texttt{Map<RowKey, SortedMap<ColumnKey, ColumnValue>>}. By using maps we achieve easy lookups and range scans. By adding one more level of nesting we can group columns. These are called super columns. 
+In Cassandra de-normalization in important to efficiently perform queries that accesses information stored in separate columns. To allow for faster loopups composite columns can be created to match the need of one or more specific queries. These composite columns simply duplicate information already stored in various columns for easier access. 
 
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.5\textwidth]{resources/cas_col.png}
-    \caption{A sample column. The row key acts as a primary key and each key:value pair would hold one field in a table. Images borrowed from www.ebaytechblog.com}
+    \caption{A sample Cassanda column. The row key acts as a primary key and each key:value pair would hold one field in a table. Images borrowed from www.ebaytechblog.com}
     \label{fig:sample_col}
 \end{figure}
 
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.6\textwidth]{resources/cas_comp_col.png}
-    \caption{A sample composite columns. Here we have separate composite column to efficiently be able to serve queries on users by item and item by users.}
+    \caption{A sample Cassandra composite columns. Here we have separate composite column to efficiently be able to serve queries on users by item and item by users.}
     \label{fig:sample_comp_col}
 \end{figure}
 
 \begin{figure}[ht]
 	\centering
 	\includegraphics[width=0.4\textwidth]{resources/cas_super_col.png}
-	\caption{A sample super column. Here we can see an outer map containing a person and the inner maps consisting of various composite columns}
+	\caption{A sample Cassandra super column. Here we can see an outer map containing a person and the inner maps consisting of various composite columns}
 	\label{fig:sample_super_col}
 \end{figure}
 
-Cassandra is used by several well known companies. Netflix uses Cassandra for several applications, including its subscriber system and viewer history service. Facebook used Cassandra to power their inbox search, however this was abandoned in late 2010 in favor of HBase. Spotify also migrated to Cassandra after migrating away from postgreSQL because of scaling issues. They use Cassandra to store playlists, radio stations and notification notifications.
+Cassandra is used by several well known companies. Netflix uses Cassandra for several applications, including its subscriber system and viewer history service. Facebook used Cassandra to power their inbox search, however this was abandoned in late 2010 in favor of HBase. Spotify also moved to Cassandra after migrating away from postgreSQL because of scaling issues. They use Cassandra to store playlists, radio stations and notification notifications.
 
 \subsection{HBase}
 HBase is based on Googles paper on BigTable.
@@ -84,8 +85,6 @@ I.e. if we have a query \texttt{<no.nrk.www, referrals:no.nrkbeta.www, 999>}, an
 <no.nrk.www, referrals:no.nrkbeta.www, 777>
 \end{lstlisting}
 \texttt{<no.nrk.www, referrals:no.nrkbeta.www, 777>} will be returned.
-
-\subsection{Bone dry servey that explains performance}
 
 \subsection{Netflix Priam for Cassandra}
 Priam is a tool made open source by Netflix in 2012. It is a management tool that seeks to provide backup and recovery, automatic token assignment, a centralized system for configuration, and a RESTful interface for management and monitoring of Cassandra nodes. It is heavily integrated with the Amazon EC2 ecosystem (AWS), where Netflix keeps its clusters.
