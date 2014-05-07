@@ -4,8 +4,27 @@ Our work and implementation happened mainly in 3 parts. Part 1 consists of integ
 
 \section{Part 1}
 Integrating ZooKeeper into Voldemort and taking advantage of the coordination services ZooKeeper provides, proved rather difficult.
-We chose to override and rewrite much of the current MetadataStore implementation to one that uses ZooKeeper as the backend storage engine instead of local files. Local node bookeeping is still kept on the local filesystem.
-This abstraction works rather well for shared data files, but causes some issues with information that is stored locally.
+We chose to override and rewrite much of the current MetadataStore implementation to one that uses ZooKeeper as the backend storage engine instead of local files. 
+Actual data is still of course stored locally, but configuration (meta data) now resides in the ZooKeeper cluster.
+This abstraction works rather well for shared data files, but causes some issues with information that is stored for individual nodes.
+
+As such, we landed on a fixed path scheme, where certain configuration files are expected to reside on known locations. The final design can be viewed in Figure ??.
+TODO: lag figur av ZK fil hierarki
+
+\subsection{Configuration}
+Configuration is stored in a VoldemortConfig object. Normally this is created from settings stored in local files per node. At startup, the code looks for a properties file in a directory given by environment variable \texttt{VOLDEMORT\_HOME}. 
+
+If however you specify a ZooKeeper connection URL, the program looks for configuration in ZooKeeper on path \texttt{/config/HOSTNAME/server.properties}. It then reads the config file and tries to parse. If parsing fails, the server fails to clearly signal something is wrong that needs immediate fixing. If the file is not found, the server registers a watch on the path in ZooKeeper. If there is a write to this file, ZooKeeper will let the server know and the config file can be re-read. One can argue whether to fail or listen when a config is not found, but we decided for the latter, to listen for changes after implementing the management service, and we will come back to this. 
+
+Our modification is a rewrite of VoldemortConfig, so that the ZooKeeper version can be used in the same code, in the same manner. The modified code reads data from a fixed location in ZooKeeper, and creates the necessary settings and properties for the server to bootstrap. The ZooKeeper connection URL is passed as a command line parameter.
+
+\subsection{MetadataStore}
+The internal state for a node is written to a Store called MetadataStore. It consists of an in memory cache store, and a persistent one to disk. 
+
+\section{Handling ZooKeeper connection}
+
+
+\section{Part 2}
 
 \subsection{Initial configuration}
 
@@ -24,7 +43,5 @@ A \texttt{write} or \texttt{put} in the context of ZooKeeper is considered a Zoo
 A ZooKeeper event, is an event triggered by a watch set in ZooKeeper, giving push information about a change in ZooKeeper about a znode being watched.
 
 In the context of ZooKeeper, the word file might be used for a znode. File used in the context of a local filesystem is a local file.
-
-
 
 
