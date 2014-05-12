@@ -6,9 +6,45 @@ Our work and implementation happened mainly in 3 parts. Part 1 consists of integ
 Integrating ZooKeeper into Voldemort and taking advantage of the coordination services ZooKeeper provides, proved rather difficult.
 We chose to override and rewrite much of the current MetadataStore implementation to one that uses ZooKeeper as the backend storage engine instead of local files. 
 Actual data is still of course stored locally, but configuration (meta data) now resides in the ZooKeeper cluster.
-This abstraction works rather well for shared data files, but causes some issues with information that is stored for individual nodes.
+This abstraction works rather well for shared data files, but causes some issues with information that is stored for individual nodes. 
+As such, we landed on a fixed path scheme, where certain configuration files are expected to reside on known locations, and will be presented later.
 
-As such, we landed on a fixed path scheme, where certain configuration files are expected to reside on known locations. The final design can be viewed in Figure \ref{fig:dirstruct}.
+This change introduces the dependency of a running ZooKeeper cluster for normal operation of any node. While this is a liability and potential source for downtime in a highly available system, ZooKeeper is itself a highly available system and the 5 node setup is regarded as very stable and in heavy use at Yahoo\ref{need:citation}.
+TODO: CITATION
+
+Alternatively we could have made the coordination service optional, but we then considered it risky to allow updating config files live through ZooKeeper. In any case, the system will in general be able to operate through short ZooKeeper outages, as all meta and config data is cached locally, however changes will not propagate to the affected nodes as quickly.
+
+\subsection{Configuration}
+Configuration is stored in a VoldemortConfig object. Normally this is created from settings stored in local files per node. At startup, the code looks for a properties file in a directory given by environment variable \texttt{VOLDEMORT\_HOME}. 
+
+Now, if you specify a ZooKeeper connection URL as a command line parameter, the program looks for configuration in ZooKeeper.
+We have given an example outline of the expected directory structure in Figure \ref{fig:configdirs}. This is for the three nodes \texttt{vold0.idi.ntnu.no}, \texttt{vold1.idi.ntnu.no} and \texttt{vold2.idi.ntnu.no}. You can see the expected path follows the pattern \texttt{/config/HOSTNAME/server.properties}. 
+
+The startup code then reads the config file and tries to parse. If parsing fails, the server fails to clearly signal something is wrong at startup, and needs immediate fixing. If the file is not found, the server registers a watch on the path in ZooKeeper. If there is a write to this file, ZooKeeper will let the server know and the config file can be re-read. 
+
+One can argue whether to fail or listen when a config is not found, but we decided for the latter, to listen for changes after implementing the management service, as we will later see it allows us to push new config files to a node by the help of our management daemon Headmaster. 
+
+\begin{figure}[h]
+\label{fig:configdirs}
+\dirtree{%
+.1 / \ldots{} \begin{minipage}[t]{8cm}(root directory)
+			  \end{minipage}.
+.2 config.
+.3 nodes \ldots{} (individual node configs).
+.4 vold0.idi.ntnu.no \ldots{} (hostname).
+.5 server.properties.
+.4 vold1.idi.ntnu.no.
+.5 server.properties.
+.4 vold2.idi.ntnu.no.
+.5 server.properties.
+}
+\caption{Individual node configs in the shared space.}
+\end{figure}
+
+Our modification inherits from VoldemortConfig, so that the ZooKeeper capable version can be used in the same code, in the same manner. The modified code reads data from a fixed location in ZooKeeper, and sets the necessary settings and properties for the server to bootstrap. The ZooKeeper connection URL is passed as a command line parameter.
+
+The directory structure for the whole program can be viewed in its entirety in Figure \ref{fig:dirstruct}, and has been included for completeness.
+
 \begin{figure}[h]
 \label{fig:dirstruct}
 \dirtree{%
@@ -31,13 +67,6 @@ As such, we landed on a fixed path scheme, where certain configuration files are
 }
 \caption{Directory structure in ZooKeeper. The nodes or directories are actually Znodes and can hold data.}
 \end{figure}
-
-\subsection{Configuration}
-Configuration is stored in a VoldemortConfig object. Normally this is created from settings stored in local files per node. At startup, the code looks for a properties file in a directory given by environment variable \texttt{VOLDEMORT\_HOME}. 
-
-If however you specify a ZooKeeper connection URL, the program looks for configuration in ZooKeeper on path \texttt{/config/HOSTNAME/server.properties}. It then reads the config file and tries to parse. If parsing fails, the server fails to clearly signal something is wrong that needs immediate fixing. If the file is not found, the server registers a watch on the path in ZooKeeper. If there is a write to this file, ZooKeeper will let the server know and the config file can be re-read. One can argue whether to fail or listen when a config is not found, but we decided for the latter, to listen for changes after implementing the management service, and we will come back to this. 
-
-Our modification is a rewrite of VoldemortConfig, so that the ZooKeeper version can be used in the same code, in the same manner. The modified code reads data from a fixed location in ZooKeeper, and creates the necessary settings and properties for the server to bootstrap. The ZooKeeper connection URL is passed as a command line parameter.
 
 \subsection{MetadataStore}
 The internal state for a node is written to a Store called MetadataStore. It consists of an in memory cache store, and a persistent one to disk. 
