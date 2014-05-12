@@ -8,8 +8,29 @@ We chose to override and rewrite much of the current MetadataStore implementatio
 Actual data is still of course stored locally, but configuration (meta data) now resides in the ZooKeeper cluster.
 This abstraction works rather well for shared data files, but causes some issues with information that is stored for individual nodes.
 
-As such, we landed on a fixed path scheme, where certain configuration files are expected to reside on known locations. The final design can be viewed in Figure ??.
-TODO: lag figur av ZK fil hierarki
+As such, we landed on a fixed path scheme, where certain configuration files are expected to reside on known locations. The final design can be viewed in Figure \ref{fig:dirstruct}.
+\begin{figure}[h]
+\label{fig:dirstruct}
+\dirtree{%
+.1 / \ldots{} \begin{minipage}[t]{8cm}(The root can also be a chroot{.})
+			  \end{minipage}.
+.2 active.
+.3 vold0.idi.ntnu.no.
+.3 vold2.idi.ntnu.no.
+.2 config.
+.3 nodes (individual node configs).
+.4 vold0.idi.ntnu.no.
+.4 vold1.idi.ntnu.no.
+.4 vold2.idi.ntnu.no.
+.3 cluster.xml.
+.3 stores.xml.
+.2 headmaster.
+.3 headmaster\_0009.
+.3 headmaster\_0011.
+.3 headmaster\_0012.
+}
+\caption{Directory structure in ZooKeeper. The nodes or directories are actually Znodes and can hold data.}
+\end{figure}
 
 \subsection{Configuration}
 Configuration is stored in a VoldemortConfig object. Normally this is created from settings stored in local files per node. At startup, the code looks for a properties file in a directory given by environment variable \texttt{VOLDEMORT\_HOME}. 
