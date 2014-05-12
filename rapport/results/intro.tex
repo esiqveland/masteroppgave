@@ -1,3 +1,12 @@
 % intro.tex
 
 In this chapter we will present our findings and evaluate what impact the added features have on a working node.
+
+While management and monitoring can be both useful and convenient, it does introduce overhead. This overhead should not have a significant impact on system performance, others citing as low as 1-2\% impact as tolerable.
+
+Here we will verify the impact of our work on the overall throughput and performance of the software under different workloads.
+
+We will first look at single node performance, with and without our modifications.
+Next we will try verifying that performance scaling is intact. For Voldemort, near linear scaling of throughput is expected when adding worker nodes to the cluster.
+Lastly we will look at performance during a automatically triggered rebalance under load.
+
