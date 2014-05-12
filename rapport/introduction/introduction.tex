@@ -32,10 +32,6 @@ Compared with Apaches Cassandra, Voldemort lacks the power of column families an
 
 Voldemort is currently being used by a number of known companies. At LinkedIn they use Voldemort both as read-only and read-write stores. Services powered include LinkedIn Search, news and Who viewed your profile. At Ebay they use Voldemort as a read-only store for distributed lookups, and the dating site eHarmony uses Voldemort as a high volume read/write store.
 
-There are several factors that was important for us when choosing which distributed key-value store to work with. We both had detailed theoretical knowledge of Dynamo after holding a presentation on their paper. The simple design and data model of Voldemort also was a good fit for our project as we did not have any application specific requirements for our storage system to meet. Lastly we wanted to work with an open source project. Voldemort fulfilled all these requirements. 
-
-Voldemort keep its configuration data in several XML files. These files reside on each individual node in the cluster. The process of executing a repartition or rebalance involves another set of xml files as well as various scripts that must be run. As the number of nodes grows this number of configuration files can get out of hand quickly. 
-As a result, creating a system to handle these configuration files was proposed as a ``fun project'' on the project-voldemort website. Apache ZooKeeper was proposed as a possible service for this system.  
 
 
 \subsection{Goals}

@@ -6,5 +6,9 @@ A re-balance is split up into three steps. Preparation, execution and verificati
 In the preparation step a plan has to be made. This plan determines which partitions to move in order for the cluster to reach a specified partitioning. In Voldemort this plan is made by first extracting the current cluster and stores meta data from the cluster, and then run the tool RepartitionerCLI. 
 
 
+There are several factors that was important for us when choosing which distributed key-value store to work with. We both had detailed theoretical knowledge of Dynamo after holding a presentation on their paper. The simple design and data model of Voldemort also was a good fit for our project as we did not have any application specific requirements for our storage system to meet. Lastly we wanted to work with an open source project. Voldemort fulfilled all these requirements. 
+
+Voldemort keep its configuration data in several XML files. These files reside on each individual node in the cluster. The process of executing a repartition or rebalance involves another set of xml files as well as various scripts that must be run. As the number of nodes grows this number of configuration files can get out of hand quickly. 
+As a result, creating a system to handle these configuration files was proposed as a ``fun project'' on the project-voldemort website. Apache ZooKeeper was proposed as a possible service for this system.  
 
 
