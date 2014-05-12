@@ -4,9 +4,34 @@ In this chapter we will present our findings and evaluate what impact the added 
 
 While management and monitoring can be both useful and convenient, it does introduce overhead. This overhead should not have a significant impact on system performance, others citing as low as 1-2\% impact as tolerable.
 
-Here we will verify the impact of our work on the overall throughput and performance of the software under different workloads.
+Here we will verify the impact of our work on the overall throughput and performance of the software under different workloads. We will look at requests processed per second under typical usage patterns and some edge cases. 
 
 We will first look at single node performance, with and without our modifications.
 Next we will try verifying that performance scaling is intact. For Voldemort, near linear scaling of throughput is expected when adding worker nodes to the cluster.
 Lastly we will look at performance during a automatically triggered rebalance under load.
 
+\subsection{The tests}
+
+Test0:
+
+100\% read ?
+100\% read no mod ?
+
+99\% 1\% read/update ? read/write?
+99\% 1\% read/update ? read/write? no mod
+
+1\%/99\% read/write ?
+1\%/99\% read/write ? no mod
+
+linear scaling:
+100\% read ? 2 nodes
+100\% read no mod ? 2 nodes
+
+99\% 1\% read/update ? read/write? 2 nodes
+99\% 1\% read/update ? read/write? no mod | 2 nodes
+
+These are the most realistic workloads for Voldemort, as a high volume read only service and about 98-99\% read to write/update.
+
+rebalance:
+Just monitor request rate during a rebalance.
+Remember to somewhat record size of data set.
