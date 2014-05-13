@@ -107,6 +107,78 @@ storage.configs=voldemort.store.bdb.BdbStorageConfiguration, voldemort.store.rea
 
 \end{itemize}
 
+\subsection{Rebalancing}
+In this section we will discuss how rebalancing is done in Voldemort and what we did give headmaster access to this feature. A rebalance operation involves repartitioning and moving data between nodes. There can be several reasons for rebalancing a cluster including adding nodes (cluster expansion), adding nodes to zones(zone expansion) and load balancing by shuffling partitions around. We would also like to be able to shrink the cluster (cluster contraction), however this is not yet supported by Voldemort. During a rebalance Voldemort suffers no down time and clients should not experience any noticeable performance drops. In addition there should be no loss or corruption of data if anything goes wrong and the rebalance is aborted. A rebalance is split into three steps which we will explain below. 
+
+\subsubsection{Terminology}
+Before we can go into details about the rebalance process we need to define a few terms:
+
+\begin{itemize}
+\item Stealer-node: When rebalancing this node will \emph{steal} a partition from another node and copy its data.  
+\item Donor-node: When rebalancing this node will act as a donor and send data to one or more stealer nodes.
+\item Donor-stealer pair: During a rebalance donors and stealers form pairs and copy data while proxying requests.
+\item Task: A list of all patition-stores that must be cloned from the donor node.  
+\item Zone n-ary: Closely tied to how many replicas there is of each data item. If we have a replication factor of 3 then the original entry is the Zone 0-ary, the first duplicate the zone 1-ary and the last one zone 2-ary. This information is used when deciding stealer-donor relationships during a rebalance. 
+\item Proxy-bridge: When moving partitions during a rebalance a nodes have responsibility for data they do not have. To counter this proxy bridges are put up between donor and stealer nodes so any request can be forwarded to the node holding the data.
+\end{itemize}
+
+\subsubsection{Preparation}
+Before a rebalance can occur we need a plan. This plan decides which partitions to move to which nodes. When choosing where to move partitions, Voldemort has a set of design principals to assist in deciding where each node should copy its data from during a rebalance.
+
+\begin{enumerate}
+\item Only steal if you do not already host the required partitions
+\item Try to steal from a node in the same zone, if this is not possible, steal from a donor in the same zone as the primary partition.
+\item When you have to steal, steal from the same zone n-ary. 
+\end{enumerate}
+
+Following these pricipals the plan generated will limit data movement across zones in addtion to aligning proxy-bridges with stealer-donor pairs. The output of such a planning operation is a file called \texttt{final\_cluster.xml}. This is a modified version of the \texttt{cluster.xml} and contains the newly proposed cluster setup. Executing the planning is done by running one of the rebalance* scripts provided with Voldemort. 
+
+\begin{lstlisting}[style=customc, caption=Sample command to plan a cluster expansion. Outputs a final\_cluster.xml as well as a plan]
+./bin/rebalance-cluster-expansion.sh -c current_cluster -s current_stores -i interim_cluster -o output dir
+\end{lstlisting}
+
+\subsubsection{Execution}
+The first issue that needs to be handled when rebalancing is dealing with already connected clients. At time of connecting, cluster metadata is returned to the client. The client uses this metadata for all future requests. When rebalancing this metadata is no longer valid and clients must be informed of this. Voldemort has two ways of dealing with this issue. Either the client can check metadata version on every request, or any node receiving a request for a partition it does not hold can throw an InvalidMetadataException. In the latter case clients only refresh their metadata after requesting a partition that has moved. Voldemort offers a proxy-pause option while rebalancing which is a window of time where the cluster metadata is updated and proxy-bridges are set up. This allows connected clients to request the new metadata before any actual rebalancing is done. The rebalance is executed using the supplied adiministrator tool. 
+
+The steps involved in executing a rebalance are the following:
+
+\begin{enumerate}
+\item Upload interim metadata: To allow for a new node to join the cluster it must have an entry in cluster.xml. This is done by replacing cluster.xml with a modified interim cluster.xml. In this file an entry for the new node has been added. This node will not yet be responsible for any partitions.
+\item Gather verification data: To later be able to verify that the rebalance was successful it is possible to extract some verification data for comparison before running the rebalance.
+\item Stop asynchronous tasks: These tasks could cause the rebalance to abort.
+\item Execute rebalance: Run the appropriate rebalance script.
+\end{enumerate}
+
+\begin{lstlisting}[style=customc, caption=Sample command to execute the rebalance. Parallelism defines how many tasks can be run at the same time.]
+./bin/run-class.sh voldemort.tools.RebalanceControllerCLI --url \$URL  --final-cluster final-cluster.xml --parallelism 8 --proxy-pause 900
+\end{lstlisting}
+
+Servers will be notified of the rebalance by the client sending the new cluster.xml files and changing their state to REBALANCING. Servers will now start proxying requests according to the new partition setup. After the proxy-pause time nodes will start to receive rebalance tasks from the client or fetch requests from stealer nodes. Once the server state changes back to normal it stops proxying requests and return to normal operation. In case of an abort, each server rolls back metadata locally, sets state to normal and stops proxying requests. 
+
+\subsubsection{Verification}
+After a rebalance has be completed it is useful to run verification that the rebalance was a success. There is also a repair job that should be run after the rebalance to delete orphaned keys.
+
+\begin{lstlisting}[style=customc, caption=Commands for pulling a key sample from a store and the versioned data objects stored under the keys. These are used to verify that the rebalance worked]
+./bin/run-class.sh voldemort.utils.KeySamplerCLI --url $BOOTSTRAP_URL --out-dir key-samples --records-per-partition 5
+./bin/run-class.sh voldemort.utils.KeyVersionFetcherCLI --url $URL --in-dir key-samples --out-dir key-version-fetches
+\end{lstlisting}
+
+\begin{lstlisting}[style=customc, caption=Sample repair job script. Passing -1 as node will run the script on all nodes.]
+./bin/voldemort-admin-tool.sh --repair-job --node '-1' --url \$URL
+\end{lstlisting}
+
+
+% There are several factors that was important for us when choosing which distributed key-value store to work with. We both had detailed theoretical knowledge of Dynamo after holding a presentation on their paper. The simple design and data model of Voldemort also was a good fit for our project as we did not have any application specific requirements for our storage system to meet. Lastly we wanted to work with an open source project. Voldemort fulfilled all these requirements. 
+
+% Voldemort keep its configuration data in several XML files. These files reside on each individual node in the cluster. The process of executing a repartition or rebalance involves another set of xml files as well as various scripts that must be run. As the number of nodes grows this number of configuration files can get out of hand quickly. 
+% As a result, creating a system to handle these configuration files was proposed as a ``fun project'' on the project-voldemort website. Apache ZooKeeper was proposed as a possible service for this system.  
+
+
+
+
+
+
+
 % \subsection{cluster.xml}
 % Cluster.xml is the file that contains persistent information about the nodes involved in the cluster. In order for a node to join the cluster it must first have an entry in this file. The fields in the file is relatively self explanatory. In addition to listing communication ports, each entry must have a unique ID and hostname. The partition field lists which parts of the keyspace this node will be resposible for. In Voldemort each partition can be moved between nodes, however the number of partitions is not changeable after the cluster is running. In the example below the reader can verify that we have 16 partitions spread across 3 nodes. It is also possible to group nodes into zones. These are typically used for grouping machines running in the same data-center. 
 
