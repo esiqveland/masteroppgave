@@ -9,7 +9,7 @@ Actual data is still of course stored locally, but configuration (meta data) now
 This abstraction works rather well for shared data files, but causes some issues with information that is stored for individual nodes. 
 As such, we landed on a fixed path scheme, where certain configuration files are expected to reside on known locations, and will be presented later.
 
-This change introduces the dependency of a running ZooKeeper cluster for normal operation of any node. While this is a liability and potential source for downtime in a highly available system, ZooKeeper is itself a highly available system and the 5 node setup is regarded as very stable and in heavy use at Yahoo\ref{need:citation}.
+This change introduces the dependency of a running ZooKeeper cluster for normal operation of any node. While this is a liability and potential source for downtime in a highly available system, ZooKeeper is itself a highly available system and the 5 node setup is regarded as very stable and in heavy use at Yahoo\cite{need:citation}.
 TODO: CITATION
 
 Alternatively we could have made the coordination service optional, but we then considered it risky to allow updating config files live through ZooKeeper. In any case, the system will in general be able to operate through short ZooKeeper outages, as all meta and config data is cached locally, however changes will not propagate to the affected nodes as quickly.
@@ -20,12 +20,11 @@ Configuration is stored in a VoldemortConfig object. Normally this is created fr
 Now, if you specify a ZooKeeper connection URL as a command line parameter, the program looks for configuration in ZooKeeper.
 We have given an example outline of the expected directory structure in Figure \ref{fig:configdirs}. This is for the three nodes \texttt{vold0.idi.ntnu.no}, \texttt{vold1.idi.ntnu.no} and \texttt{vold2.idi.ntnu.no}. You can see the expected path follows the pattern \texttt{/config/HOSTNAME/server.properties}. 
 
-The startup code then reads the config file and tries to parse. If parsing fails, the server fails to clearly signal something is wrong at startup, and needs immediate fixing. If the file is not found, the server registers a watch on the path in ZooKeeper. If there is a write to this file, ZooKeeper will let the server know and the config file can be re-read. 
+The startup code then reads the config file and tries to parse. If parsing fails, the server is set to fail to clearly signal something is wrong at startup, and needs immediate fixing. If the file is not found, the server registers a watch on the path in ZooKeeper. If there is a write to this file, ZooKeeper will let the server know and the config file can be re-read. 
 
 One can argue whether to fail or listen when a config is not found, but we decided for the latter, to listen for changes after implementing the management service, as we will later see it allows us to push new config files to a node by the help of our management daemon Headmaster. 
 
 \begin{figure}[h]
-\label{fig:configdirs}
 \dirtree{%
 .1 / \ldots{} \begin{minipage}[t]{8cm}(root directory)
 			  \end{minipage}.
@@ -39,6 +38,7 @@ One can argue whether to fail or listen when a config is not found, but we decid
 .5 server.properties.
 }
 \caption{Individual node configs in the shared space.}
+\label{fig:configdirs}
 \end{figure}
 
 Our modification inherits from VoldemortConfig, so that the ZooKeeper capable version can be used in the same code, in the same manner. The modified code reads data from a fixed location in ZooKeeper, and sets the necessary settings and properties for the server to bootstrap. The ZooKeeper connection URL is passed as a command line parameter.
@@ -46,7 +46,6 @@ Our modification inherits from VoldemortConfig, so that the ZooKeeper capable ve
 The directory structure for the whole program can be viewed in its entirety in Figure \ref{fig:dirstruct}, and has been included for completeness.
 
 \begin{figure}[h]
-\label{fig:dirstruct}
 \dirtree{%
 .1 / \ldots{} \begin{minipage}[t]{8cm}(The root can also be a chroot{.})
 			  \end{minipage}.
@@ -66,6 +65,7 @@ The directory structure for the whole program can be viewed in its entirety in F
 .3 headmaster\_0012.
 }
 \caption{Directory structure in ZooKeeper. The nodes or directories are actually Znodes and can hold data.}
+\label{fig:dirstruct}
 \end{figure}
 
 \subsection{MetadataStore}
