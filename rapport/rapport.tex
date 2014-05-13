@@ -13,9 +13,6 @@
 \usepackage{wrapfig}
 \usepackage{csquotes}
 \usepackage{dirtree}
-%\usepackage{inconsolata}
-
-
 
 
 \hypersetup{
@@ -27,7 +24,37 @@
     urlcolor=blue
 }
 
+%\usepackage[T1]{fontenc}
+\usepackage{color}
+\usepackage{inconsolata}
+
+\definecolor{pblue}{rgb}{0.13,0.13,1}
+\definecolor{pgreen}{rgb}{0,0.5,0}
+\definecolor{pred}{rgb}{0.9,0,0}
+\definecolor{pgrey}{rgb}{0.46,0.45,0.48}
+
+\lstdefinestyle{customjava}{
+  language=Java,
+  showspaces=false,
+  showtabs=false,
+  breaklines=true,
+  showstringspaces=false,
+  breakatwhitespace=true,
+  commentstyle=\itshape\color{pgreen},
+  keywordstyle=\color{pblue},
+  stringstyle=\color{pred},
+  basicstyle=\ttfamily,
+  moredelim=[il][\textcolor{pgrey}]{$$},
+  moredelim=[is][\textcolor{pgrey}]{\%\%}{\%\%},
+  captionpos=b,
+  belowcaptionskip=1\baselineskip,
+  frame=single
+}
+
+
+
 \lstdefinestyle{customc}{
+  escapechar=@,
   belowcaptionskip=1\baselineskip,
   breaklines=true,
   frame=single,
@@ -41,7 +68,6 @@
   stringstyle=\color{orange},
   tabsize=4
 }
-\lstset{escapechar=@,style=customc}
 
 \title{Utilizing Amazon's Zookeeper to handle scaling and maintenance of a Voldemort cluster}
 \author{Eivind Siqveland Larsen and Knut Nygaard,\\

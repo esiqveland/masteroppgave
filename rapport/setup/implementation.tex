@@ -1,6 +1,7 @@
 % implementation.tex
 
-Our work and implementation happened mainly in 3 parts. Part 1 consists of integrating ZooKeeper support and mechanisms into a Voldemort server. Making Voldemort read configurations and storing data in ZooKeeper. Part 2 contains our work towards rebalancing by the help of ZooKeeper. In Part 3 we create the service Headmaster, which is a process to run along side of the Voldemort process. Headmaster listens to active nodes in the cluster, and can generate configuration for new nodes, add them to the cluster, and prepare the members for a rebalance to include the new node.
+Our work and implementation happened mainly in 3 parts. Part 1 consists of integrating ZooKeeper support and mechanisms into a Voldemort server. Making Voldemort read configurations and storing data in ZooKeeper. Part 2 contains our work towards rebalancing by the help of ZooKeeper. In Part 3 we create the service Headmaster, which is a process to run along side of the Voldemort process. Headmaster listens to active nodes in the cluster, and can generate configuration for new nodes, add them to the cluster, and prepare the members for a rebalance to include the new node. Lastly we have included a part (\ref{sec:testing}) about how we validated our implementation while working.
+
 
 \section{Part 1}
 Integrating ZooKeeper into Voldemort and taking advantage of the coordination services ZooKeeper provides, proved rather difficult.
@@ -22,7 +23,7 @@ We have given an example outline of the expected directory structure in Figure \
 
 The startup code then reads the config file and tries to parse. If parsing fails, the server is set to fail to clearly signal something is wrong at startup, and needs immediate fixing. If the file is not found, the server registers a watch on the path in ZooKeeper. If there is a write to this file, ZooKeeper will let the server know and the config file can be re-read. 
 
-One can argue whether to fail or listen when a config is not found, but we decided for the latter, to listen for changes after implementing the management service, as we will later see it allows us to push new config files to a node by the help of our management daemon Headmaster. 
+One can argue whether to fail or listen when a config is not found, but we decided for the latter, to listen for changes, after implementing the management service. As we later will see, listening allows us to push new config files to a node by the help of our management daemon Headmaster. 
 
 \begin{figure}[h]
 \dirtree{%
@@ -32,16 +33,18 @@ One can argue whether to fail or listen when a config is not found, but we decid
 .3 nodes \ldots{} (individual node configs).
 .4 vold0.idi.ntnu.no \ldots{} (hostname).
 .5 server.properties.
+.5 server.state.
+.5 node.id.
 .4 vold1.idi.ntnu.no.
 .5 server.properties.
-.4 vold2.idi.ntnu.no.
-.5 server.properties.
+.5 server.state.
+.5 node.id.
 }
 \caption{Individual node configs in the shared space.}
 \label{fig:configdirs}
 \end{figure}
 
-Our modification inherits from VoldemortConfig, so that the ZooKeeper capable version can be used in the same code, in the same manner. The modified code reads data from a fixed location in ZooKeeper, and sets the necessary settings and properties for the server to bootstrap. The ZooKeeper connection URL is passed as a command line parameter.
+Our modification inherits from the original VoldemortConfig object, so that the ZooKeeper capable version can be used in the same code, in the same manner. The modified code reads data from a fixed location in ZooKeeper, and sets the necessary settings and properties for the server to boot and join the cluster. The ZooKeeper connection URL is passed as a command line parameter.
 
 The directory structure for the whole program can be viewed in its entirety in Figure \ref{fig:dirstruct}, and has been included for completeness.
 
@@ -49,29 +52,38 @@ The directory structure for the whole program can be viewed in its entirety in F
 \dirtree{%
 .1 / \ldots{} \begin{minipage}[t]{8cm}(The root can also be a chroot{.})
 			  \end{minipage}.
-.2 active.
-.3 vold0.idi.ntnu.no.
-.3 vold2.idi.ntnu.no.
-.2 config.
+.2 active .
+.3 vold0.idi.ntnu.no \ldots{} (ephemeral).
+.3 vold2.idi.ntnu.no \ldots{} (ephemeral).
+.2 config \ldots{} (persistent) . 
 .3 nodes (individual node configs).
 .4 vold0.idi.ntnu.no.
+.5 server.properties.
+.5 server.state.
+.5 node.id.
 .4 vold1.idi.ntnu.no.
+.5 server.properties.
+.5 server.state.
+.5 node.id.
 .4 vold2.idi.ntnu.no.
+.5 server.properties.
+.5 server.state.
+.5 node.id.
 .3 cluster.xml.
 .3 stores.xml.
 .2 headmaster.
-.3 headmaster\_0009.
-.3 headmaster\_0011.
-.3 headmaster\_0012.
+.3 headmaster\_0009 \ldots{} (ephemeral \& sequential).
+.3 headmaster\_0011 \ldots{} (ephemeral \& sequential).
+.3 headmaster\_0012 \ldots{} (ephemeral \& sequential) .
 }
 \caption{Directory structure in ZooKeeper. The nodes or directories are actually Znodes and can hold data.}
 \label{fig:dirstruct}
 \end{figure}
 
 \subsection{MetadataStore}
-The internal state for a node is written to a \texttt{Store} called \texttt{MetadataStore}. It consists of an in memory cache store, and a persistent one to disk. The different stores are implementations of an abstract data \texttt{Store}. As such, we wrote a \texttt{Store} using ZooKeeper as the backend for persistent storage.
+The internal state for a node is written to a \texttt{Store} called \texttt{MetadataStore}. It consists of an in memory cache store, and a persistent one to disk. The different stores are implementations of an abstract data \texttt{Store}. As such, we wrote a \texttt{Store} using ZooKeeper as the backend, and used this for persistent storage.
 
-At startup we read the global configuration, the cluster and stores settings, from the Store. The Store fetches the requested files from ZooKeeper, and leaves a watch on the nodes. Because a store \emph{only} \emph{stores} data, the Store itself can not take advantage of the event deliveries from ZooKeeper.
+At startup we read the global configuration, the cluster and stores settings, from the Store. The Store fetches the requested files from ZooKeeper, and leaves a watch on the nodes. Because a store \emph{only} \emph{stores} data, the Store itself can not take advantage of the event deliveries from ZooKeeper: The Store keeps no application logic, and can be thought of as a hash map.
 
 To notify and update the internal state of the node on events, we found it necessary to receive events in the configuration management logic, written in the \texttt{MetadataStore}.
 
@@ -101,8 +113,7 @@ We provide the following listener events:
 
 \end{description}
 
-
-As well as the raw Watcher interface from ZooKeeper:
+We also include the possibility for receiving the raw events from the ZooKeeper client in the interface:
 
 \begin{description}
 	\item[process(event):]
@@ -111,9 +122,6 @@ As well as the raw Watcher interface from ZooKeeper:
 \end{description}
 
 
-ANZKL?
-
-ZKDataListener?
 
 
 \section{Part 2}
@@ -123,10 +131,11 @@ ZKDataListener?
 
 \subsection{Rebalance}
 Another issue we bumped into is related to the architecture of Voldemort.
-In a rebalance, the new config files are pushed (written) to each node separately using Voldemort admin data requests. This causes each node to write the new data given to the MetadataStore.
-Because we would like to be notified about changes to the config using watches, each write causes N watches to trigger, where N is the number of nodes in the Voldemort cluster.
-A write therefore also causes N watches to trigger, and N new watches to be set. So for a full configuration rewrite in a rebalance, N*N re-reads and watches would be set and reset, and also N writes in quick succession.
-We therefore ignores such put requests in the ZooKeeper driven MetadataStore, and just put the new data in the Metadata cache, deferring the admin to use a ZooKeeper write operation to put the new config out, making the nodes do a re-read.
+In a rebalance, the new config files are pushed (written) to each node separately using Voldemort admin data requests. This causes every node to execute a put of the new data on the MetadataStore.
+
+As explained above, we use ZooKeeper for (persistently) sharing the global configuration files.
+Also, we would like to be notified about changes to the config files using watches. So first you have N nodes in the cluster, executing N writes to the same file. Each file write potentially triggers N watches, causing a read and watch reset. Worst case we will end up with N writes and N*N watch triggers and reads, all in quick succession (less than a second).
+We therefore decided to ignore such put requests in the ZooKeeper driven persistent Store, and only put the new data in the Metadata cache store, deferring the admin to use a ZooKeeper write operation to put the new config out, making the nodes do a re-read.
 
 
 \subsection{Begrepsavklaring}
@@ -137,5 +146,39 @@ A ZooKeeper event, is an event triggered by a watch set in ZooKeeper, giving pus
 In the context of ZooKeeper, the word file might be used for a znode. File used in the context of a local filesystem is a local file.
 
 \section{Part 4}
+\label{sec:testing}
+TODO: Tests and unit tests?
+When working on large projects, a lot of code lines are involved. To prevent breaking functionality underway, and to help verify correct (desired) behavior while working, we decided to write unit tests. 
+Because of the complex series of events that need to happen while running the program to execute your desired code, it is much easier and more efficient to test and verify your code programmatically in a test environment. The design and verification of our Headmaster program greatly benefited from this approach. The event chain to test the code can be fairly complex, even though the application logic is fairly straight forward.
 
-Tests and unit tests?
+To create a test environment, we used JUnit and the Mockito project to mimic the behavior we need for validation.
+Mockito is a testing framework for Java. It allows to create ``mock'' objects that can be used to trigger and verify program behavior in a predictable and controlled manner. The ``fake'', but controllable objects are very useful for eliminating outer dependencies, and instead having them behave in a completely predictable and controlled way.
+
+Listing \ref{lst:mockito} shows a short example of how Mockito and JUnit is used to write short, simple yet powerful functional tests that verify behavior. It is also worth noting that the resulting test code is quite readable by a programmer.
+
+\begin{lstlisting}[style=customjava,label=lst:mockito,caption={Test code utilizing Mockito. Think of the \texttt{@Mock} class as a subclass with all methods \texttt{return null;}.}]
+$$@Mock
+ActiveNodeZKListener activeNodeZKListener;
+
+Headmaster headmaster;
+
+public void whenDataChangedTestIfWatchIsReset() {
+    String path = "/config/cluster.xml";
+
+    when(activeNodeZKListener.getStringFromZooKeeper(
+    	path, true)).thenReturn(EXAMPLE_CLUSTER);
+
+    headmaster.setZKListener(activeNodeZKListener);
+
+    headmaster.dataChanged(path);
+
+    /** 
+     * verify method is called with params path, and watch flag set to true.
+     */
+    verify(activeNodeZKListener, times(1)).getStringFromZooKeeper(path, true);
+}
+
+\end{lstlisting}
+
+Here we are verifying that upon receiving a notification that a znode has changed, the Znode (path) is fetched with a new watch set.
+All without actually providing a working third party object (ActiveNodeZKListener) to the test, the object is entirely faked with the static \texttt{when} and \texttt{thenReturn} methods. After setting the dependency class up with the desired behavior, it is injected into the class we are testing, then verify that the desired method is called once and only once (\texttt{times(1)}). Similarly it is easy to see how you can verify two calls (\texttt{times(2)}). For zero calls, it is recommended to use the more readable method \texttt{never}.
