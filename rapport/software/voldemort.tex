@@ -1,5 +1,5 @@
 \section{Voldemort}
-
+\label{sec:voldemort}
 \subsection{Configuration data}
 In this section we will explore the essential configuration data used to manage Voldemort. It is split into two parts: global and local files. Global files are identical files hosted by each individual node in a cluster. These files contains persistent cluster metadata. These files needs to be consistent between nodes. As the number of nodes increase managing these files can become cumbersome. Local files typically contain per node specific persistent configuration data like hostname, ID and performance metrics. In our running cluster we use the following global configuration files:
 
