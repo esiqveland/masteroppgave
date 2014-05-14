@@ -156,7 +156,7 @@ Mockito is a testing framework for Java. It allows to create ``mock'' objects th
 
 Listing \ref{lst:mockito} shows a short example of how Mockito and JUnit is used to write short, simple yet powerful functional tests that verify behavior. It is also worth noting that the resulting test code is quite readable by a programmer.
 
-\begin{lstlisting}[style=customjava,label=lst:mockito,caption={Test code utilizing Mockito. Think of the \texttt{@Mock} class as a subclass with all methods \texttt{return null;}.}]
+\begin{lstlisting}[style=customjava,label=lst:mockito,caption={Test code utilizing Mockito. Think of the \texttt{@Mock} class as a subclass with all methods overrided \texttt{return null;}.}]
 $$@Mock
 ActiveNodeZKListener activeNodeZKListener;
 
