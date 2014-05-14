@@ -3,18 +3,22 @@
 \section{Introduction}
 This section explains the background for our project, what goals we have and what methods we have employed to reach our goals. 
 
-Section \ref{sec:technical_background} explains technology and techniques commonly used in distributed systems.
+Chapter \ref{sec:related_software} introduces what other software exist in this area, where we take a quick look at Cassandra and HBase.
+Chapter \ref{sec:related_work} looks at similar work in our area.
+Chapter \ref{sec:technical_background} explains technology and techniques commonly used in distributed systems, and how they are used in Voldemort.
+Chapter \ref{sec:prequel} quickly summarizes how we started this project, and how the first angle failed.
+Another software project we ended up using heavily is Apache ZooKeeper, and is introduced in chapter \ref{sec:zookeeper}.
 
-TODO: INTRODUCE OTHER SECTIONS AND CHAPTERS
-
-\subsection{Introduction-2 IN NEED OF BETTER TITLE}
-In our pre-project we built a search engine and ran it on a cluster composed of 8 Raspberry PIs. In this project we wanted to work with a more developed distributed system and explore what possibilities existed for further work. We have chosen to work with Voldemort, which is an open source implementation of Amazon’s Dynamo. This is a highly available NoSQL database that can be run on several nodes. As clusters grow in size, management and administrative tasks can become increasingly complex, so we have decided to focus our work on automation and management of a working cluster of nodes running Voldemort. 
+\subsection{Prequel}
+In our pre-project we built a search engine and ran it on a cluster composed of 8 Raspberry PIs. In this project we wanted to work with a more developed distributed system and explore what possibilities existed for further work, but the typical software packages was unable to run reliably on a small system like the PI. 
+We have therefore chosen to work with Voldemort, which is an open source implementation of Amazon’s Dynamo. This is a highly available NoSQL database that can be run on several nodes.
+As clusters grow in size, management and administrative tasks can become increasingly complex, so we have decided to focus our work on automation and management of a working cluster of nodes running Voldemort. 
 
 \subsection{Background}
 Traditional relational database systems are generally very safe to use, usually providing all of the ACID (\emph{Atomicity, Consistency, Isolation, Durability}) properties.
 This guarantees that all committed transactions are processed reliably. 
 Today a lot of services needs to support up to millions of users and serve thousands of requests per second, but experience has shown that databases providing ACID guarantees have trouble scaling. 
-To allow for cost effective scaling commodity hardware is used instead of expensive specialized servers. To continue scaling by adding numerous small servers, applications need to become increasingly distributed.
+To allow for cost effective scaling, commodity hardware is used instead of expensive specialized servers. To continue scaling by adding numerous small servers, applications need to become increasingly distributed.
 
 The main reason for ACID databases having troubles scaling is the strong guarantees of atomic operations, isolation and consistency. 
 To allow for atomic operations in a distributed systems a distributed commit log would be required. 
@@ -26,12 +30,11 @@ The databases are designed to scale linearly, however managing and scaling these
 
 
 \subsection{Voldemort and Dynamo}
-Voldemort is a distributed key-value storage system based off Amazon's paper on Dynamo, Amazons's highly available key-value store. Voldemort was created by LinkedIn and the first public release was in 2009. It is still under development. Voldemort supports a simple set of operations limited to put, get and delete. Stored objects are uniquely identified by a key and are considered by the system as binary blobs. Voldemort is commonly used for storing lots of smaller objects, typically less than 1MB.  As with other NoSQL implementations, Voldemort sacrifices consistency and isolation requirements to achieve higher availability with satisfactory durability. In fact, we will later see that most of this behavior is easily tunable and left as design choices per implementation.
+Voldemort is a distributed key-value storage system based off Amazon's paper on Dynamo, Amazons's highly available key-value store. Voldemort was created by LinkedIn and the first public release was in 2009. It is still under development. Voldemort supports a simple set of operations limited to put, get and delete. Stored objects are uniquely identified by a key and are considered by the system as binary blobs. Voldemort is commonly used for storing lots of smaller objects, typically less than 1MB.  As with other NoSQL implementations, Voldemort sacrifices consistency and isolation requirements to achieve higher availability with satisfactory durability. In fact, we will later see that most of this behavior is easily tunable and left as design choices per implementation. In chapter \ref{sec:voldemort} we will look closer at the specifics of configuring Voldemort. 
 
-Compared with Apaches Cassandra, Voldemort lacks the power of column families and multi-key lookup. This means that any application powered by Voldemort requires addtional logic to handle more advanced queries. For simple read heavy workloads however, Voldemort is blazingly fast serving over 20 000 read requests per second per node. 
+Compared with Apaches Cassandra, Voldemort lacks the power of column families and multi-key lookup. This means that any application powered by Voldemort requires additional logic to handle more advanced queries. For simple read heavy workloads however Voldemort is quite fast, serving over 20 000 read requests per second per node. 
 
-Voldemort is currently being used by a number of known companies. At LinkedIn they use Voldemort both as read-only and read-write stores. Services powered include LinkedIn Search, news and Who viewed your profile. At Ebay they use Voldemort as a read-only store for distributed lookups, and the dating site eHarmony uses Voldemort as a high volume read/write store.
-
+Voldemort is currently being used by a number of known companies. At LinkedIn they use Voldemort both as read-only and read-write stores. Services powered include LinkedIn Search, news and Who viewed your profile. At EBay they use Voldemort as a read-only store for distributed lookups, and the dating site eHarmony uses Voldemort as a high volume read/write store.
 
 
 \subsection{Goals}
