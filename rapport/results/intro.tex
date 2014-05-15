@@ -4,13 +4,13 @@ In this chapter we will present our findings and evaluate what impact the added 
 
 While management and monitoring can be both useful and convenient, it does introduce overhead. This overhead should not have a significant impact on system performance, others citing as low as 1-2\% impact as tolerable.
 
-Here we will verify the impact of our work on the overall throughput and performance of the software under different workloads. We will look at requests processed per second under typical usage patterns and some edge cases. 
+Here we will verify the impact of our work on the overall throughput and performance of the software under different workloads. We will look at requests processed per second and response time distribution under typical usage patterns and some edge cases. 
 
 We will first look at single node performance, with and without our modifications.
 Next we will try verifying that performance scaling is intact. For Voldemort, near linear scaling of throughput is expected when adding worker nodes to the cluster.
 Lastly we will look at performance during a automatically triggered rebalance under load.
 
-\subsection{The tests}
+\section{The tests}
 
 Test0:
 
@@ -35,3 +35,26 @@ These are the most realistic workloads for Voldemort, as a high volume read only
 rebalance:
 Just monitor request rate during a rebalance.
 Remember to somewhat record size of data set.
+
+\begin{center}
+\begin{table}[h]
+	\begin{tabular}{|c|c|c|l|}
+		\multicolumn{1}{c}{Test case} & 
+		\multicolumn{1}{c}{read \%} & 
+		\multicolumn{1}{c}{write \%} & 
+		\multicolumn{1}{c}{state} \\
+		\hline
+
+		TC0 & 100 & 0 & no mod \\
+		TC1 & 100 & 0 & mod \\
+		TC2 & 99 & 1 & no mod \\
+		TC3 & 99 & 1 & mod \\
+		TC4 & 1 & 99 & no mod \\
+		TC5 & 1 & 99 & mod \\
+
+		\hline
+	\end{tabular}
+	\caption{Test case setup. No mod/mod is shorthand for no modification and modification, meaning whether we will be using original or our source code for this test.}
+	\label{tbl:testcases}
+\end{table}
+\end{center}
