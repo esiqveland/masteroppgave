@@ -1,9 +1,48 @@
 % futurework.tex
 
-downscaling when voldemort supports it
+We will here introduce and expand upon some ideas we have for future work on this project. Some ideas we did not find the time for. Others are not as of this writing possible yet.
 
+\section{Downscaling}
+Voldemort as of this project, does not support downscaling, ie. downsizing the cluster. There is work going on for this, but it is not a current priority. We would of course like to include this functionality into our project once it is possible.
+
+
+\section{Decision support system}
 decision support for scaling, ie. based on resource measurement.
+
+\section{Data rebalancing}
+Rebalancing here refers to the data balance in the cluster. With nodes being added and partitions shuffled around, the system might end up in states were the data distribution is uneven like in Table \ref{tbl:datarebalance}.
+\begin{center}
+\begin{table}[h]
+	\begin{tabular}{|c|c|r|}
+
+		\multicolumn{1}{c}{Node} & 
+		\multicolumn{1}{c}{Partition } & 
+		\multicolumn{1}{c}{data \%} \\
+		\hline
+
+		\multirow{2}{*}{0} & 0 & 12.5 \\ \cline{2-3}
+		 & 1 & 12.5 \\
+		 \hline
+		\multirow{2}{*}{1} & 2 & 12.5 \\ \cline{2-3}
+		 & 3 & 24.0 \\
+ 		 \hline
+
+		\multirow{2}{*}{2} & 4 & 1.0 \\ \cline{2-3}
+		 & 5 & 5.0 \\
+		
+		\hline	
+		
+		\multirow{2}{*}{3} & 6 & 20.0 \\ \cline{2-3}
+		 & 7 & 12.5 \\
+
+		\hline
+	\end{tabular}
+	\caption{A cluster with uneven data distribution. This cluster needs rebalancing of data.}
+	\label{tbl:datarebalance}
+\end{table}
+\end{center}
 
 do routinly analysis of the cluster and trigger random shuffles etc. to balance the cluster.
 
+\section{Running repair jobs}
 run repair jobs regulary / based on sigar output
