@@ -47,5 +47,10 @@ do routinly analysis of the cluster and trigger random shuffles etc. to balance 
 \section{Running repair jobs}
 run repair jobs regulary / based on sigar output
 
-extend RebalancePlannerZK to be able to do: Random shuffle, Greedy shuffle, Zone expansion
 
+\section{Ondemand computing}
+With the recent years advancement in cloud computing, especially those driven by Amazons EC2 service, it is easy to rent computing capacity on the fly. By the current design, having actual computers ready is a hard requirement, ie. you have to already own (or rent) the hardware to insert a new node. Although you can scale the cluster for demand as you go, they still have to be set up with software and told to join in.
+
+With the 
+
+extend RebalancePlannerZK to be able to do: Random shuffle, Greedy shuffle, Zone expansion
