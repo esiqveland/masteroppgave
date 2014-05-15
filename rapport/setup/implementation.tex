@@ -138,6 +138,10 @@ Also, we would like to be notified about changes to the config files using watch
 We therefore decided to ignore such put requests in the ZooKeeper driven persistent Store, and only put the new data in the Metadata cache store, deferring the admin to use a ZooKeeper write operation to put the new config out, making the nodes do a re-read.
 
 
+\subsection{Including rebalance functionality in Headmaster}
+Voldemort uses external scripts for triggering rebalancing and repartitioning. This makes incorporating this behavior into Headmaster very cumbersome. To get around this we created classes that mirrors the scripts behavior. We included two classes into the project: \texttt{RebalancePlannerZK} and \texttt{RebalancerZK}. These expose the methods: \texttt{createRebalacePlan()} and \texttt{rebalance(RebalancePlan plan)} used to trigger these events. Both classes utilize \texttt{ActiveZooKeeperListener} to fetch required configuration data from ZooKeeper. Headmaster now have access to these methods and will trigger them given a token in ZooKeeper. 
+
+
 \subsection{Begrepsavklaring}
 A \texttt{write} or \texttt{put} in the context of ZooKeeper is considered a ZooKeeper \texttt{setData} operation.
 
