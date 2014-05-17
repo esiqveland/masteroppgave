@@ -10,8 +10,15 @@ From Apache ZooKeepers own website\cite{zookeeper} they explain ZooKeeper as:
 
 ZooKeeper offers a simple yet powerful set of services. When designing ZooKeeper they decided not to implement specific primitives server side and instead exposing an API allowing application developers to create their own primitives. This allows for ZooKeeper to be adapted to suit the requirements of different applications, instead of constraining developers to a fixed set of primitives. 
 
+\subsection{Clarification}
+A \texttt{write} or \texttt{put} in the context of ZooKeeper is considered a ZooKeeper \texttt{setData} operation.
+
+A ZooKeeper event, is an event triggered by a watch set in ZooKeeper, giving push information to a client about a change in ZooKeeper about a Znode being watched.
+
+In the context of ZooKeeper, the word file might be used for a znode. File used in the context of a local filesystem is a local file.
+
 \subsection{Znodes}
-ZooKeeper behaves almost like a file system with one key difference. Instead of files and directories - we have znodes. These znodes can contain information in the form of text. One znodes can have children which again can have more children. Together they form an hierarchical structure. 
+ZooKeeper behaves almost like a file system with one key difference. Instead of files and directories - we have znodes. All znodes can contain information in the form of bytes. One znodes can have children which again can have more children. Together they form an hierarchical structure, addressable like a unix filesystem path. 
 
 Znodes also include version numbers for data changes, ACL changes and timestamps to allow cache validations as well as coordinate updates. Whenever a znode's data is change, it's version number increases. This is also true for whenever a client receives data. 
 

@@ -142,13 +142,6 @@ We therefore decided to ignore such put requests in the ZooKeeper driven persist
 Voldemort uses external scripts for triggering rebalancing and repartitioning. This makes incorporating this behavior into Headmaster very cumbersome. To get around this we created classes that mirrors the scripts behavior. We included two classes into the project: \texttt{RebalancePlannerZK} and \texttt{RebalancerZK}. These expose the methods: \texttt{createRebalacePlan()} and \texttt{rebalance(RebalancePlan plan)} used to trigger these events. Both classes utilize \texttt{ActiveZooKeeperListener} to fetch required configuration data from ZooKeeper. Headmaster now have access to these methods and will trigger them given a token in ZooKeeper. 
 
 
-\subsection{Begrepsavklaring}
-A \texttt{write} or \texttt{put} in the context of ZooKeeper is considered a ZooKeeper \texttt{setData} operation.
-
-A ZooKeeper event, is an event triggered by a watch set in ZooKeeper, giving push information about a change in ZooKeeper about a znode being watched.
-
-In the context of ZooKeeper, the word file might be used for a znode. File used in the context of a local filesystem is a local file.
-
 \section{Part 4}
 \label{sec:testing}
 TODO: Tests and unit tests?
