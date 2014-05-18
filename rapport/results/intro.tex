@@ -1,6 +1,7 @@
 % intro.tex
 
-In this chapter we will present our findings and evaluate what impact the added features have on a working node.
+%In this chapter we will present our findings and evaluate what impact the added features have on a working node.
+In this chapter we will present the data we have collected from our measurements and how they were taken.
 
 While management and monitoring can be both useful and convenient, it does introduce overhead. This overhead should not have a significant impact on system performance, others citing as low as 1-2\% impact as tolerable.
 
@@ -11,6 +12,7 @@ Next we will try verifying that performance scaling is intact. For Voldemort, ne
 Lastly we will look at performance during a automatically triggered rebalance under load.
 
 \section{The tests}
+All tests are run on a clean cluster instance, with a warm up period loading data into the database. All tests are run three times, with the average score used.
 
 Test0:
 
