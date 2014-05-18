@@ -113,6 +113,3 @@ rapport/target/rapport.pdf
 
 voldemort/src/java/META-INF/MANIFEST.MF
 
-*.txt
-
-*.properties
