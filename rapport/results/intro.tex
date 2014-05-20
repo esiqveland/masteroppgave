@@ -61,10 +61,48 @@ Remember to somewhat record size of data set.
 \end{table}
 \end{center}
 
+\section{Experiences}
+Networkspeed is a limitation. 
+No real difference between 12MB and 2G cache. 
+
+
 Findings:
 
 Network is of the utmost importance.
 
 Performance seem very consistent.
 
+
 \input{results/figures}
+
+
+\section{Experiments}
+\subsection{Setup}
+\subsubsection{Benchmark tool}
+We use Voldemorts built in benchmark tool to send data to our cluster. This allows for varying request distribution, frequency and number of sending threads. TODO: Eivind fyll inn med scripts osv... 
+
+\subsubsection{Hardware}
+We have 4 computers involved in these experiments:
+\begin{enumerate}
+\item Hackintosh: Intel Core i7 2.5GHz Quad Core  16 GB Memory 250GB SSD
+\item MacBook Pro: Intel Core i7 2.6 GHz Quad Core 8 GB Memory 250GB SSD
+\item MacBook Pro: Intel Core i5 2.5 GHz Dual Core 8 GB Memory 120GB SSD
+\item Mac Mini: Intel Core 2 Duo 2.4 GHz Dual Core 8 GB Memory 250GB SSD
+\end{enumerate}
+
+In addition we use a D-Link Dir-655 gigabit router for networking.
+
+\subsubsection{Software}
+All computers run Apple OS X 10.9.2 operating system. 
+
+\subsection{Baseline}
+In this experiment we want to establish a baseline for how a cluster behaves under load. We have both Macbooks sharing 16 partitions. We use the Hackintosh for generating traffic. This experiment was run with a request destribution of 99\% reads and 1 \% writes. We will measure overall throughput as well as how stressed each system is under the experiment.
+
+We expect the du
+
+
+
+
+
+
+
