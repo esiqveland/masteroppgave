@@ -141,8 +141,12 @@ We therefore decided to ignore such put requests in the ZooKeeper driven persist
 \subsection{Including rebalance functionality in Headmaster}
 Voldemort uses external scripts for triggering rebalancing and repartitioning. This makes incorporating this behavior into Headmaster very cumbersome. To get around this we created classes that mirrors the scripts behavior. We included two classes into the project: \texttt{RebalancePlannerZK} and \texttt{RebalancerZK}. These expose the methods: \texttt{createRebalacePlan()} and \texttt{rebalance(RebalancePlan plan)} used to trigger these events. Both classes utilize \texttt{ActiveZooKeeperListener} to fetch required configuration data from ZooKeeper. Headmaster now have access to these methods and will trigger them given a token in ZooKeeper. 
 
+
 \section{Part 3}
 \subsection{Headmaster}
+We ran into some issues while writing these features. Originally the rebalance process sends the newly created \texttt{final\_cluster.xml} to all nodes. 
+
+
 
 \subsection{SigarAgent}
 SigarAgent is our service for monitoring activity on nodes in the cluster. Our solution is heavily inspired by the work of Andreas Baakind\cite{baakind}. We utilize Hyperic's sigar API to gather system information on each individual node and send this to Headmaster. We continiously send status on current CPU usage, current consumed memory and how much data the node have stored compared to a given maximum. In contrast to Baakind who only informed his scaling service if any value was above a set threshhold, we send a status message every 5 seconds. To prevent these messages for taking up too much resources, we use UDP instead of TCP as we do not require all messages to arrive at Headmaster. 
