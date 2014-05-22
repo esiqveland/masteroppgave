@@ -40,23 +40,27 @@ Remember to somewhat record size of data set.
 
 \begin{center}
 \begin{table}[h]
-	\begin{tabular}{|c|c|c|l|}
+	\begin{tabular}{|c|c|c|c|c|l|}
 		\multicolumn{1}{c}{Test case} & 
+		\multicolumn{1}{c}{Node \#} &
+		\multicolumn{1}{c}{Cluster size} &  
 		\multicolumn{1}{c}{read \%} & 
 		\multicolumn{1}{c}{write \%} & 
 		\multicolumn{1}{c}{state} \\
 		\hline
 
-		TC0 & 100 & 0 & no mod \\
-		TC1 & 100 & 0 & mod \\
-		TC2 & 99 & 1 & no mod \\
-		TC3 & 99 & 1 & mod \\
-		TC4 & 1 & 99 & no mod \\
-		TC5 & 1 & 99 & mod \\
+		TC1.1 & 1 & 1 & 95 & 5 & official \\
+		TC1.2 & 1 & 1 & 95 & 5 & modified \\
+		\hline
+		TC2.1 & 2 & 1 & 95 & 5 & official \\
+		TC2.2 & 2 & 1 & 95 & 5 & modified \\
+		\hline
+		TC3.1 & 3 & 1 & 95 & 5 & official \\
+		TC3.2 & 3 & 1 & 95 & 5 & modified \\
 
 		\hline
 	\end{tabular}
-	\caption{Test case setup. No mod/mod is shorthand for no modification and modification, meaning whether we will be using original or our source code for this test.}
+	\caption{Test case setup. Official/modified is shorthand for whether we will be using original or our source code for this test.}
 	\label{tbl:testcases}
 \end{table}
 \end{center}
@@ -79,15 +83,36 @@ Performance seem very consistent.
 \section{Experiments}
 \subsection{Setup}
 \subsubsection{Benchmark tool}
-We use Voldemorts built in benchmark tool to send data to our cluster. This allows for varying request distribution, frequency and number of sending threads. TODO: Eivind fyll inn med scripts osv... 
+We use Voldemorts provided benchmark tool to send data to our cluster. The program is heavily based on the work by Yahoo Cloud Serving Benchmark. This allows us to generate different types of workloads, request loads and number of sending threads. We also had to do some modifications to get a running average, instead of a total average.
+
+We parse most of the logs in python to transform the data into something useful. In some cases we also have to manually put the data together.
+For analysis, we mainly use \texttt{R}\cite{Rproject} with extensive use of the \texttt{Hmisc}\cite{Hmisc} library. Our Rscripts can be found in our project on github\cite{githubproject}. Most of the diagrams in this chapter has been generated with \texttt{R}.
+
+An example run with the benchmark tool could be:
+\begin{lstlisting}[language=bash]
+read_percent=95
+write_percent=5
+metric=histogram # [summary|histogram]
+ops=1 000 000 # total requests to run
+threads=54
+recordcount=1000000 # records to insert during warmup
+valuesize=1024 # bytes per record
+
+voldemort-performance-tool.sh --threads $threads --metric-type $metric 
+--ops-count $ops --url $url --value-size $valuesize 
+--store-name $store --record-count $recordcount $@
+\end{lstlisting}
+
+These are also the settings we used for most of our tests.
 
 \subsubsection{Hardware}
 We have 4 computers involved in these experiments:
+
 \begin{enumerate}
-\item Hackintosh: Intel Core i7 2.5GHz Quad Core  16 GB Memory 250GB SSD
-\item MacBook Pro: Intel Core i7 2.6 GHz Quad Core 8 GB Memory 250GB SSD
-\item MacBook Pro: Intel Core i5 2.5 GHz Dual Core 8 GB Memory 120GB SSD
-\item Mac Mini: Intel Core 2 Duo 2.4 GHz Dual Core 8 GB Memory 250GB SSD
+	\item Hackintosh: Intel Core i7 2.5GHz Quad Core  16 GB Memory 250GB SSD
+	\item MacBook Pro: Intel Core i7 2.6 GHz Quad Core 8 GB Memory 250GB SSD
+	\item MacBook Pro: Intel Core i5 2.5 GHz Dual Core 8 GB Memory 120GB SSD
+	\item Mac Mini: Intel Core 2 Duo 2.4 GHz Dual Core 8 GB Memory 250GB SSD
 \end{enumerate}
 
 In addition we use a D-Link Dir-655 gigabit router for networking.
@@ -102,7 +127,7 @@ In this part we want to investigate how our computer and cluster behaves in vari
 \subsubsection{Response time distribution}
 We want to establish a baseline for how each individual node performs with regards to servicing a request. In this experiment we will setup single computer Voldemort instance on each computer and measure the distribution of service time. We will run this test with both our ZooKeeper implementation and the original Voldemort code. We will send queries as fast as possible.
 
-We expect little difference in results as all nodes should run below maximum capacity. We expect majority of these requests to be serviced in under 1 ms as found by Rabl et al.\cite{vldb2012}
+We expect little difference in results as all nodes should run below maximum capacity. We expect majority of these requests to be serviced in under 1 ms as found by Rabl et al\cite{Rabl:2012:SBD:2367502.2367512}.
 
 \subsubsection{Performance of single nodes}
 We also want to get an idea of each individual nodes ability to service queries. To test this we will again run single node clusters and send requests as fast as possible.
