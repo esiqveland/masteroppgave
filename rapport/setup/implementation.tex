@@ -149,13 +149,27 @@ We ran into some issues while writing these features. Originally the rebalance p
 
 
 \subsection{SigarAgent}
-SigarAgent is our service for monitoring activity on nodes in the cluster. Our solution is heavily inspired by the work of Andreas Baakind\cite{baakind}. We utilize Hyperic's sigar API to gather system information on each individual node and send this to Headmaster. We continiously send status on current CPU usage, current consumed memory and how much data the node have stored compared to a given maximum. In contrast to Baakind who only informed his scaling service if any value was above a set threshhold, we send a status message every 5 seconds. To prevent these messages for taking up too much resources, we use UDP instead of TCP as we do not require all messages to arrive at Headmaster. 
+SigarAgent is our service for monitoring activity on nodes in the cluster. Our solution is heavily inspired by the work of Andreas Baakind\cite{baakind}. We utilize Hyperic's sigar API to gather system information on each individual node and send this to Headmaster. We continiously send status on current CPU usage, current consumed memory and how much data the node have stored compared to a given maximum. In contrast to Baakind who only informed his scaling service if any value was above a set threshold, we send a status message every 5 seconds. To prevent these messages for taking up too much resources, we use UDP instead of TCP as we do not require all messages to arrive at Headmaster. 
 
 SigarAgent utilizes ZooKeeper to keep track of who is current Headmaster, and will react if there is a change of leadership. If there is no Headmaster active, SigarAgent will sleep until it is notified of a new Headmaster. 
 
-
-
 \subsection{StatusAnalyzer}
+StatusAnalyser is a decisions system available to the current headmaster. StatusAnalyser receives status messages from all nodes running SigarAgent and store them in a \texttt{HashMap<String, LinkedList<StatusMessage>>} We store the last 10 messages received from each node. This HashMap is used to analyze the cluster state and trigger rebalancing actions if deemed necessary.
+
+StatusAnalyser has a few useful member functions:
+
+\begin{lstlisting}[style=customjava,label=lst:test,caption={a caption}]
+
+getAvgCPU(String hostname)
+getCalmestNode()
+analyzeCPU()
+migratePartitions(List<String> strugglingNodes)
+
+\end{lstlisting}
+
+Every 30 seconds analyzeCPU is run to see if there is the average CPU-utilization of any nodes is over a threshold. We have defined a node running at over 80\% as a struggling node. If any nodes are above this threshold, getCalmestNode is run to see if there is any nodes that have a lesser workload. Any node with less than 70\% load is defined as a calm node. If we have one or more struggling nodes and a calm node, migratePartitions is triggered. This will inform headmaster that we need a rebalance action to stabilize the cluster. 
+
+We have two strategies for moving partitions. If we have more than one struggling node we either pick one at random and move one partition over to the calm node, or we move one partition from all struggling nodes over to the calm node. The former strategy will ensure a slow and steady transition while the latter could arrive at a stable state faster at the cost of performance during the more heavy rebalance.
 
 
 \section{Part 4}
