@@ -65,18 +65,6 @@ Remember to somewhat record size of data set.
 \end{table}
 \end{center}
 
-\section{Experiences}
-Networkspeed is a limitation. 
-No real difference between 12MB and 2G cache. 
-
-
-Findings:
-
-Network is of the utmost importance.
-
-Performance seem very consistent.
-
-
 \input{results/figures}
 
 
@@ -121,18 +109,19 @@ In addition we use a D-Link Dir-655 gigabit router for networking.
 All computers run Apple OS X 10.9.2 operating system. 
 
 \subsection{Initial benchmarking}
-In this part we want to investigate how our computer and cluster behaves in various scenarios. We will in all experiments use a workload of 95\% read and 5\% write requests as is common on a typical social website. Each data entry is 1kb. 
+In this part we want to investigate how our computer and cluster behaves in various scenarios. We will in all experiments use a workload of 95\% read and 5\% write requests as is common on a typical social website. Each data entry is 1kB. 
 
 
 \subsubsection{Response time distribution}
-We want to establish a baseline for how each individual node performs with regards to servicing a request. In this experiment we will setup single computer Voldemort instance on each computer and measure the distribution of service time. We will run this test with both our ZooKeeper implementation and the original Voldemort code. We will send queries as fast as possible.
+We want to establish a baseline for how each individual node performs with regards to servicing requests. In this experiment we will setup a single node Voldemort instance, and measure the service time over a given number of requests. We will run this test with both our ZooKeeper implementation and the original Voldemort code, sending queries as fast as possible.
 
-We expect little difference in results as all nodes should run below maximum capacity. We expect majority of these requests to be serviced in under 1 ms as found by Rabl et al\cite{Rabl:2012:SBD:2367502.2367512}.
+We expect similar results between the nodes, as all nodes will run at maximum capacity. We also expect the majority of these requests to be serviced in under 1 ms as found by Rabl et al\cite{Rabl:2012:SBD:2367502.2367512}.
 
-\subsubsection{Performance of single nodes}
-We also want to get an idea of each individual nodes ability to service queries. To test this we will again run single node clusters and send requests as fast as possible.
+\subsubsection{Throughput of single nodes}
+We also want to get an idea of each individual nodes ability to service queries. To test this we will again run single node clusters and send requests as fast as possible. The throughput is measured for 1 million requests, each for values of size 1024 bytes.
 
-With our workload and entry size we have a theoretical limit of around 60 000 requests per second as this is equal to 125MB or 1Gbit data per second. We expect the 4 cores of the i7 to be able to serve up to 60 000 requests, while the two computers will perform considerably worse. 
+%%% This is for evaluation I think?
+%With our workload and entry size we have a theoretical limit of around 60 000 requests per second as this is equal to 125MB or 1Gbit data per second. We expect the 4 cores of the i7 to be able to serve up to 60 000 requests, while the two computers will perform considerably worse. 
 
 \subsection{Experiments on the cluster}
 In this part of the experiments we have a look at how a cluster consisting of several nodes performs. We will explore different scenarios both with and without rebalancing.
