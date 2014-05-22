@@ -132,7 +132,7 @@ We expect little difference in results as all nodes should run below maximum cap
 \subsubsection{Performance of single nodes}
 We also want to get an idea of each individual nodes ability to service queries. To test this we will again run single node clusters and send requests as fast as possible.
 
-With our workload and entry size we have a theoretical limit of around 60 000 requests per second as this is equal to 125MB or 1Gbit data per second. We expect the 4 cores of the i7 to be able to serve up to 60 000 requests, while the two computers will perform considerably worse. 
+With our workload and entry size we have a theoretical limit of around 60 000 requests per second as this is equal to 125MB or 1Gbit data per second. We expect the 4 cores of the i7 to be able to serve up to 60 000 requests, while the two slower computers will perform considerably worse. 
 
 \subsection{Experiments on the cluster}
 In this part of the experiments we have a look at how a cluster consisting of several nodes performs. We will explore different scenarios both with and without rebalancing.
@@ -167,6 +167,27 @@ We expect the system to perform poorly during the initial phase as both computer
 
 \subsection{Initial benchmarking}
 Below we present our results
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\textwidth]{results/distribution/distribution_macmini}
+    \caption{Response time distribution Core 2 Duo Macmini}
+    \label{fig:dist_knut}
+\end{figure}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\textwidth]{results/distribution/distribution_knut}
+    \caption{Response time distribution i5 MacBook}
+    \label{fig:dist_knut}
+\end{figure}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\textwidth]{results/distribution/distribution_eivind}
+    \caption{Response time distribution i7 MacBook}
+    \label{fig:dist_knut}
+\end{figure}
 
 
 
