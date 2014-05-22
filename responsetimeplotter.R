@@ -30,6 +30,8 @@ mydatanozk = read.csv(opt$official)
 # unpack histogram
 nozk <- unlist(apply(mydatanozk, 1, function(x) rep(x[1], x[2])))
 
+quantile(nozk, prob=c(0.9, 0.999))
+quantile(zookeeperdata, prob=c(0.9, 0.999))
 
 
 
