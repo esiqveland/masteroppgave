@@ -1,0 +1,13 @@
+% evaluation.tex
+
+We will first mention a few of the general experiences we got doing this project.
+
+\section{Experiences}
+We did not have access to a lot of different hardware while doing this project. Our computers proved quite fast, with each individual node pushing 50-70 MB per second. This made us quickly reach the network speed limit in our benchmarking system, receiving over 130MB/s second from the cluster while benchmarking. This limit was reached around 60k requests/s, so this is our practical, and theoretical, maximum throughput of 1024 kB values. On a 100mbit connection we could only send or receive about 5k requests/s, or roughly 12 MB/s. 
+
+While testing, we noticed no real difference between a 12MB and 2GB cache size on our Voldemort systems. This might suggest there is a problem with the setting in the software. All of our hardware run on SSDs, but we still consider this result surprising. There could be more work done here on largely different sizes of data sets, but this was not our main focus.
+
+Overall we found the performance to be very consistent. Our results were on large very reproducible and saw little variance between benchmark runs.
+
+\section{Response time}
+
