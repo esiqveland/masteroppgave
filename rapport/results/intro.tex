@@ -95,10 +95,54 @@ In addition we use a D-Link Dir-655 gigabit router for networking.
 \subsubsection{Software}
 All computers run Apple OS X 10.9.2 operating system. 
 
-\subsection{Baseline}
-In this experiment we want to establish a baseline for how a cluster behaves under load. We have both Macbooks sharing 16 partitions. We use the Hackintosh for generating traffic. This experiment was run with a request destribution of 99\% reads and 1 \% writes. We will measure overall throughput as well as how stressed each system is under the experiment.
+\subsection{Initial benchmarking}
+In this part we want to investigate how our computer and cluster behaves in various scenarios. We will in all experiments use a workload of 95\% read and 5\% write requests as is common on a typical social website. Each data entry is 1kb. 
 
-We expect the du
+
+\subsubsection{Response time distribution}
+We want to establish a baseline for how each individual node performs with regards to servicing a request. In this experiment we will setup single computer Voldemort instance on each computer and measure the distribution of service time. We will run this test with both our ZooKeeper implementation and the original Voldemort code. We will send queries as fast as possible.
+
+We expect little difference in results as all nodes should run below maximum capacity. We expect majority of these requests to be serviced in under 1 ms as found by Rabl et al.\cite{vldb2012}
+
+\subsubsection{Performance of single nodes}
+We also want to get an idea of each individual nodes ability to service queries. To test this we will again run single node clusters and send requests as fast as possible.
+
+With our workload and entry size we have a theoretical limit of around 60 000 requests per second as this is equal to 125MB or 1Gbit data per second. We expect the 4 cores of the i7 to be able to serve up to 60 000 requests, while the two computers will perform considerably worse. 
+
+\subsection{Experiments on the cluster}
+In this part of the experiments we have a look at how a cluster consisting of several nodes performs. We will explore different scenarios both with and without rebalancing.
+
+\subsubsection{Baseline}
+In this experiment we want to establish a baseline for how a cluster behaves under load. We have both MacBooks sharing 16 partitions. We define node 1 to be the Core i7 MacBook and node 2 to be then Core i5 Macbook.  We use the Hackintosh for generating traffic. 
+
+We expect node 1 to be able to serve its requests with ease while node 2 will struggle with near 100\% utilization of the CPU. As this is not an optimal work distribution we expect measured throughput to be lower than under optimal conditions. As in the case with the initial benchmarks, we will run the tests both on our ZooKeeper implementation and the original Voldemort project. 
+
+\subsubsection{Adaptive cluster experiment}
+In this experiment we want to see how the cluster behaves when we allow a struggling node to move partitions over on a node under less stress. Node 1 and 2 are set up the same way as in the baseline experiment. A struggling node is defined as a node running at less than 20\% idle CPU.
+
+We expect throughput to be lower during the rebalance phase, but overall we will see an increase in performance over time as we gain a more optimal distribution of partition. 
+
+We will again run the experiment on both our implementation and the original Voldemort implementation to see if there is any major differences in performance. On the original implementation we trigger rebalances manually until we reach a state where no node is stressed. 
+
+After viewing the results we found a severe bug in our ZooKeeper implementation. Which led us to redo this test on our implementation. More on this in the results section. We chose to include the incorrect result for completeness. 
+
+
+\subsubsection{Mini and slowpro with fastpro to the rescue}
+In this experiment we will utilize all our features by adding a node to a already struggling cluster and automatically move partitions to alleviate the existing nodes. We will have a cluster consisting of the Mac Mini and i5 MacBook Pro and we will add the i7 Macbook Pro during the experiment. 
+
+We expect the system to perform poorly during the initial phase as both computers will be running at near max capacity. After we add third computer and move the first partition the performance should increase. As the system migrates more partitions away from the struggling nodes the overall performance should keep increasing. 
+
+\subsubsection{Partitions containing lots of data. See how much throughput is affected. Different rebalance strategies}
+
+
+
+
+
+\section{Results}
+
+\subsection{Initial benchmarking}
+Below we present our results
+
 
 
 
