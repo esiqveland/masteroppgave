@@ -106,36 +106,42 @@ In addition we use a D-Link Dir-655 gigabit router for networking.
 All computers run Apple OS X 10.9.2 operating system. 
 
 \subsection{Initial benchmarking}
-In this part we want to investigate how our computer and cluster behaves in various scenarios. We will in all experiments use a workload of 95\% read and 5\% write requests as is common on a typical social website. Each data entry is 1kB. 
+To verify our modifications are not too costly for performance, we will be concentrating on two metrics during our tests. The response time distribution has been included to verify \emph{how fast} we are answering most queries. The throughput metric has been included to verify whether raw, overall work performance is intact.
+
+In this part we want to investigate how our computer and cluster behaves in various scenarios. We will in all experiments use a workload of 95\% read and 5\% write requests as is common on a typical social website. Each data entry is 1kB. The database is seeded with 1 million entries before each test starts, unless otherwise specified. 
 
 
 \subsubsection{Response time distribution}
-We want to establish a baseline for how each individual node performs with regards to servicing requests. In this experiment we will setup a single node Voldemort instance, and measure the service time over a given number of requests. We will run this test with both our ZooKeeper implementation and the original Voldemort code, sending queries as fast as possible.
+Response time is an important metric and the response time distribution is very helpful in determining perceived performance. Response time is important for both user experience when using a service and for keeping SLAs.
 
-We expect similar results between the nodes, as all nodes will run at maximum capacity. We also expect the majority of these requests to be serviced in under 1 ms as found by Rabl et al\cite{Rabl:2012:SBD:2367502.2367512}.
+We want to establish a baseline for how each individual node performs with regards to time used responding per requests. This is to verify the impact our modifications have on the users experience of performance. In this experiment we will setup a single node Voldemort instance, and measure the service time over a given number of requests. We will run this test with both our ZooKeeper implementation and the official Voldemort code for comparison. 
+Queries are generated as fast as possible to test response time at maximum load, ie. the worst case.
+
+We expect comparable results between the nodes, as all nodes will run at maximum capacity. We also expect the majority of these requests to be serviced in under 1 ms as found by Rabl et al\cite{Rabl:2012:SBD:2367502.2367512}.
 
 \subsubsection{Throughput of single nodes}
-We also want to get an idea of each individual nodes ability to service queries. To test this we will again run single node clusters and send requests as fast as possible. The throughput is measured for 1 million requests, each for values of size 1024 bytes.
+We also want to get an overview over each nodes ability to answer requests. To test throughput we will again run single node clusters and send requests as fast as possible. The throughput is measured over 1 million requests, for values of 1024 bytes.
 
 %%% This is for evaluation I think?
 %With our workload and entry size we have a theoretical limit of around 60 000 requests per second as this is equal to 125MB or 1Gbit data per second. We expect the 4 cores of the i7 to be able to serve up to 60 000 requests, while the two computers will perform considerably worse. 
 
 \subsection{Experiments on the cluster}
-In this part of the experiments we have a look at how a cluster consisting of several nodes performs. We will explore different scenarios both with and without rebalancing.
+In this part of the experiments we have a look at how a cluster consisting of several nodes performs. We will explore different scenarios both with and without rebalancing, and look at how throughput and CPU usage is affected.
 
 \subsubsection{Baseline}
-In this experiment we want to establish a baseline for how a cluster behaves under load. We have both MacBooks sharing 16 partitions. We define node 1 to be the Core i7 MacBook and node 2 to be then Core i5 Macbook.  We use the Hackintosh for generating traffic. 
+In this experiment we want to establish a baseline for how a cluster behaves under load. We have 2 nodes sharing 32 partitions, 16 partitions each. We define node 1 to be the Core i7 MacBook and node 2 to be the Core i5 MacBook. We use the desktop i7 for generating traffic. 
 
 We expect node 1 to be able to serve its requests with ease while node 2 will struggle with near 100\% utilization of the CPU. As this is not an optimal work distribution we expect measured throughput to be lower than under optimal conditions. As in the case with the initial benchmarks, we will run the tests both on our ZooKeeper implementation and the original Voldemort project. 
 
 \subsubsection{Adaptive cluster experiment}
-In this experiment we want to see how the cluster behaves when we allow a struggling node to move partitions over on a node under less stress. Node 1 and 2 are set up the same way as in the baseline experiment. A struggling node is defined as a node running at less than 20\% idle CPU.
+In this experiment we want to see how the cluster behaves when we allow a struggling node to move partitions over to a node under less stress. Node 1 and 2 are set up the same way as in the baseline experiment. A struggling node is defined as a node running at less than 20\% idle CPU over a given period of time.
 
-We expect throughput to be lower during the rebalance phase, but overall we will see an increase in performance over time as we gain a more optimal distribution of partition. 
+We expect throughput to be lower during the rebalance phase, but overall we will see an increase in performance over time as we gain a more optimal distribution of partitions tailored for the hardware. 
 
-We will again run the experiment on both our implementation and the original Voldemort implementation to see if there is any major differences in performance. On the original implementation we trigger rebalances manually until we reach a state where no node is stressed. 
+We will again run the experiment on both our implementation and the original Voldemort implementation to see if there is any major differences in performance. On the official source code, we trigger rebalances manually until we reach a state where no node is stressed. 
 
-After viewing the results we found a severe bug in our ZooKeeper implementation. Which led us to redo this test on our implementation. More on this in the results section. We chose to include the incorrect result for completeness. 
+% % % evaluation??
+% % %After viewing the results we found a severe bug in our ZooKeeper implementation. Which led us to redo this test on our implementation. More on this in the results section. We chose to include the incorrect result for completeness. 
 
 
 \subsubsection{Mini and slowpro with fastpro to the rescue}
