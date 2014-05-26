@@ -144,8 +144,17 @@ Voldemort uses external scripts for triggering rebalancing and repartitioning. T
 
 \section{Part 3}
 \subsection{Headmaster}
-We ran into some issues while writing these features. Originally the rebalance process sends the newly created \texttt{final\_cluster.xml} to all nodes. 
+% We ran into some issues while writing these features. Originally the rebalance process sends the newly created \texttt{final\_cluster.xml} to all nodes. 
 
+Headmaster is our cluster administrator service. It can be started on any node as long as ZooKeeper is reachable. When an instance of Headmaster is started an ephemeral znode is created under /headmaster in ZooKeeper. This path has the sequential flag set, so each znode will autmoatically have a sequence number appended to its name. So at runtime with 3 nodes running Headmaster we typically have a structure like in Figure \ref{fig:dirstruct}
+
+Headmaster can be running on multiple nodes concurrently, and a leader election protocol based on ZooKeeper is resposible for only having one active Headmaster at the time. If current Headmaster becomes unavailable, one of the waiting Headmasters will take over and become active. 
+
+Whenever a node is starting Voldemort it register itself under the znode /active in ZooKeeper. This is done with the ephemeral flag set. to recap on ZooKeeper, this means that if for some reason the node is disconnected from ZooKeeper. The znode will be deleted. When a node creates this znode it also put its node id as the value. If it is a new node with no existing id, it sets the value to ``NEW''. 
+
+Headmaster is informed of all changes under the /active znode. Whenever there is a node registering with value ``NEW'' headmaster checks if the node as an entry in the current cluster.xml. If this is the case it simply changes the active value to the correct id. If there is no entry in cluster.xml, Headmaster give the node an id and creates a znode under /config/nodes/ and uploads the corresponding server.properties file. Finally cluster.xml is updated with a new entry for the new node. This entry will not have responsibility for any partitions yet.
+
+If StatusAnalzser intiates a partitionMove headmaster picks one or more partitions according to the rebalance strategy and moves them to the specified calm node. Then a final\_cluster.xml is written and a rebalance is intiated.
 
 
 \subsection{SigarAgent}
