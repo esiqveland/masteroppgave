@@ -44,12 +44,6 @@ Rebalancing here refers to the data balance in the cluster. With nodes being add
 
 do routinly analysis of the cluster and trigger random shuffles etc. to balance the cluster.
 
-\section{Running repair jobs}
-run repair jobs regulary / based on sigar output
-
-\section{Moving paritions based on load}
-Headmaster could make decisions based on e.g. cpu, disk or memory usage to make partition shifts from one node to another.
-
 \section{Ondemand computing}
 With the recent years advancement in cloud computing, especially those driven by Amazons EC2 service, it is easy to rent computing capacity on the fly. By the current design, having actual computers ready is a hard requirement, ie. you have to already own (or rent) the hardware to insert a new node. Although you can scale the cluster for demand as you go, they still have to be set up with software and told to join in.
 
