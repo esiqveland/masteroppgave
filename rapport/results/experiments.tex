@@ -2,9 +2,10 @@
 
 %In this chapter we will present our findings and evaluate what impact the added features have on a working node.
 
-In this chapter we will present experiments we have run and the corresponding results. We will benchmark both the original Voldemort implementation and our own to compare the impact of our work on the overall throughput and performance of the system. We will look at requests processed per second, response time distribution and CPU-utilization under a typical usage pattern. 
+In this chapter we will present experiments we have run and their corresponding results. We will benchmark both the original Voldemort implementation and our own to compare the impact of our work on the overall throughput and performance of the system. We will look at requests processed per second, response time distribution and CPU-utilization under a typical usage pattern. 
 
-Our experiments are in two phases. First single-node benchmarking then rebalancing of a cluster both manually and automatically. As our cluster consists of very different hardware it will be useful to get an understanding of what to expect from each individual node before we add them together. Lastly we will have a look at how the cluster performs during a fully automated cluster expansion with corresponding rebalances. 
+Our experiments are done in two phases. First part is a single-node benchmark of each node that will participate in the tests. This is to get an understanding of their performance. As our cluster consists of very different hardware it will be useful to have an idea of what to expect from each individual node before we add them together.
+The second part concerns performance and scaling after and during rebalancing of a cluster. The rebalance process will be executed both manually and using our automatic system for balancing.
 
 While management and monitoring can be both useful and convenient, it does introduce overhead. This overhead should not have a significant impact on system performance, others citing as low as 1-2\% impact as tolerable.
 
