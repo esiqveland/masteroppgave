@@ -20,12 +20,16 @@ During these tests we see a lot of different behavior for the different hardware
 
 The i7 with 4 cores clearly does the best, displaying same performance for both code bases and sub 5 ms response time for 99.9\% of requests.
 
+TODO: include?
+On our initial tests we alse have found no significant difference in the performance between our ZooKeeper implementation and the original Voldemort code. Contrary to our expectations, the response time distribution varies greatly on different hardware. In our results the 0.999 percentile response time varies from 250 ms on the slowest hardware to 5 ms on the fastest. On the .90 percentile there is however is much less difference with response times of 2 ms on the slowest hardware and 1 ms on the fastest.
+
 \section{Throughput}
 \label{eval:throughput}
+When it comes to the single node throughput benchmarks the results are more in line with what we expected. The slow Core 2 Duo is barely able to serve 17000 requests per second while the Core i5 and i7 are able to serve 32000 and 44000. With our theoretical limit of 60 000 requests per second we can expect a cluster consisting of the two slower machines to be unable to service a full workload, while a cluster with all 3 nodes should comfortably do so. This information is useful for structuring our adaptive cluster experiments.
 
 \section{Scaling and balancing}
 \label{eval:balance}
-As we can see, to achieve full potential scaling some skewing of partitions is required.
+As we can see, to achieve full potential scaling some skewing of partitions is required. In our adaptive cluster experiments we have compared automated to manual rebalancing and found our automatic solution to perform on par with the manual one. We have also done a extensive cluster expansion test and monitored CPU-utilization and throughput. These experiments show that our implementation works as intended.
 
 Figure shows that this can also be achieved by automatic methods.
 
