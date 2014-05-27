@@ -11,67 +11,12 @@ While management and monitoring can be both useful and convenient, it does intro
 
 The goal of these experiments is to verify that after our modifications the performance remains intact. For Voldemort, near linear scaling of throughput is expected when adding worker nodes to the cluster. 
 
-\section{The tests}
-All tests are run on a clean cluster instance, with a warm up period loading data into the database. All tests are run three times, with the average score used.
+\section{Setup}
+\subsection{Benchmark tool}
+We use Voldemorts provided benchmark tool to send data to our cluster. The program is heavily based on the work by Yahoo Cloud Serving Benchmark. This allows us to generate different types of workloads, request loads and number of sending threads. We also had to do some modifications to get a running average throughput, instead of a total average throughput when measuring.
 
-Test0:
-
-100\% read ?
-100\% read no mod ?
-
-99\% 1\% read/update ? read/write?
-99\% 1\% read/update ? read/write? no mod
-
-1\%/99\% read/write ?
-1\%/99\% read/write ? no mod
-
-linear scaling:
-100\% read ? 2 nodes
-100\% read no mod ? 2 nodes
-
-99\% 1\% read/update ? read/write? 2 nodes
-99\% 1\% read/update ? read/write? no mod | 2 nodes
-
-These are the most realistic workloads for Voldemort, as a high volume read only service and about 98-99\% read to write/update.
-
-rebalance:
-Just monitor request rate during a rebalance.
-Remember to somewhat record size of data set.
-
-\begin{center}
-\begin{table}[h]
-	\begin{tabular}{|c|c|c|c|c|l|}
-		\multicolumn{1}{c}{Test case} & 
-		\multicolumn{1}{c}{Node \#} &
-		\multicolumn{1}{c}{Cluster size} &  
-		\multicolumn{1}{c}{read \%} & 
-		\multicolumn{1}{c}{write \%} & 
-		\multicolumn{1}{c}{state} \\
-		\hline
-
-		TC1.1 & 1 & 1 & 95 & 5 & official \\
-		TC1.2 & 1 & 1 & 95 & 5 & modified \\
-		\hline
-		TC2.1 & 2 & 1 & 95 & 5 & official \\
-		TC2.2 & 2 & 1 & 95 & 5 & modified \\
-		\hline
-		TC3.1 & 3 & 1 & 95 & 5 & official \\
-		TC3.2 & 3 & 1 & 95 & 5 & modified \\
-
-		\hline
-	\end{tabular}
-	\caption{Test case setup. Official/modified is shorthand for whether we will be using original or our source code for this test.}
-	\label{tbl:testcases}
-\end{table}
-\end{center}
-
-\section{Experiments}
-\subsection{Setup}
-\subsubsection{Benchmark tool}
-We use Voldemorts provided benchmark tool to send data to our cluster. The program is heavily based on the work by Yahoo Cloud Serving Benchmark. This allows us to generate different types of workloads, request loads and number of sending threads. We also had to do some modifications to get a running average, instead of a total average.
-
-We parse most of the logs in python to transform the data into something useful. In some cases we also have to manually put the data together.
-For analysis, we mainly use \texttt{R}\cite{Rproject} with extensive use of the \texttt{Hmisc}\cite{Hmisc} library. Our Rscripts can be found in our project on github\cite{githubproject}. Most of the diagrams in this chapter has been generated with \texttt{R}.
+We parse most of the logs in python to transform the data points into something useful. In some cases we also have to manually put the data together.
+For analysis, we mainly use \texttt{R}\cite{Rproject} with extensive use of the \texttt{Hmisc}\cite{Hmisc} library. Our Rscripts can be found in our project on github\cite{githubproject}. All the diagrams in this chapter has been generated with \texttt{R}.
 
 An example run with the benchmark tool could be:
 \begin{lstlisting}[language=bash]
@@ -90,11 +35,11 @@ voldemort-performance-tool.sh --threads $threads --metric-type $metric
 
 These are also the settings we used for most of our tests.
 
-\subsubsection{Hardware}
+\subsection{Hardware}
 We have 4 computers involved in these experiments:
 
 \begin{enumerate}
-	\item Hackintosh: Intel Core i7 2.5GHz Quad Core  16 GB Memory 250GB SSD
+	\item Custom built: Intel Core i7 2.5GHz Quad Core  16 GB Memory 250GB SSD
 	\item MacBook Pro: Intel Core i7 2.6 GHz Quad Core 8 GB Memory 250GB SSD
 	\item MacBook Pro: Intel Core i5 2.5 GHz Dual Core 8 GB Memory 120GB SSD
 	\item Mac Mini: Intel Core 2 Duo 2.4 GHz Dual Core 8 GB Memory 250GB SSD
@@ -102,57 +47,50 @@ We have 4 computers involved in these experiments:
 
 In addition we use a D-Link Dir-655 gigabit router for networking.
 
-\subsubsection{Software}
+\subsection{Software}
 All computers run Apple OS X 10.9.2 operating system. 
 
-\subsection{Initial benchmarking}
+\section{Single-node benchmarking}
 To verify our modifications are not too costly for performance, we will be concentrating on two metrics during our tests. The response time distribution has been included to verify \emph{how fast} we are answering most queries. The throughput metric has been included to verify whether raw, overall work performance is intact.
 
-In this part we want to investigate how our computer and cluster behaves in various scenarios. We will in all experiments use a workload of 95\% read and 5\% write requests as is common on a typical social website. Each data entry is 1kB. The database is seeded with 1 million entries before each test starts, unless otherwise specified. 
+In this part we want to investigate how our computer and cluster behaves in various scenarios. We will in all experiments use a workload of 95\% read and 5\% write requests as is common on a typical social website CITATION NEEDED. Each data entry is 1kB. The database is seeded with 1 million entries before each test starts, unless otherwise specified. In all tests the i7 desktop is generating requests. 
 
 
-\subsubsection{Response time distribution}
-Response time is an important metric and the response time distribution is very helpful in determining perceived performance. Response time is important for both user experience when using a service and for keeping SLAs.
+\subsection{Response time distribution}
+Response time is an important metric and the response time distribution is very helpful in determining perceived performance. Response time is important for both user experience when using a service and for upholding SLAs.
 
 We want to establish a baseline for how each individual node performs with regards to time used responding per requests. This is to verify the impact our modifications have on the users experience of performance. In this experiment we will setup a single node Voldemort instance, and measure the service time over a given number of requests. We will run this test with both our ZooKeeper implementation and the official Voldemort code for comparison. 
-Queries are generated as fast as possible to test response time at maximum load, ie. the worst case.
+Queries are generated as fast as possible to test response time at maximum load, i.e. the worst case.
 
-We expect comparable results between the nodes, as all nodes will run at maximum capacity. We also expect the majority of these requests to be serviced in under 1 ms as found by Rabl et al\cite{Rabl:2012:SBD:2367502.2367512}.
+We expect comparable results between the nodes, as all nodes will run at maximum capacity. We also expect the majority of these requests to be serviced in under 1 ms as found by Rabl et al.\cite{Rabl:2012:SBD:2367502.2367512}.
 
 \subsubsection{Throughput of single nodes}
-We also want to get an overview over each nodes ability to answer requests. To test throughput we will again run single node clusters and send requests as fast as possible. The throughput is measured over 1 million requests, for values of 1024 bytes.
+We also want to get an overview over each nodes ability to serve requests. To test throughput we will again run single node clusters and send requests at maximum load. The throughput is measured over 1 million requests, for values of 1024 bytes. 
 
-%%% This is for evaluation I think?
-%With our workload and entry size we have a theoretical limit of around 60 000 requests per second as this is equal to 125MB or 1Gbit data per second. We expect the 4 cores of the i7 to be able to serve up to 60 000 requests, while the two computers will perform considerably worse. 
+As our hardware is so different we expect vast difference in individual node performance. The old core 2 duo will not fare well compared to the i5 and i7. 
 
-\subsection{Experiments on the cluster}
-In this part of the experiments we have a look at how a cluster consisting of several nodes performs. We will explore different scenarios both with and without rebalancing, and look at how throughput and CPU usage is affected.
+\subsection{Adaptive cluster}
+In these experiments we have a look at how a cluster consisting of several nodes performs. We will explore different scenarios both with and without rebalancing, and look at how throughput and CPU usage is affected. For these experiments we increase the preloaded values in the system to 3 million to allow for more data points during each rebalance operation. 
 
 \subsubsection{Baseline}
-In this experiment we want to establish a baseline for how a cluster behaves under load. We have 2 nodes sharing 32 partitions, 16 partitions each. We define node 1 to be the Core i7 MacBook and node 2 to be the Core i5 MacBook. We use the desktop i7 for generating traffic. 
+This experiment will act as a base line for how a cluster behaves under load. We have 2 nodes sharing 16 partitions, 8 partitions each. We run this experiment on the two slowest nodes to make increases in performance more obvious. As we only have 2 nodes in the cluster we only use one required read / write on each request and no data duplication.
 
-We expect node 1 to be able to serve its requests with ease while node 2 will struggle with near 100\% utilization of the CPU. As this is not an optimal work distribution we expect measured throughput to be lower than under optimal conditions. As in the case with the initial benchmarks, we will run the tests both on our ZooKeeper implementation and the original Voldemort project. 
+We expect both nodes to struggle with servicing their workload and as a result the throughput should be less than optimal. In other words we do not expect the throughput of these two nodes combined to be equal to the sum of their individual throughputs. 
 
-\subsubsection{Adaptive cluster experiment}
-In this experiment we want to see how the cluster behaves when we allow a struggling node to move partitions over to a node under less stress. Node 1 and 2 are set up the same way as in the baseline experiment. A struggling node is defined as a node running at less than 20\% idle CPU over a given period of time.
+\subsubsection{Manual rebalancing}
+In this experiment we want to see how the cluster behaves when we allow a struggling node to move partitions over to a node under less stress. We will manually move one partition at the time over from a struggling node to one less worked. We will use the same criteria as in our automatic system ,which means that a struggling node is defined as a node running over 85\% utilized CPU. We will continue to move partitions until there are no nodes under 85\% utilization. This experiment is run on the original Voldemort code. 
 
-We expect throughput to be lower during the rebalance phase, but overall we will see an increase in performance over time as we gain a more optimal distribution of partitions tailored for the hardware. 
+During rebalancing we expect the throughput to suffer somewhat, however we expect to see an increase in performance over time as we gain a more optimal distribution of partitions. 
 
-We will again run the experiment on both our implementation and the original Voldemort implementation to see if there is any major differences in performance. On the official source code, we trigger rebalances manually until we reach a state where no node is stressed. 
+\subsubsection{Automatic rebalancing}
+This experiment is a rerun of the previous one except there is no manual interaction and Headmaster is calling all the shots.
 
-% % % evaluation??
-% % %After viewing the results we found a severe bug in our ZooKeeper implementation. Which led us to redo this test on our implementation. More on this in the results section. We chose to include the incorrect result for completeness. 
+We expect this experiment to play out the same way as the previous one, with comparable performance.
 
+\subsubsection{Automatic cluster expansion}
+Finally we will utilize all our features by adding a node to an already struggling cluster and automatically move partitions to alleviate the existing nodes. We will have a cluster consisting of the Mac Mini and i5 MacBook Pro and we will add the i7 Macbook Pro during the experiment. Headmaster will be in charge of triggering rebalance as needed. 
 
-\subsubsection{Mini and slowpro with fastpro to the rescue}
-In this experiment we will utilize all our features by adding a node to an already struggling cluster and automatically move partitions to alleviate the existing nodes. We will have a cluster consisting of the Mac Mini and i5 MacBook Pro and we will add the i7 Macbook Pro during the experiment. 
-
-We expect the system to perform poorly during the initial phase as both computers will be running at near max capacity. After we add third computer and move the first partition the performance should increase. As the system migrates more partitions away from the struggling nodes the overall performance should keep increasing until we reach a stable state where we are able to serve up to the network cap with data. 
-
-\subsubsection{Partitions containing lots of data. See how much throughput is affected. Different rebalance strategies}
-
-
-
+We expect the system to perform poorly during the initial phase as both computers will be running at near max capacity. After we add third computer and move the first partition the performance should increase. As the system migrates more partitions away from the struggling nodes the overall performance should keep increasing until it can keep up with maximum workload. 
 
 
 
