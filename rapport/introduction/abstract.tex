@@ -1,12 +1,14 @@
 
 \begin{abstract}
-Voldemort is a distributed key-value storage system. 
-It is an open source implementation of Amazon's Dynamo storage system. 
-Voldemort features redundancy through automatic replication across multiple servers as well as (assisted) partitioning of data. 
-Similarly to Dynamo it also includes tunable consistency.
-It's distributed nature also includes no single point of failure, with no members having a special position (no master or coordinator). 
+We have migrated the configuration storage of a distributed NoSql database from filesystem local XML files to global objects using Apache ZooKeeper.
 
-One proposed fun project in the Voldemort system was improving the configuration system by migrating from current XMLs stored locally to a distributed system like Yahoo's ZooKeeper. 
-In this project we have set out to explore the configuration requirements of Voldemort and implement and integrate solutions to these with ZooKeeper. 
+Using native tools and ZooKeeper coordination, we have implemented a fault tolerant, redundant service to manage node discovery, configuration generation and propagation, and live adjustment of responsibility to match each nodes available system resources.
+\end{abstract}
 
+\clearpage
+\renewcommand{\abstractname}{Sammendrag}
+\begin{abstract}
+Vi har flyttet konfigurasjon av en distribuert NoSql database fra lokalt lagrede XML filer til globalt tilgjengelige objekter ved hjelp av Apache ZooKeeper.
+
+Vi har brukt ZooKeepers egenskaper for koordinasjon og andre verktøy til å implementere en feiltolerant, redundant tjeneste for å ta hånde om nye noder, generere konfigurasjonsfiler, propagere endringer og automatisk tilpassing av det kjørende systemet til den enkelte nodes tilgjengelige systemressurser.
 \end{abstract}
