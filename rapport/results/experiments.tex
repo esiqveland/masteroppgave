@@ -1,15 +1,14 @@
 % intro.tex
 
 %In this chapter we will present our findings and evaluate what impact the added features have on a working node.
-In this chapter we will present the data we have collected from our measurements and how they were taken.
+
+In this chapter we will present experiments we have run and the corresponding results. We will benchmark both the original Voldemort implementation and our own to compare the impact of our work on the overall throughput and performance of the system. We will look at requests processed per second, response time distribution and CPU-utilization under a typical usage pattern. 
+
+Our experiments are in two phases. First single-node benchmarking then rebalancing of a cluster both manually and automatically. As our cluster consists of very different hardware it will be useful to get an understanding of what to expect from each individual node before we add them together. Lastly we will have a look at how the cluster performs during a fully automated cluster expansion with corresponding rebalances. 
 
 While management and monitoring can be both useful and convenient, it does introduce overhead. This overhead should not have a significant impact on system performance, others citing as low as 1-2\% impact as tolerable.
 
-Here we will verify the impact of our work on the overall throughput and performance of the software under different workloads. We will look at requests processed per second and response time distribution under typical usage patterns and some edge cases. 
-
-We will first look at single node performance, with and without our modifications.
-Next we will try verifying that performance scaling is intact. For Voldemort, near linear scaling of throughput is expected when adding worker nodes to the cluster.
-Lastly we will look at performance during a automatically triggered rebalance under load.
+The goal of these experiments is to verify that after our modifications the performance remains intact. For Voldemort, near linear scaling of throughput is expected when adding worker nodes to the cluster. 
 
 \section{The tests}
 All tests are run on a clean cluster instance, with a warm up period loading data into the database. All tests are run three times, with the average score used.
