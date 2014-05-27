@@ -148,14 +148,11 @@ Voldemort uses external scripts for triggering rebalancing and repartitioning. T
 
 Headmaster is our cluster administrator service. It can be started on any node as long as ZooKeeper is reachable. When an instance of Headmaster is started an ephemeral znode is created under /headmaster in ZooKeeper. This path has the sequential flag set, so each znode will autmoatically have a sequence number appended to its name. So at runtime with 3 nodes running Headmaster we typically have a structure like in Figure \ref{fig:dirstruct}
 
-Headmaster can be running on multiple nodes concurrently, and a leader election protocol based on ZooKeeper is resposible for only having one active Headmaster at the time. If current Headmaster becomes unavailable, one of the waiting Headmasters will take over and become active. 
+Headmaster can be running on multiple nodes concurrently, and a leader election protocol based on ZooKeeper is resposible for only having one active Headmaster at the time. If the current Headmaster becomes unavailable, one of the waiting Headmasters will take over and become active. 
 
-Whenever a node is starting Voldemort it register itself under the znode /active in ZooKeeper. This is done with the ephemeral flag set. to recap on ZooKeeper, this means that if for some reason the node is disconnected from ZooKeeper. The znode will be deleted. When a node creates this znode it also put its node id as the value. If it is a new node with no existing id, it sets the value to ``NEW''. 
+Whenever a node is starting Voldemort, the node registers itself under the znode /active in ZooKeeper. This is done with the ephemeral flag set. To recap on ZooKeeper, this means that if for some reason the node is disconnected from ZooKeeper. The znode will be deleted. When a node creates this znode it also put its node id as the value. If it is a new node with no existing id, it sets the value to ``NEW''. 
 
-Headmaster is informed of all changes under the /active znode. Whenever there is a node registering with value ``NEW'' headmaster checks if the node as an entry in the current cluster.xml. If this is the case it simply changes the active value to the correct id. If there is no entry in cluster.xml, Headmaster give the node an id and creates a znode under /config/nodes/ and uploads the corresponding server.properties file. Finally cluster.xml is updated with a new entry for the new node. This entry will not have responsibility for any partitions yet.
-
-If StatusAnalzser intiates a partitionMove headmaster picks one or more partitions according to the rebalance strategy and moves them to the specified calm node. Then a final\_cluster.xml is written and a rebalance is intiated.
-
+Through ZooKeeper, Headmaster is informed of all changes under the /active znode. So, whenever there is a node registering, Headmaster checks for the value ``NEW''. Headmaster then checks if the node has an entry in the current \texttt{cluster.xml}. If the node has an entry, Headmaster simply changes the value to the correct id. If there is no entry in cluster.xml, Headmaster assigns the node a unique id and creates a znode under /config/nodes/ and uploads the corresponding server.properties file. Finally cluster.xml is updated with a new entry for the new node. This node will not have responsibility for any partitions yet.
 
 \subsection{SigarAgent}
 SigarAgent is our service for monitoring activity on nodes in the cluster. Our solution is heavily inspired by the work of Andreas Baakind\cite{baakind}. We utilize Hyperic's sigar API to gather system information on each individual node and send this to Headmaster. We continiously send status on current CPU usage, current consumed memory and how much data the node have stored compared to a given maximum. In contrast to Baakind who only informed his scaling service if any value was above a set threshold, we send a status message every 5 seconds. To prevent these messages for taking up too much resources, we use UDP instead of TCP as we do not require all messages to arrive at Headmaster. 
@@ -163,7 +160,7 @@ SigarAgent is our service for monitoring activity on nodes in the cluster. Our s
 SigarAgent utilizes ZooKeeper to keep track of who is current Headmaster, and will react if there is a change of leadership. If there is no Headmaster active, SigarAgent will sleep until it is notified of a new Headmaster. 
 
 \subsection{StatusAnalyzer}
-StatusAnalyser is a decisions system available to the current headmaster. StatusAnalyser receives status messages from all nodes running SigarAgent and store them in a \texttt{HashMap<String, LinkedList<StatusMessage>>} We store the last 10 messages received from each node. This HashMap is used to analyze the cluster state and trigger rebalancing actions if deemed necessary.
+StatusAnalyzer is a decisions system available to the current Headmaster. StatusAnalyser receives status messages from all nodes running SigarAgent and stores them in a \texttt{HashMap<String, LinkedList<StatusMessage>>}. We store the last 10 messages received from each node, corresponding to 10 intervals of data. This HashMap is used to analyze the cluster state and trigger rebalancing actions if deemed necessary.
 
 StatusAnalyser has a few useful member functions:
 
@@ -176,14 +173,14 @@ migratePartitions(List<String> strugglingNodes)
 
 \end{lstlisting}
 
-Every 30 seconds analyzeCPU is run to see if there is the average CPU-utilization of any nodes is over a threshold. We have defined a node running at over 80\% as a struggling node. If any nodes are above this threshold, getCalmestNode is run to see if there is any nodes that have a lesser workload. Any node with less than 70\% load is defined as a calm node. If we have one or more struggling nodes and a calm node, migratePartitions is triggered. This will inform headmaster that we need a rebalance action to stabilize the cluster. 
+Every 30 seconds analyzeCPU is run to see if the average CPU-utilization of any node is over a threshold. We have defined a node running at over 80\% as a struggling node. If any nodes are above this threshold, getCalmestNode is run to see if there are any nodes that have a lesser workload. Any node with less than 70\% load is defined as a calm node. If we have one or more struggling nodes and a calm node, migratePartitions is triggered. This will inform Headmaster that we need a rebalance action to stabilize the cluster. 
 
-We have two strategies for moving partitions. If we have more than one struggling node we either pick one at random and move one partition over to the calm node, or we move one partition from all struggling nodes over to the calm node. The former strategy will ensure a slow and steady transition while the latter could arrive at a stable state faster at the cost of performance during the more heavy rebalance.
+We have two strategies for moving partitions. If we have more than one struggling node we either pick one at random and move one partition over to the calm node, or we move one partition from each struggling nodes over to the calm node. The former strategy will ensure a slow and steady transition while the latter could arrive at a stable state faster at the cost of performance during the more heavy rebalance.
 
 
 \section{Part 4}
+\subsection{Testing}
 \label{sec:testing}
-TODO: Tests and unit tests?
 When working on large projects, a lot of code lines are involved. To prevent breaking functionality underway, and to help verify correct (desired) behavior while working, we decided to write unit tests. 
 Because of the complex series of events that need to happen while running the program to execute your desired code, it is much easier and more efficient to test and verify your code programmatically in a test environment. The design and verification of our Headmaster program greatly benefited from this approach. The event chain to test the code can be fairly complex, even though the application logic is fairly straight forward.
 
