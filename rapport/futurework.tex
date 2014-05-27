@@ -37,16 +37,22 @@ Rebalancing here refers to the data balance in the cluster. With nodes being add
 
 		\hline
 	\end{tabular}
-	\caption{A cluster with uneven data distribution. This cluster needs rebalancing of data.}
+	\caption{A cluster where partitions exhibit uneven data distribution. This cluster \emph{potentially} needs rebalancing of data.}
 	\label{tbl:datarebalance}
 \end{table}
 \end{center}
 
-do routinly analysis of the cluster and trigger random shuffles etc. to balance the cluster.
+If certain partitions end up with a skewed amount of data, even shuffling partitions around to idle nodes might be fruitless. One might have to do a very expensive rehash, effectively moving the partition key space. If this could be done live in an efficient manner, it could greatly improve the balancing and performance of each node.
 
 \section{Ondemand computing}
-With the recent years advancement in cloud computing, especially those driven by Amazons EC2 service, it is easy to rent computing capacity on the fly. By the current design, having actual computers ready is a hard requirement, ie. you have to already own (or rent) the hardware to insert a new node. Although you can scale the cluster for demand as you go, they still have to be set up with software and told to join in.
+With the recent years advancement in cloud computing, especially those driven by Amazons EC2 service, it is now easy to rent computing capacity as you go and pay for what you use.
+With the current design, having physical computers ready is an absolute requirement, ie. to insert a new node one needs actual hardware.
 
-With the 
+An idea we have for future work is a module to the Headmaster rebalancer that can automatically create, setup and assign Amazon EC2 machines on demand. This would allow for scaling the cluster up and down on demand with rented computing.
 
+
+\section{}
+Wait for node in active, if it is present when we start a server. This could e.g. be used for backup nodes.
+
+\section{}
 extend RebalancePlannerZK to be able to do: Random shuffle, Greedy shuffle, Zone expansion
