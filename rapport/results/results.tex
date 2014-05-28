@@ -89,7 +89,7 @@ In Figure \ref{fig:adaptive_base} we see a cluster of 2 nodes serving queries an
     \label{fig:adaptive_man}
 \end{figure}
 
-In Figure\ref{fig:adaptive_man} we see 2 manual rebalances. We see total CPU-utilization increase as we move partitions away from a struggling node and over to one less worked. The aim of this experiment was to get a baseline to compare our automatic rebalance service to. We see throughput steadily increase after each rebalance moving from around 36k up to 45k. During the rebalance we have two very distict drops in throughput. The first one is from when request starts being proxied and all client threads must reconnect. The second one is from the actual data transfer. 
+In Figure \ref{fig:adaptive_man} we see 2 manual rebalances. We see total CPU-utilization increase as we move partitions away from a struggling node and over to one less worked. The aim of this experiment was to get a baseline to compare our automatic rebalance service to. We see throughput steadily increase after each rebalance moving from around 36k up to 45k. During the rebalance we have two very distict drops in throughput. The first one is from when request starts being proxied and all client threads must reconnect. The second one is from the actual data transfer. 
 
 \clearpage
 \begin{figure}[h]
@@ -98,7 +98,7 @@ In Figure\ref{fig:adaptive_man} we see 2 manual rebalances. We see total CPU-uti
     \caption{Automatic moving of 2 partitions from a struggling node (Core 2). Grey regions mark rebalance period, where data is prepared and transferred. CPU threshold set at \texttt{0.84}.}
     \label{fig:adaptive_auto}
 \end{figure}
-Figure\ref{fig:adaptive_auto} shows the same experiment just automated by Headmaster. We again see a steady increase in throughput as partitions are moved. This shows that our automatic rebalancer performs just as well as the manual tool in Voldemort.  
+Figure \ref{fig:adaptive_auto} shows the same experiment just automated by Headmaster. We again see a steady increase in throughput as partitions are moved. This shows that our automatic rebalancer performs just as well as the manual tool in Voldemort.  
 
 \clearpage
 \begin{figure}[h]
@@ -107,7 +107,7 @@ Figure\ref{fig:adaptive_auto} shows the same experiment just automated by Headma
     \caption{Automatic migration of partitions in a struggling cluster after a third node joins}
     \label{fig:adapt_3node}
 \end{figure}
-Our final Figure\ref{fig:adapt_3node} shows the result adding a node to a struggling cluster and rebalance live. At t=380 the i7 is introduced to the cluster. We see a steady increase in performance as more and more partitions are moved to the i7. In the end the partition distribution is 3,6,9 for the Core 2, i5 and i7. 
+Our final Figure \ref{fig:adapt_3node} shows the result adding a node to a struggling cluster and rebalance live. At t=380 the i7 is introduced to the cluster. We see a steady increase in performance as more and more partitions are moved to the i7. In the end the partition distribution is 3,6,9 for the Core 2, i5 and i7. 
 
 At t=1700 there is a significant loss of throughput after a rebalance. We found no reason for this in our logs, so we expect this to be related to unrelated work done by the operating system on the workload generating computer. 
 
