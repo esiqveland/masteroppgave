@@ -13,7 +13,7 @@ The goal of these experiments is to verify that after our modifications the perf
 
 \section{Setup}
 \subsection{Benchmark tool}
-We use Voldemorts provided benchmark tool to send data to our cluster. The program is heavily based on the work by Yahoo Cloud Serving Benchmark. This allows us to generate different types of workloads, request loads and number of sending threads. We also had to do some modifications to get a running average throughput, instead of a total average throughput when measuring.
+We use Voldemorts provided benchmark tool to send data to our cluster. The program is heavily based on the work by Yahoo Cloud Serving Benchmark\cite{ycsb}. This allows us to generate different types of workloads, request loads and number of sending threads. We also had to do some modifications to get a running average throughput, instead of a total average throughput when measuring.
 
 We parse most of the logs in python to transform the data points into something useful. In some cases we also have to manually put the data together.
 For analysis, we mainly use \texttt{R}\cite{Rproject} with extensive use of the \texttt{Hmisc}\cite{Hmisc} library. Our Rscripts can be found in our project on github\cite{githubproject}. All the diagrams in this chapter has been generated with \texttt{R}.
@@ -25,7 +25,7 @@ write_percent=5
 metric=histogram # [summary|histogram]
 ops=1 000 000 # total requests to run
 threads=54
-recordcount=1000000 # records to insert during warmup
+recordcount=1 000 000 # records to insert during warmup
 valuesize=1024 # bytes per record
 
 voldemort-performance-tool.sh --threads $threads --metric-type $metric 
@@ -48,13 +48,12 @@ We have 4 computers involved in these experiments:
 In addition we use a D-Link Dir-655 gigabit router for networking.
 
 \subsection{Software}
-All computers run Apple OS X 10.9.2 operating system. 
+All computers run Apple OS X 10.9.2 operating system and Java JDK 1.7.0\_51. 
 
 \section{Single-node benchmarking}
 To verify our modifications are not too costly for performance, we will be concentrating on two metrics during our tests. The response time distribution has been included to verify \emph{how fast} we are answering most queries. The throughput metric has been included to verify whether raw, overall work performance is intact.
 
-In this part we want to investigate how our computer and cluster behaves in various scenarios. We will in all experiments use a workload of 95\% read and 5\% write requests as is common on a typical social website CITATION NEEDED. Each data entry is 1kB. The database is seeded with 1 million entries before each test starts, unless otherwise specified. In all tests the i7 desktop is generating requests. 
-
+In this part we want to investigate how our computer and cluster behaves in various scenarios. We will in all experiments use a workload of 95\% read and 5\% write requests as is common on a typical social website where most browse with a few comments or status updates. Each data entry is 1kB. The database is seeded with 1 million entries before each test starts, unless otherwise specified. In all tests the i7 desktop is generating requests. 
 
 \subsection{Response time distribution}
 Response time is an important metric and the response time distribution is very helpful in determining perceived performance. Response time is important for both user experience when using a service and for upholding SLAs.
@@ -70,10 +69,10 @@ We also want to get an overview over each nodes ability to serve requests. To te
 As our hardware is so different we expect vast difference in individual node performance. The old core 2 duo will not fare well compared to the i5 and i7. 
 
 \subsection{Adaptive cluster}
-In these experiments we have a look at how a cluster consisting of several nodes performs. We will explore different scenarios both with and without rebalancing, and look at how throughput and CPU usage is affected. For these experiments we increase the preloaded values in the system to 3 million to allow for more data points during each rebalance operation. 
+In these experiments we have a look at how a cluster consisting of several nodes performs. We will explore different scenarios both with and without rebalancing, and look at how throughput and CPU usage is affected. For these experiments we increase the preloaded values in the system to 3 million to get a bigger data set to move during each rebalance operation. 
 
 \subsubsection{Baseline}
-This experiment will act as a base line for how a cluster behaves under load. We have 2 nodes sharing 16 partitions, 8 partitions each. We run this experiment on the two slowest nodes to make increases in performance more obvious. As we only have 2 nodes in the cluster we only use one required read / write on each request and no data duplication.
+This experiment will act as a base line for how a cluster behaves under load. We have 2 nodes sharing 16 partitions, 8 partitions each. We run this experiment on the two slowest nodes to make increases in performance more obvious. As we only have 2 nodes in the cluster we only use one required read / write on each request and no data duplication. Recall that this is a \texttt{(1,1,1)} system if we refer to the (N,R,W) parameters of Voldemort.
 
 We expect both nodes to struggle with servicing their workload and as a result the throughput should be less than optimal. In other words we do not expect the throughput of these two nodes combined to be equal to the sum of their individual throughputs. 
 

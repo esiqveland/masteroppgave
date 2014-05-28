@@ -11,6 +11,10 @@ We did not have access to a lot of different hardware while doing this project. 
 \subsubsection{Server side caching}
 While testing, we noticed no real difference between a 12MB and 2GB database cache on our Voldemort servers. This might suggest there is a problem with the cache setting in the software. All of our hardware run on SSDs, but we still consider this result surprising. There could be more work done here on largely different sizes of data sets, but this was not our main focus.
 
+\subsubsection{Client updates}
+during rebalancing, we found a critical bug we had introduced in the way clients receive updates of configuration.
+
+
 \subsubsection{Other notes}
 Overall we found the performance to be very consistent. Our results were on large very reproducible and saw little variance between benchmark runs.
 
