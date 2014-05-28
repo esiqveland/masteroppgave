@@ -1,18 +1,16 @@
 % introduction.tex
 
+This thesis is split into \ref{chapter:summary} chapters. Chapter \ref{chapter:introduction} introduces the project, goal, background and technical information. In chapter \ref{chapter:implementation} we present the work we did and how we implemented our goals. Chapter \ref{chapter:results} present the results from testing and verifying our implementation. We then have an evaluation of our work in chapter \ref{chapter:evaluation} and a summary in chapter \ref{chapter:summary}. Chapter \ref{chapter:futurework} presents our thoughts and ideas for future work.
+
 \section{Introduction}
 This section explains the background for our project, what goals we have and what methods we have employed to reach our goals. 
+The goal is a redundant, self balancing service for Voldemort that uses live data about a nodes health to make management decisions.
 
-Chapter \ref{sec:related_software} introduces what other software exist in this area, where we take a quick look at Cassandra and HBase.
-Chapter \ref{sec:related_work} looks at similar work in our area.
-Chapter \ref{sec:technical_background} explains technology and techniques commonly used in distributed systems, and how they are used in Voldemort.
-Chapter \ref{sec:prequel} quickly summarizes how we started this project, and how the first angle failed.
-Another software project we ended up using heavily is Apache ZooKeeper, and is introduced in chapter \ref{sec:zookeeper}.
-
-\subsection{Prequel}
-In our pre-project we built a search engine and ran it on a cluster composed of 8 Raspberry PIs. In this project we wanted to work with a more developed distributed system and explore what possibilities existed for further work, but the typical software packages was unable to run reliably on a small system like the PI. 
-We have therefore chosen to work with Voldemort, which is an open source implementation of Amazon’s Dynamo. This is a highly available NoSQL database that can be run on several nodes.
-As clusters grow in size, management and administrative tasks can become increasingly complex, so we have decided to focus our work on automation and management of a working cluster of nodes running Voldemort. 
+Section \ref{sec:related_software} introduces what other databases exist in this area, where we take a quick look at Cassandra and HBase.
+Section \ref{sec:related_work} looks at similar work in our area.
+Section \ref{sec:technical_background} explains technology and techniques commonly used in distributed systems, and how they are used in Voldemort.
+Section \ref{sec:prequel} quickly summarizes how we started this project, and how the first angle failed.
+Another software project we ended up using heavily is Apache ZooKeeper, and is introduced in section \ref{sec:zookeeper}.
 
 \subsection{Background}
 Traditional relational database systems are generally very safe to use, usually providing all of the ACID (\emph{Atomicity, Consistency, Isolation, Durability}) properties.
@@ -30,9 +28,9 @@ The databases are designed to scale linearly, however managing and scaling these
 
 
 \subsection{Voldemort and Dynamo}
-Voldemort is a distributed key-value storage system based off Amazon's paper on Dynamo, Amazons's highly available key-value store. Voldemort was created by LinkedIn and the first public release was in 2009. It is still under development. Voldemort supports a simple set of operations limited to put, get and delete. Stored objects are uniquely identified by a key and are considered by the system as binary blobs. Voldemort is commonly used for storing lots of smaller objects, typically less than 1MB.  As with other NoSQL implementations, Voldemort sacrifices consistency and isolation requirements to achieve higher availability with satisfactory durability. In fact, we will later see that most of this behavior is easily tunable and left as design choices per implementation. In chapter \ref{sec:voldemort} we will look closer at the specifics of configuring Voldemort. 
+Voldemort is a distributed key-value storage system based off Amazon's paper on Dynamo, Amazons's highly available key-value store. Voldemort was created by LinkedIn and the first public release was in 2009. It is still under development. Voldemort supports a simple set of operations limited to put, get and delete. Stored objects are uniquely identified by a key and are considered by the system as binary blobs. Voldemort is commonly used for storing lots of smaller objects, typically less than 1MB.  As with other NoSQL implementations, Voldemort sacrifices consistency and isolation requirements to achieve higher availability with satisfactory durability. In fact, we will later see that most of this behavior is easily tunable and left as design choices per implementation. In section \ref{sec:voldemort} we will look closer at the specifics of configuring Voldemort. 
 
-Compared with Apaches Cassandra, Voldemort lacks the power of column families and multi-key lookup. This means that any application powered by Voldemort requires additional logic to handle more advanced queries. For simple read heavy workloads however Voldemort is quite fast, serving over 20 000 read requests per second per node. 
+Compared with Apaches Cassandra, Voldemort lacks the power of column families and multi-key lookup. This means that any application powered by Voldemort requires additional logic to handle more advanced queries. For simple read heavy workloads however Voldemort is quite fast, reportedly serving over 20 000 read requests per second per node\cite{voldemort}. 
 
 Voldemort is currently being used by a number of known companies. At LinkedIn they use Voldemort both as read-only and read-write stores. Services powered include LinkedIn Search, news and Who viewed your profile. At EBay they use Voldemort as a read-only store for distributed lookups, and the dating site eHarmony uses Voldemort as a high volume read/write store.
 
@@ -46,11 +44,11 @@ We have chosen to implement this proposed configuration system by moving Voldemo
 In short our goals are the following:
 
 \begin{enumerate}
-	\item{Move Voldemort configuration data away from each local node and into ZooKeeper}
+	\item{Move Voldemort configuration data away from each local node and into the global domain of ZooKeeper}
 	\item{Simplify the rebalance process using ZooKeeper}
 	\item{Create a service for automatic management of the cluster, including node discovery, membership and rebalancing with new members}
 	\item{Create a monitor service to monitor live nodes}
-	\item{Create a decision taker to analyze live monitor data and execute rebalances if necessary}
+	\item{Be able to act and make decisions about the cluster based on gathered information}
 \end{enumerate}
 
 \subsection{Method}
