@@ -69,10 +69,10 @@ We also want to get an overview over each nodes ability to serve requests. To te
 As our hardware is so different we expect vast difference in individual node performance. The old core 2 duo will not fare well compared to the i5 and i7. 
 
 \subsection{Adaptive cluster}
-In these experiments we have a look at how a cluster consisting of several nodes performs. We will explore different scenarios both with and without rebalancing, and look at how throughput and CPU usage is affected. For these experiments we increase the preloaded values in the system to 3 million to allow for more data points during each rebalance operation. 
+In these experiments we have a look at how a cluster consisting of several nodes performs. We will explore different scenarios both with and without rebalancing, and look at how throughput and CPU usage is affected. For these experiments we increase the preloaded values in the system to 3 million to get a bigger data set to move during each rebalance operation. 
 
 \subsubsection{Baseline}
-This experiment will act as a base line for how a cluster behaves under load. We have 2 nodes sharing 16 partitions, 8 partitions each. We run this experiment on the two slowest nodes to make increases in performance more obvious. As we only have 2 nodes in the cluster we only use one required read / write on each request and no data duplication.
+This experiment will act as a base line for how a cluster behaves under load. We have 2 nodes sharing 16 partitions, 8 partitions each. We run this experiment on the two slowest nodes to make increases in performance more obvious. As we only have 2 nodes in the cluster we only use one required read / write on each request and no data duplication. Recall that this is a \texttt{(1,1,1)} system if we refer to the (N,R,W) parameters of Voldemort.
 
 We expect both nodes to struggle with servicing their workload and as a result the throughput should be less than optimal. In other words we do not expect the throughput of these two nodes combined to be equal to the sum of their individual throughputs. 
 
