@@ -2,16 +2,16 @@
 
 %In this chapter we will present our findings and evaluate what impact the added features have on a working node.
 
-In this chapter we will present experiments we have run and their corresponding results. We will benchmark both the original Voldemort implementation and our own to compare the impact of our work on the overall throughput and performance of the system. We will look at requests processed per second, response time distribution and CPU-utilization under a typical usage pattern. 
+In this chapter we will present benchmarks we have run and their corresponding results. We will benchmark both the original Voldemort implementation and our own to compare the impact of our work on the overall throughput and performance of the system. We will look at requests processed per second, response time distribution and CPU-utilization under a typical usage pattern. 
 
 Our experiments are done in two phases. First part is a single-node benchmark of each node that will participate in the tests. This is to get an understanding of their performance. As our cluster consists of very different hardware it will be useful to have an idea of what to expect from each individual node before we add them together.
 The second part concerns performance and scaling after and during rebalancing of a cluster. The rebalance process will be executed both manually and using our automatic system for balancing.
 
-While management and monitoring can be both useful and convenient, it does introduce overhead. This overhead should not have a significant impact on system performance, others citing as low as 1-2\% impact as tolerable.
-
 The goal of these experiments is to verify that after our modifications the performance remains intact. For Voldemort, near linear scaling of throughput is expected when adding worker nodes to the cluster. 
 
 \section{Setup}
+We will here present the setup and tools used for our testing.
+
 \subsection{Benchmark tool}
 We use Voldemorts provided benchmark tool to send data to our cluster. The program is heavily based on the work by Yahoo Cloud Serving Benchmark\cite{ycsb}. This allows us to generate different types of workloads, request loads and number of sending threads. We also had to do some modifications to get a running average throughput, instead of a total average throughput when measuring.
 
@@ -39,7 +39,7 @@ These are also the settings we used for most of our tests.
 We have 4 computers involved in these experiments:
 
 \begin{enumerate}
-	\item Custom built: Intel Core i7 2.5GHz Quad Core  16 GB Memory 250GB SSD
+	\item Custom built desktop: Intel Core i7 3.5 GHz Quad Core  16 GB Memory 250GB SSD
 	\item MacBook Pro: Intel Core i7 2.6 GHz Quad Core 8 GB Memory 250GB SSD
 	\item MacBook Pro: Intel Core i5 2.5 GHz Dual Core 8 GB Memory 120GB SSD
 	\item Mac Mini: Intel Core 2 Duo 2.4 GHz Dual Core 8 GB Memory 250GB SSD
@@ -51,7 +51,7 @@ In addition we use a D-Link Dir-655 gigabit router for networking.
 All computers run Apple OS X 10.9.2 operating system and Java JDK 1.7.0\_51. 
 
 \section{Single-node benchmarking}
-To verify our modifications are not too costly for performance, we will be concentrating on two metrics during our tests. The response time distribution has been included to verify \emph{how fast} we are answering most queries. The throughput metric has been included to verify whether raw, overall work performance is intact.
+To verify our modifications are not too costly for performance, we will be concentrating on two metrics during our tests. The response time distribution has been included to verify \emph{how fast} we are answering most queries. The throughput metric has been included to verify whether raw, overall work performance is intact, ie. \emph{how many} queries we can answer.
 
 In this part we want to investigate how our computer and cluster behaves in various scenarios. We will in all experiments use a workload of 95\% read and 5\% write requests as is common on a typical social website where most browse with a few comments or status updates. Each data entry is 1kB. The database is seeded with 1 million entries before each test starts, unless otherwise specified. In all tests the i7 desktop is generating requests. 
 
