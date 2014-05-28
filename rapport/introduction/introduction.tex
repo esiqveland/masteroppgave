@@ -52,7 +52,7 @@ In short our goals are the following:
 \end{enumerate}
 
 \subsection{Method}
-We plan to use virtual machines as our cluster nodes. This greatly simplifies setup of environments and scaling, but is not ideal for performance. We will rewrite the MetadataStore in Voldemort to utilize ZooKeeper instead of local files. As ZooKeeper does not offer advanced primitives, we need to write the ones we need. Finally we will create a service for node discovery, membership and automatic management. The monitor service will act as decision support system for this automated service. 
+We plan to rewrite the MetadataStore in Voldemort to utilize ZooKeeper instead of local files. As ZooKeeper does not offer advanced primitives, we need to implement the ones we need. We will create a separate service outside Voldemort for node discovery, membership and automatic management. We will also create a node monitor service. The monitor service will act as decision support system for the automated management service. 
 
 
 % The supported queries are limited to simple get and put operations on objects uniquely identified by a key. 
@@ -68,9 +68,4 @@ We plan to use virtual machines as our cluster nodes. This greatly simplifies se
 %Traditional relational database systems are generally very safe to use, usually providing all of the ACID (\emph{Atomicity, Consistency, Isolation, Durability}) properties.
 %This guarantees that all committed transactions are processed reliably.
 %Experience has however shown that databases providing ACID guarantees have trouble scaling. It is very difficult, if not impossible, to have ACID databases handle the high traffic volumes in addition to the high availability demands of today.
-
-%Voldemort and Dynamo sacrifices consistency and isolation requirements to achieve higher availability with satisfactory durability.
-%In fact, we will later see that most of this behavior is easily tunable and left as design choices per implementation.
-%You should also note Voldemort (and Dynamo) does not guarantee any form of isolation and does not support multiple key updates.
-
 
