@@ -5,10 +5,6 @@ We will here introduce and expand upon some ideas we have for future work on thi
 \section{Downscaling}
 Voldemort as of this project, does not support downscaling, ie. downsizing the cluster. There is work going on for this, but it is not a current priority. We would of course like to include this functionality into our project once it is possible.
 
-
-\section{Decision support system}
-decision support for scaling, ie. based on resource measurement.
-
 \section{Data rebalancing}
 Rebalancing here refers to the data balance in the cluster. With nodes being added and partitions shuffled around, the system might end up in states were the data distribution is uneven like in Table \ref{tbl:datarebalance}.
 \begin{center}
@@ -50,8 +46,12 @@ With the current design, having physical computers ready is an absolute requirem
 
 An idea we have for future work is a module to the Headmaster rebalancer that can automatically create, setup and assign Amazon EC2 machines on demand. This would allow for scaling the cluster up and down on demand with rented computing.
 
+\section{Decision support system}
+We think it would be interesting with further decision support for scaling. We currently don't do anything with regards available disk space or memory usage. 
+Combining this with the possibilities in ondemand computing would be interesting.
+This could allow for ordering and extending both disk space and memory in running nodes, which is currently possible with e.g. Amazon Web Services.
 
-\section{}
+\section{Backup nodes}
 Wait for node in active, if it is present when we start a server. This could e.g. be used for backup nodes.
 
 \section{}
