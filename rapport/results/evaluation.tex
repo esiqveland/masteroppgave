@@ -1,12 +1,9 @@
 % evaluation.tex
 This chapter will cover discussion regarding our results. In Section \ref{eval:results} we discuss our results from the experiments. Section \ref{eval:discussion} covers our thoughts on the system we have created as a whole and in Section \ref{eval:exp} we share some general experiences we had during the project.
 
-
-% In Section \ref{eval:performance} we will discuss the single node performance. Section \ref{eval:balance} covers the results of the rebalance operations and measured performance scaling. Section \ref{eval:discussion} we discuss our implementation as whole. Finally in Section \ref{eval:exp} we cover some experiences we had during the project.
-
 \section{Results discussion}
 \label{eval:results}
-In this section we will discuss our results and evaluate our system as a whole. We will also briefly discuss issues related to network limits.  
+In this section we will discuss our results as well as issues related to network limits.  
 
 \subsection{Network limits}
 We did not have access to different network hardware while doing this project. Our computers proved very capable, with each individual node pushing 34-70 MB per second in raw network data. This made us quickly reach the network speed limit of our gigabit network infrastructure. At this point the load generator was receiving over 130MB/s from the cluster. This limit was reached at around 60k requests per second each of 1024 kB values, providing a hard limit for our throughput. This is why throughput is capped at 60k in our experiments, even though there still are nodes with lots of idle CPU-cycles. On a 100Mbit connection we could only send or receive about 5k requets per second equaling to around 12 MB/s
@@ -31,7 +28,7 @@ Overall we found the performance to be very consistent. Our results were on larg
 
 \section{System evaluation}
 \label{eval:discussion}
-Overall we are happy with our results. They show that we have not noticeably affected the performance of Voldemort when adding automatic scaling. For now the monitor service is started as a separate process on each node involved in Voldemort. This could be incorporated into Voldemort, but we have not yet done so.  
+Overall we are happy with our results. They show that we have not noticeably affected the performance of Voldemort when adding automatic scaling. For now the monitor service is started as a separate process on each node involved in Voldemort. This could be incorporated into Voldemort, but we yet to do so.  
 
 For now Headmaster is implemented as a standalone service so that it also can be run remotely, and independently from Voldemort.
 While working, we had at one point inadvertently started two Headmasters at once, which kept fighting for control.
