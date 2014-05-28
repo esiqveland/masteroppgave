@@ -31,18 +31,13 @@ With optimal partition distribution, a cluster consisting of the two slowest mac
 
 \subsection{System evaluation}
 \label{eval:discussion}
+Overall we are happy with our results. They show that we have not noticeably affected the performance of Voldemort when adding automatic scaling. For now the monitor service is started as a separate process on each node involved in Voldemort. This could be incorporated into Voldemort, but we have not yet done it.  
 
+Our system is best used with diverse clusters of heterogeneous nodes where Headmaster can help automatically partition the dataset across different nodes to improve cluster balance. As the performance loss while rebalancing is not terrible it could be possible to utilize Headmasters rebalancing during peak hours to alleviate struggling nodes. This of course is heavily dependent on partition size. 
 
+Our work should be rather failure tolerant, but as we have not done extensive failure scenario testing, there might still be some bugs. 
 
-
-- does it work?
-	
-- Where can it be used?
-- What needs to be fixed?
-
-- have we completed our goals
-
-
+We feel that all our goals are met with the system we have created.
 
 \section{General Experiences}
 
