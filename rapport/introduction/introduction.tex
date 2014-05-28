@@ -51,6 +51,8 @@ In short our goals are the following:
 	\item{Be able to act and make decisions about the cluster based on gathered information}
 \end{enumerate}
 
+While management and monitoring can be both useful and convenient, it does introduce overhead. This overhead should not have a significant impact on system performance, others citing as low as 1-2\% impact as tolerable.
+
 \subsection{Method}
 We plan to rewrite the MetadataStore in Voldemort to utilize ZooKeeper instead of local files. As ZooKeeper does not offer advanced primitives, we need to implement the ones we need. We will create a separate service outside Voldemort for node discovery, membership and automatic management. We will also create a node monitor service. The monitor service will act as decision support system for the automated management service. 
 
