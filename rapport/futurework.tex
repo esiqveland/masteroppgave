@@ -38,7 +38,7 @@ Rebalancing here refers to the data balance in the cluster. With nodes being add
 \end{table}
 \end{center}
 
-If certain partitions end up with a skewed amount of data, even shuffling partitions around to idle nodes might be fruitless. One might have to do a very expensive rehash, effectively moving the partition key space. If this could be done live in an efficient manner, it could greatly improve the balancing and performance of each node.
+If certain partitions end up with a skewed amount of data, even shuffling partitions around to idle nodes might be fruitless. One might have to do a very expensive rehash, effectively moving the partition key space. If this could be done live in an efficient manner, it could greatly improve the balancing and performance of each node in such edge cases.
 
 \section{Ondemand computing}
 With the recent years advancement in cloud computing, especially those driven by Amazons EC2 service, it is now easy to rent computing capacity as you go and pay for what you use.
@@ -51,13 +51,15 @@ We think it would be interesting with further decision support for scaling. We c
 Combining this with the possibilities in ondemand computing would be interesting.
 This could allow for ordering and extending both disk space and memory in running nodes, which is currently possible with e.g. Amazon Web Services.
 
-\section{Backup nodes}
-Wait for node in active, if it is present when we start a server. This could e.g. be used for backup nodes.
+\section{Running with backup nodes}
+One could assign a certain znode path or a certain property with new nodes in \texttt{/active} to add a node as a backup node.
+A backup node can be a queued node that is kept ready for use in case another node dies permanently. E.g. if a node has a permanent failure, this backup node is put in to replace it immediately. A challenge here could be false positives, replacing a node before we need to.
 
-\section{}
-extend RebalancePlannerZK to be able to do: Random shuffle, Greedy shuffle, Zone expansion
+One could also see backup nodes waiting on znodes in \texttt{/active} to disappear, then immediately replace them. This does not seem like very efficient use of resources though.
 
-\section{Testing}
-As we have done this project without a real application using Voldemort, we do not have access to realistic test data. Before our management system can be deployed to a live production environment, further testing should be done. 
+\section{Real world testing}
+As we have done this project without a real application using Voldemort, we do not have access to realistic test data. We feel a few more real world tests should be done before our management system can be deployed to a live production environment.
 
+It would also be interesting to apply it to a already running instance and see if and what improvements could be made, both to the code and to the running cluster.
+Seeing how and if a running real world cluster can gain anything from the automatic load adaption would help furthering this kind of automatic management.
 
