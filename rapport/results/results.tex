@@ -1,5 +1,5 @@
 \section{Results}
-In this section we present our results from the experiments. The experiments follow the same order as they were presented. We will have a short summery with discussion after each phase. 
+In this section we present our results from the experiments. The experiments follow the same order as they were presented. We will have a short summary after each phase. 
 
 
 \subsection{Response time distribution}
@@ -22,7 +22,7 @@ On Figure \ref{fig:dist_mini} we see that both implementations perform similarly
     \label{fig:dist_knut}
 \end{figure}
 
-On Figure \ref{fig:dist_knut} we see that the i5 MacBook Pro fares better. The vertical lines again mark the 0.9 and 0.999 percentile of requests. At the 0.90 percentile we see no improvement, however at the 0.999 percentile we see a massive improvement with 58 ms on our ZooKeeper implementation and 48 ms on the original code.  
+On Figure \ref{fig:dist_knut} we see that the i5 MacBook Pro fares better. The vertical lines again mark the 0.9 and 0.999 percentile of requests. At the 0.90 percentile we see no improvement, however at the 0.999 percentile we see a noticeable improvement with 58 ms on our ZooKeeper implementation and 48 ms on the original code.  
 
 \clearpage
 \begin{figure}[h]
@@ -98,7 +98,7 @@ In Figure \ref{fig:adaptive_man} we see 2 manual rebalances. We see total CPU-ut
     \caption{Automatic moving of 2 partitions from a struggling node (Core 2). Grey regions mark rebalance period, where data is prepared and transferred. CPU threshold set at \texttt{0.84}.}
     \label{fig:adaptive_auto}
 \end{figure}
-Figure \ref{fig:adaptive_auto} shows the same experiment just automated by Headmaster. We again see a steady increase in throughput as partitions are moved. This shows that our automatic rebalancer performs just as well as the manual tool in Voldemort.  
+Figure \ref{fig:adaptive_auto} shows the same experiment just automated by Headmaster. We again see a steady increase in throughput as partitions are moved. We start out at about 36k requests per second, moving up to ~46k requests/s as the load balances out. Also here we see two dips in performance per rebalance period. The first one stems from the clients reconnect after new metadata is discovered. The second one is during the moving of records between nodes.
 
 \clearpage
 \begin{figure}[h]
@@ -107,9 +107,9 @@ Figure \ref{fig:adaptive_auto} shows the same experiment just automated by Headm
     \caption{Automatic migration of partitions in a struggling cluster after a third node joins}
     \label{fig:adapt_3node}
 \end{figure}
-Our final Figure \ref{fig:adapt_3node} shows the result adding a node to a struggling cluster and rebalance live. At t=380 the i7 is introduced to the cluster. We see a steady increase in performance as more and more partitions are moved to the i7. In the end the partition distribution is 3,6,9 for the Core 2, i5 and i7. 
+Our final Figure \ref{fig:adapt_3node} shows the result adding a node to a struggling cluster and rebalance live. At t=380 the i7 is introduced to the cluster. We see a steady increase in performance as more and more partitions are moved to the i7. In the end the different nodes are holding different number of partitions. This is 3,6,9 for the Core 2, i5 and i7 respectively. 
 
-At t=1700 there is a significant loss of throughput after a rebalance. We found no reason for this in our logs, so we expect this to be related to unrelated work done by the operating system on the workload generating computer. 
+At t=1700 there is a significant loss of throughput after a rebalance. We found no reason for this in our logs, so we suspect this to be related to unrelated work done by the operating system on the workload generating computer, but we failed to find any verification on this. The test is quite long, running for over 40 minutes and a quite a few of our tests got affected by random events on this time frame.
 
 
 
