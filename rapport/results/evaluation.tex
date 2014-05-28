@@ -1,22 +1,18 @@
 % evaluation.tex
+This chapter will cover discussion regarding our results. In Section \ref{eval:results} we discuss our results from the experiments. Section \ref{eval:discussion} covers our thoughts on the system we have created as a whole and in Section \ref{eval:exp} we share some general experiences we had during the project.
 
-We will first mention a few of the general experiences we got doing this project.
-We will then discuss the response time results. In Section \ref{eval:throughput} we will discuss the single node throughputs.
-Section \ref{eval:balance} discusses the results of the rebalance operations and measured performance scaling. Finally in Section \ref{eval:discussion} we discuss our implementation as a finished product. 
 
-\section{Experiences}
+% In Section \ref{eval:performance} we will discuss the single node performance. Section \ref{eval:balance} covers the results of the rebalance operations and measured performance scaling. Section \ref{eval:discussion} we discuss our implementation as whole. Finally in Section \ref{eval:exp} we cover some experiences we had during the project.
 
 \section{Results discussion}
+\label{eval:results}
 In this section we will discuss our results and evaluate our system as a whole. We will also briefly discuss issues related to network limits.  
-
-\subsection{Network limits}
-We did not have access to different network hardware while doing this project. Our computers proved very capable, with each individual node pushing 34-70 MB per second in raw network data. This made us quickly reach the network speed limit of our gigabit network infrastructure. At this point the load generator was receiving over 130MB/s from the cluster. This limit was reached at around 60k requests per second each of 1024 kB values, providing a hard limit for our throughput. This is why throughput is capped at 60k in our experiments, even though there still are nodes with lots of idle CPU-cycles. On a 100Mbit connection we could only send or receive about 5k requets per second equaling to around 12 MB/s.
 
 \subsection{Network limits}
 We did not have access to different network hardware while doing this project. Our computers proved very capable, with each individual node pushing 34-70 MB per second in raw network data. This made us quickly reach the network speed limit of our gigabit network infrastructure. At this point the load generator was receiving over 130MB/s from the cluster. This limit was reached at around 60k requests per second each of 1024 kB values, providing a hard limit for our throughput. This is why throughput is capped at 60k in our experiments, even though there still are nodes with lots of idle CPU-cycles. On a 100Mbit connection we could only send or receive about 5k requets per second equaling to around 12 MB/s
 
 \subsection{Response time distribution and throughput}
-\label{eval:responsetime}
+\label{eval:performance}
 In our initial benchmarking experiments we have found no significant difference in the performance when comparing our ZooKeeper implementation with the original Voldemort code. In some cases our implementation is performing slightly better, while in other the opposite is true. We believe this mostly comes down to variance.
 
 Contrary to our expectations, the response time distribution varies greatly on different hardware. In our results the 0.999 percentile response time varies from 250 ms on the slowest hardware to 5 ms on the fastest. On the .90 percentile there is however is much less difference with response times of 2 ms on the slowest hardware and 1 ms on the fastest.
@@ -29,7 +25,11 @@ To achieve full potential scaling some skewing of partitions is required. In our
 
 With optimal partition distribution, a cluster consisting of the two slowest machines was able to service 46k requests per second providing almost the sum of both individual nodes. We also see that a cluster of all three nodes with proper partition distribution easily was able to service the maximum request rate of 60k requests per second. 
 
-\subsection{System evaluation}
+\subsection{Other notes}
+Overall we found the performance to be very consistent. Our results were on large very reproducible and saw little variance between benchmark runs.
+
+
+\section{System evaluation}
 \label{eval:discussion}
 Overall we are happy with our results. They show that we have not noticeably affected the performance of Voldemort when adding automatic scaling. For now the monitor service is started as a separate process on each node involved in Voldemort. This could be incorporated into Voldemort, but we have not yet done it.  
 
@@ -40,6 +40,8 @@ Our work should be rather failure tolerant, but as we have not done extensive fa
 We feel that all our goals are met with the system we have created.
 
 \section{General Experiences}
+In this section we cover general experiences we have made that we find worth sharing. 
+\label{eval:exp}
 
 \subsubsection{Server side caching}
 While testing, we noticed no real difference between a 12MB and 2GB database cache on our Voldemort servers. This might suggest there is a problem with the cache setting in Voldemort. All of our hardware run on SSDs, but we still consider this result surprising. This could be investigated further using largely different of data sets, but this was not our main focus of this thesis.
@@ -57,5 +59,4 @@ While benchmarking rebalancing we found a critical bug we had introduced in the 
 \subsubsection{VectorClock of Stores}
 We also had issues with translating a config files version number in ZooKeeper to a valid vector clock in Voldemort. This caused the cluster.xml sent to nodes during a rebalance to be rejected, leading to all proxy-bridges being set up with invalid data. The effect of this bug was that no moved data was accessable during a rebalance. 
 
-\subsubsection{Other notes}
-Overall we found the performance to be very consistent. Our results were on large very reproducible and saw little variance between benchmark runs.
+
