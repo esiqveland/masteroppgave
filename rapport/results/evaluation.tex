@@ -31,7 +31,7 @@ Overall we found the performance to be very consistent. Our results were on larg
 
 \section{System evaluation}
 \label{eval:discussion}
-Overall we are happy with our results. They show that we have not noticeably affected the performance of Voldemort when adding automatic scaling. For now the monitor service is started as a separate process on each node involved in Voldemort. This could be incorporated into Voldemort, but we have not yet done it.  
+Overall we are happy with our results. They show that we have not noticeably affected the performance of Voldemort when adding automatic scaling. For now the monitor service is started as a separate process on each node involved in Voldemort. This could be incorporated into Voldemort, but we have not yet done so.  
 
 For now Headmaster is implemented as a standalone service so that it also can be run remotely, and independently from Voldemort.
 While working, we had at one point inadvertently started two Headmasters at once, which kept fighting for control.
@@ -39,6 +39,8 @@ We spent a fair amount of time debugging weird race conditions until we realized
 It is now a master based service with leader election through ZooKeeper that can run on any number of nodes, without fighting for control.
 
 Our system is best used in diverse clusters of heterogeneous nodes where Headmaster can help automatically distribute the partition set across different nodes to improve cluster load balance. As the performance loss while rebalancing is not too bad, it could be possible to utilize Headmasters rebalancing during peak hours to alleviate struggling nodes. This of course is heavily dependent on partition size. A large amount of partitions will give smaller amounts of data to move, but if each partition is only held by a single node, nothing can be done even if you have many nodes and partitions. They are just too large to move in this scenario. It is therefore of significant importance to assign enough partitions for a huge data set when first creating the cluster.
+
+Another point to be made is that Headmaster is \emph{standalone}. Even with our code, the only dependency for any operation or function is an available ZooKeeper instance. The cluster still works fine even if Headmaster is down, not working or crashed.
 
 Our work should be rather failure tolerant, but we have not done very extensive failure scenario testing, there might still be some bugs. 
 
