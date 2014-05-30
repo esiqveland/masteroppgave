@@ -1,8 +1,8 @@
 
 \begin{abstract}
-We have migrated the configuration storage of a distributed NoSql database from filesystem local XML files to global objects using Apache ZooKeeper.
+We have migrated the configuration storage of a distributed NoSql database from local XML files on disk, to global objects stored in Apache ZooKeeper.
 
-Using native tools and ZooKeeper coordination, we have implemented a fault tolerant, redundant service to manage node discovery, configuration generation and propagation, and live adjustment of responsibility to match each nodes available system resources.
+Using native tools and ZooKeeper coordination, we have implemented a fault tolerant, redundant service. The service manages node discovery, configuration generation and propagation. It also has components for live monitoring and adjustment of responsibility to match each nodes available system resources.
 \end{abstract}
 
 \clearpage

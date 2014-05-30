@@ -2,8 +2,8 @@
 \section{Technical background}
 \label{sec:technical_background}
 
-The software used in this project employ many different and important techniques known from distributed computing, and will be discussed here.
-We will first discuss PAXOS, a process for reaching consensus in a set of independent nodes.
+The software used in this project employ many different and important techniques known from distributed computing, some of whom will be discussed here.
+We will first discuss PAXOS, a protocol for reaching consensus in a set of independent nodes.
 In Section \ref{sec:consistenthashing} we will talk about another key aspect called consistent hashing.
 We will then discuss how these techniques help us build \emph{available} and \emph{durable} databases.
 
@@ -14,15 +14,15 @@ Whenever you have a distributed system where errors occur and messages get lost,
 
 Say we have a set of processes that all can propose values. (The value could be related to leader election). Paxos ensures that a single one of these values is chosen and that all processes involved is notified of this value. If no value is being proposed, then no value should be chosen. 
 
-In Paxos a process can act in three different roles: {\it proposer, acceptor and learner}. A process is not limited to one role at the time. Processes communicate with one another by messages. These massages follow the non-Byzantine model and can take arbitrary long time to be delivered, or they can be lost entirely. They can also be duplicated, however they can not be corrupted. A process acting in a role might also crash, but we assume some critical information will remain through a restart. 
+In Paxos a process can act in three different roles: {\it proposer, acceptor and learner}. A process is not limited to one role at the time. Processes communicate with one another by messages. These messages follow the non-Byzantine model and can take arbitrary long time to be delivered, or they can be lost entirely. They can also be duplicated, however they can not be corrupted. A process acting in a role might also crash, but we assume some critical information will remain through a restart. 
 
-When acting as a proposer, a process will propose a value to a majority subset of acceptors. These acceptors will then accept or deny the proposal according to some rules. Finally if a value is chosen, then all the learners will be informed of this value. This is the process of choosing a value:
+When acting as a proposer, a process will propose a value to a majority subset of acceptors. These acceptors will then accept or deny the proposal according to some rules. Finally if a value is chosen, then all the learners will be informed of this value. The process of choosing a value is given below:
 
 \begin{enumerate}
 
-\item A proposer sends a prepare for proposal message to a majority set of acceptors with a number n. This number acts as a timestamp, and represents the last(newest) message this proposer has seen. 
-\item Each acceptor receiving this prepare for proposal message will compare the proposed number n with their own highest observed n. If the proposed number is higher, then a promise of not accepting any proposal lower than n will be sent back to the proposer along with the acceptors highest observed value. If the proposers number is lower than the acceptors observed number, then the value will simply be sent back. (The ``new'' highest number is proposed?)
-\item If the proposer received a promise from majority of acceptors it will send an accept message to the acceptors with the number n along with the value v which is the maximum values received from the acceptors. If the number of promises is less than the majority of acceptors then the attempt has failed, and the proposer must start again with a higher number n.
+\item A proposer sends a prepare for proposal message to a majority set of acceptors with a number $n$. This number acts as a timestamp, and represents the last(newest) message this proposer has seen. 
+\item Each acceptor receiving this prepare for proposal message will compare the proposed number $n$ with their own highest observed $n$. If the proposed number is higher, then a promise of not accepting any proposal lower than $n$ will be sent back to the proposer along with the acceptors highest observed value. If the proposers number is lower than the acceptors observed number, then the value is sent back along with the highest observed $n$.
+\item If the proposer receives a promise from a majority of acceptors, it will send an accept message to the acceptors with the number $n$ along with the value $v$, which is the maximum values received from the acceptors. If the number of promises is less than the majority of acceptors then the attempt has failed, and the proposer must start again with a higher number $n$.
 \item When a acceptor receives an accept message, this acceptor will accept this proposal as long as there has not been issued a new proposal with a higher number in the meantime. 
 \item Finally, when an acceptor has accepted a proposal it informs all learners. Either by sending a message to all learners, or by sending a message to a designated learner, which in time will inform all other learners. This second step reduces message load but is less reliable.
 
@@ -41,7 +41,7 @@ The \emph{hashspace} of the keys are then divided into $n$ partitions. Then, to 
 
 However, with this scheme if a server fails and you now have $n-1=m$ servers, all the failed server's data is gone.
 You have to invalidate all existing servers, renumber your set of servers and start over.
-Analogously, if you add k servers to accommodate higher traffic, you now have $$\textrm{Hash(key) mod } n + k$$ and it is easy to see that all or most keys will have to relocate.
+Analogously, if you add $k$ servers to accommodate higher traffic, you now have $$\textrm{Hash(key) mod } n + k$$ and it is easy to see that all or most keys will have to relocate.
 
 Consistent hashing reduces this problem by assigning each node with a number of points in the hash space.
 The hash space is viewed as a ring by wrapping around \texttt{0000-FFFF}. The nodes are placed at points along the ring as in Figure \ref{fig:hashring}. When a key is looked up, you find it's place on the ring and move clockwise to the first point with an assigned node. In Figure \ref{fig:hashring}, key K is routed to the next node on the ring, node B.
@@ -105,14 +105,14 @@ I.e. we will have an \emph{eventually consistent} form of replication.
 
 You should also note that this replication has two benefits: 
 \begin{itemize}
-	\item As a data backup should the other node have a hard drive failure
+	\item As a data backup should the other node have a hard drive failure.
 	\item As a functional backup. If the other node is off line, the replica can take over the workload with all the data available.
 \end{itemize}
 
 In Voldemort, the hash ring is split into X equally sized parts, called \emph{partitions}. Each partition is assigned a unique ID and maps to a node.
 The nodes create a \emph{preference list} over the partitions, which says to which \emph{partitions} it should store the replicas.
 
-Now let N=2 with 12 partitions as in Figure \ref{fig:voldemort_hashring}. 
+Now let $N=2$ with 12 partitions as in Figure \ref{fig:voldemort_hashring}. 
 Let a key K hash to belong in partition 0. From the preference list, we see that this key should be put in \texttt{node0}, and replicated to the node holding partition 1, which is \texttt{node1}.
 Voldemort also does some sanity checking when replicating, such that replicas are always replicated to N \emph{physical} nodes. 
 I.e. In our example, if both partition 0 and 1 where held by \texttt{node0}, Voldemort would move along the ring until it finds the next partition that is assigned to a different node before storing the replica.
@@ -123,8 +123,8 @@ In a distributed system nodes can be unreachable for a number of different reaso
 Network splits, nodes dying, overloaded network points and concurrent operations (remember no isolation or locking) may introduce conflicts in the data set.
 These conflicts \emph{will} arise and need to be discovered and resolved at some point.
 
-Deciding how to deal with conflict is an important decision.
-The questions of when to resolve them and who should have the task of doing so all have different properties.
+How to deal with conflict is an important decision.
+The question of when to resolve them and who should have the task of doing so all have different properties.
 A traditional approach is to resolve conflicts when they appear, i.e. on writes. 
 This has the benefit of keeping read logic simple, but we may have to reject a write if not all (or a majority of) replicas are reachable. Resolving conflicts on write is also easy for the user to reason with.
 
@@ -144,9 +144,9 @@ To be able to record all changes (writes), Voldemort uses a versioning system to
 To record this version history, Voldemort employs \emph{vector clocks}.
 
 Roughly vector clocks are implemented as a list of \texttt{(node, counter)} pairs and this list is stored with every version of every stored object.
-By evaluating the vector clocks between two versions (or more), we can decide if one is an ancestor of the other or not. If \texttt{one} followed as a version of \texttt{two}, we can discard \texttt{two} and use \texttt{one} because the changes for two are already included in this object. 
-If the histories are divergent, we have a conflict and need to do some sort of merge or resolution. More formally an object \texttt{one} is an ancestor of \texttt{two} if all the clocks in \texttt{one} are less than or equal to the clocks in \texttt{two}. 
-If so, we can safely discard \texttt{one}.
+By evaluating the vector clocks between two versions (or more), we can decide if one is an ancestor of the other or not. If \texttt{A} followed as a version of \texttt{B}, we can discard \texttt{B} and use \texttt{A} because the changes for \texttt{B} are already included in this object. 
+If the histories are divergent, we have a conflict and need to do some sort of merge or resolution. More formally an object \texttt{A} is an ancestor of \texttt{B} if all the clocks in \texttt{A} are less than or equal to the clocks in \texttt{B}. 
+If so, we can safely discard \texttt{A}.
 
 %\begin{wrapfigure}{r}{0.5\textwidth}
 \begin{figure}[h]
@@ -162,7 +162,7 @@ If during a read the database finds multiple divergent versions of the object, a
 The application then have to decide what to do, but typically a merged version has to be written. This merged version would specify the union of the versions of its predecessors as its version, creating a merged version.
 
 An example of an objects version history is given in Figure \ref{fig:versioning}. 
-The different objects written are labeled DX and the vector clock associated with the object is given in parenthesis. The distinct nodes are designated with S followed by a char, for example $S_x$ and $S_y$ are two distinct nodes.
+The different objects written are labeled DX and the vector clock associated with the object is given in parenthesis. The distinct nodes are designated with S followed by a character, for example $S_x$ and $S_y$ are two distinct nodes.
 
 First a new object, D1 is written to the database. This write is handled by node $S_x$, and it assigns D1 the vector clock \texttt{([$S_x$,1])}.
 This is because it is the first version for this key and node $S_x$ managed the write. If another object, D2, is written to the same key is managed by $S_x$, we increment the counter for the $S_x$ version. We then have the object D2 \texttt{([$S_x$,2])}. Note that this means if somewhere we found D1, we could discard D1 if we are also holding D2 because of the versioning causality.
@@ -193,7 +193,9 @@ In a distributed system individual nodes sometimes need to know what other nodes
 
 For example if Alice discovers Charlie is down, when Bob calls Alice, Alice will tell Bob that Charlie is down.
 
-Gossiping thus allows the system to reach an eventual consistent state without having any single broad-casted message or a demand for a single up to date catalog of the system state. To add a node to the group, simply pair it with one existing member and let the gossip protocol allow the news of the new node spread. Similarly if a node is unable to pair up with its partner the partner is marked as unreachable and this will be shared with future partners. This approach scales very efficiently as we only have peer to peer communication, but it is not without drawbacks. It is possible to create temporary logical partitions that exists while the information is being spread. Dynamo uses an external system with seed nodes to counteract these logical partitions. 
+Gossiping thus allows the system to reach an eventual consistent state without having any \emph{single} broad casted message or a demand for a single up to date catalog of the system state. To add a node to the group, simply pair it with one existing member and let the gossip protocol allow the news of the new node spread. Similarly if a node is unable to pair up with its partner the partner is marked as unreachable and this will be shared with future partners. This approach scales very efficiently as we only have peer to peer communication, but it is not without drawbacks. It is possible to create temporary logical partitions that exists while the information is being spread. Dynamo uses an external system with seed nodes to counteract these logical partitions. 
+
+An example for adding a node with Gossip would be to tell, or \emph{seed} a couple of nodes in the network with information about the newcomer manually. They will then gossip about this new node to their neighbors and the information will gradually spread. In practice this kind of seeding is useful because it really helps propagation go faster. Sometimes these seeding nodes can also be designated as such, and have a larger role in the gossip. One might argue that introducing such hotspots for information is against the pure peer to peer nature of the gossip protocol, but Amazon regards it as necessary to speed up inclusion of new nodes.
 
 \begin{figure}[h]
     \centering
@@ -202,7 +204,6 @@ Gossiping thus allows the system to reach an eventual consistent state without h
     \label{fig:gossip}
 \end{figure}
 
-An example for adding a node with Gossip would be to tell, or \emph{seed} a couple of nodes in the network with information about the new comer manually. They will then gossip about this new node to their neighbors and the information will gradually spread. In practice this kind of seeding is useful because it really helps propagation go faster. Sometimes these seeding nodes can also be designated as such, and have a larger role in the gossip. One might argue that introducing such hotspots for information is against the pure peer to peer nature of the gossip protocol, but Amazon regards it as necessary to speed up inclusion of new nodes.
 
 \end{itemize}
 

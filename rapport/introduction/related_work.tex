@@ -34,7 +34,7 @@ In Cassandra, each node is responsible for a given token range (based on the has
 
 A problem with this approach is that the data might end up being unevenly distributed. If we start with 4 partitions of the key range and 4 nodes. Assigning each node an equal part of the keyspace, we would ideally end up with ~25\% of the data on each node. Now if we split node 4, we might end up with 25\% of the data on nodes 1-3, and 12.5\% on node 4 and 5, creating an unbalanced cluster. This imbalance might eventually require a total rebalance, a very costly redistribution of the key space at a later stage. Hecuba scales the cluster by adding or deleting nodes one at time, so this fragmentation could quickly become a problem if not administered carefully.
 
-In short, the Autoscale system Hecuba scales a Cassandra cluster by identifying individual nodes that are under heavy load. This is done by having each node report their health to a given master. The master can then take action by splitting the token range for the node by adding a new node.
+Summarizing, the Autoscale system Hecuba scales a Cassandra cluster by identifying individual nodes that are under heavy load. This is done by having each node report their health to a given master. The master can then take action by splitting the token range for the node by adding a new node.
 
 
 

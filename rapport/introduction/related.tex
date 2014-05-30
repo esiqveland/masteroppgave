@@ -11,9 +11,10 @@ In Cassandra all participating nodes can be accessed for writes and reads. To en
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.5\textwidth]{resources/cas_col.png}
-    \caption{A sample Cassandra column. The row key acts as a primary key and each key:value pair would hold one field in a table. Images borrowed from www.ebaytechblog.com}
+    \caption{A sample Cassandra column\protect\footnotemark. The row key acts as a primary key and each key:value pair holds one field in a table.}
     \label{fig:sample_col}
 \end{figure}
+\footnotetext{Images taken from www.ebaytechblog.com}
 
 \begin{figure}[h]
     \centering
@@ -45,7 +46,7 @@ With regards to the CAP-theorem (Consistency, Availability, Partitioning), HBase
 Important to note is that HBase provides a sparse multi-dimensional \emph{sorted} map.
 Keys in the table are sorted, such that similar items are close to another when scanning a table.
 
-E.g. when storing data about urls, the keys are written in reverse: \texttt{com.google.www/users}. This scheme keeps urls from the same domain and subdomain close to each other in the sorted map.
+E.g. when storing data about URLs, the keys are written in reverse: \texttt{com.google.www/users}. This scheme keeps URLs from the same domain and subdomain close to each other in the sorted map.
 
 The \emph{rows} or \emph{entries} are typically sparse, meaning that most of the columns, in the table are empty.
 
