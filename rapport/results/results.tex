@@ -111,6 +111,16 @@ Our final Figure \ref{fig:adapt_3node} shows the result adding a node to a strug
 
 At t=1700 there is a significant loss of throughput after a rebalance. We found no reason for this in our logs, so we suspect this to be related to unrelated work done by the operating system on the workload generating computer, but we failed to find any verification on this. The test is quite long, running for over 40 minutes and a quite a few of our tests got affected by random events on this time frame.
 
+\clearpage
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1.0\textwidth]{results/throughput/adaptive/zookeeper/auto_3nodes_muchdata_wow}
+    \caption{In depth view of thoughput during a big rebalance operation. The blue vertical line marks average throughput during the rebalance.}
+    \label{fig:adapt_big_rebalance}
+\end{figure}
 
+Figure \ref{fig:adapt_big_rebalance} shows a large partition being moved. The partition holds almost 1 million entries or almost 1 gigabyte of data. Before the rebalance we have a steady throughput of 42k requests per second. For the duration of the rebalance, we average around 39,5k requests per second. In other words, the rebalance causes a 6\% loss of throughput. 
+
+Contrary to our expectations, we have a sudden drop in throughput followed by a steady increase during the rebalance. The sudden drop is caused by all clients being forced to fetch the newest metadata. The steady increase in throughput is a result of an increasing number of the entires being available at the stealer node, and lessening the need for proxying requests.
 
 

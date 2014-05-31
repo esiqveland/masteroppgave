@@ -139,17 +139,19 @@ Before a rebalance can start, we need a plan. This plan contains which partition
 
 Following these principles the plan generated will limit data movement across zones in addition to aligning proxy-bridges with stealer-donor pairs. The output of such a planning operation is a file called \texttt{final\_cluster.xml}. This is a modified version of the \texttt{cluster.xml} and contains the newly proposed cluster setup. Executing the planning is done by running one of the rebalance* scripts provided with Voldemort. 
 
-\begin{lstlisting}[style=customc, caption=Sample command to plan a cluster expansion. Outputs a final\_cluster.xml as well as a plan]
+\begin{lstlisting}[style=customc, caption=Sample command to plan a cluster expansion. Outputs a \texttt{final\_cluster.xml} as well as a plan]
 ./bin/rebalance-cluster-expansion.sh -c current_cluster -s current_stores -i interim_cluster -o output dir
 \end{lstlisting}
 
 \subsubsection{Execution}
-The first issue that needs to be handled when rebalancing is dealing with already connected clients. At time of connecting, cluster metadata is returned to the client. The client uses this metadata for routing all future requests. When rebalancing, this metadata is no longer valid and clients must be informed of the change. Voldemort has two ways of dealing with this issue. Either the client can check metadata version on every request, or any node receiving a request for a partition it does not hold can announce something is wrong. This alert is implemented by throwing an InvalidMetadataException. In the latter case clients only refresh their metadata after requesting a partition that has moved. Voldemort offers a proxy-pause option while rebalancing which is a window of time where the updated cluster metadata is propagated, and proxy-bridges are set up. This allows connected clients to request the new metadata before any actual rebalancing is done. The rebalance is executed using the supplied administrator tool. 
+The first issue that needs to be handled when rebalancing is dealing with already connected clients. When a client connects it requests cluster metadata from Voldemort. The client uses this metadata for routing all future requests. When rebalancing, this metadata is no longer valid and clients must be informed. Voldemort has two ways of dealing with this issue. Either the client can check metadata version on each request or nodes can alert the client if they receive a request for a key they do not have responsibility for.  This alert is implemented by throwing an InvalidMetadataException. In the latter case clients only refresh their metadata after requesting a partition that has moved. 
+
+Voldemort offers a proxy-pause option while rebalancing which is a window of time where the updated cluster metadata is propagated, and proxy-bridges are set up. This allows connected clients to request the new metadata before any actual rebalancing is done. The rebalance is executed using the supplied administrator tool. 
 
 The steps involved in executing a rebalance are the following:
 
 \begin{enumerate}
-\item Upload interim metadata: To allow for a new node to join the cluster it must have an entry in cluster.xml. This is done by replacing cluster.xml with a modified interim cluster.xml. In this file an entry for the new node has been added. This node will not yet be responsible for any partitions.
+\item Upload interim metadata: To allow for a new node to join the cluster it must have an entry in \texttt{cluster.xml}. This is done by replacing \texttt{cluster.xml} with a modified \texttt{interim\_cluster.xml}. In this file an entry for the new node has been added. This node will not yet be responsible for any partitions.
 \item Gather verification data: To later be able to verify that the rebalance was successful it is possible to extract some verification data for comparison before running the rebalance.
 \item Stop asynchronous tasks: These tasks could cause the rebalance to abort.
 \item Execute rebalance: Run the appropriate rebalance script.
@@ -159,12 +161,12 @@ The steps involved in executing a rebalance are the following:
 ./bin/run-class.sh voldemort.tools.RebalanceControllerCLI --url \$URL  --final-cluster final-cluster.xml --parallelism 8 --proxy-pause 900
 \end{lstlisting}
 
-Servers will be notified of the rebalance by the client sending the new cluster.xml files and changing their state to REBALANCING. Servers will now start proxying requests according to the new partition setup. After the proxy-pause time nodes will start to receive rebalance tasks from the client or fetch requests from stealer nodes. Once the server state changes back to normal it stops proxying requests and return to normal operation. In case of an abort, each server rolls back metadata locally, sets state to normal and stops proxying requests. 
+Servers will be notified of the rebalance by the client sending the new \texttt{cluster.xml} files and changing their state to REBALANCING\_MASTER\_SERVER. Servers will now start proxying requests according to the new partition setup. During the proxy-pause interval, nodes will pair up in donor-stealer pairs based on tasks and start proxying requests as needed. After the proxy-pause has ended, donors will start to send data to the stealers. Once all task has been completed proxy-bridges are torn down, server state changes back to NORMAL\_SERVER, and the cluster returns to normal operations.
 
 \subsubsection{Verification}
-After a rebalance is completed, it is useful to run verification that the rebalance was a success. There is also a repair job that should be run after the rebalance to delete any orphaned keys. Recall that the entries stored on the donor node are now orphans, and can be cleaned up be deleting them.
+After a rebalance is completed, it can be useful to verify that the rebalance was a success. There is also a repair job that should be run after the rebalance to delete any orphaned keys. Recall that the entries shared by a donor node are now orphans, and can be cleaned up by deleting them.
 
-\begin{lstlisting}[style=customc, caption=Commands for pulling a key sample from a store and the versioned data objects stored under the keys. These are used to verify that the rebalance worked]
+\begin{lstlisting}[style=customc, caption=Commands for pulling a key sample from a store and the versioned data objects stored under the keys. These are used to verify that the rebalance did not corrupt data]
 ./bin/run-class.sh voldemort.utils.KeySamplerCLI --url $BOOTSTRAP_URL --out-dir key-samples --records-per-partition 5
 ./bin/run-class.sh voldemort.utils.KeyVersionFetcherCLI --url $URL --in-dir key-samples --out-dir key-version-fetches
 \end{lstlisting}
@@ -183,8 +185,8 @@ A list of such pairs is called a \emph{rebalance plan}, a set of transfers that 
 The first part of a secure transfer, is the setup of proxy bridges. This starts the routing of request to the \emph{new} layout. ie. if we are moving $(node0, 3) \rightarrow node1$, all requests that are going to partition 3, are now routed to the new node, $node1$. 
 
 After allowing proxy settings to propagate for an interval, the receiving node, the \emph{stealer}, initiates a request to transfer the target partition from the \emph{donor}. 
-Now to allow for a safe transfer, all PUTs to node1 are also sent (proxyed) back to node0. This ensures no writes are lost in case of an abort or other failure. All GETs are first looked up locally in case they have been transferred yet. If not, the key is fetched explicitly from the donor and returned.
-In case of failures, we abort the plan and set the routing back to the old config.
+Now to allow for a safe transfer, all PUTs to node1 are also sent (proxyed) back to node0. This ensures no writes are lost in case of an abort or other failure. All GETs are first looked up locally in case they already have been transferred. If not, the key is fetched explicitly from the donor and returned.
+In case of failures, we abort the plan and set the routing back to the old configuration.
 
 It is easy to see that this set of rules allows a partition move to be canceled or crash at any time without incurring data loss.
 
