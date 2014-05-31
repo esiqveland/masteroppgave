@@ -174,7 +174,19 @@ After a rebalance is completed, it is useful to run verification that the rebala
 \end{lstlisting}
 
 \subsubsection{Recovery from failure}
-TODO
+A benefit of having a strict key-value store, is that there are no advanced feature. No invariants that must be kept or avoided, no joins, foreign keys, searches or other indexes (except for the primary, the key) that complicates moving and partitioning of data. 
+Think of Voldemort as a giant, distributed and persistent hash map.
+This simplifies the process for performing rebalancing, ie. scaling a lot. We can simply copy the partition, with some precautions to ensure durability and integrity.
+
+When scaling, we give a list of $(node, partition) \rightarrow node$ pairs. The left side is the FROM node and right side TO, the destination node.
+A list of such pairs is called a \emph{rebalance plan}, a set of transfers that are to be executed during the rebalance.
+The first part of a secure transfer, is the setup of proxy bridges. This starts the routing of request to the \emph{new} layout. ie. if we are moving $(node0, 3) \rightarrow node1$, all requests that are going to partition 3, are now routed to the new node, $node1$. 
+
+After allowing proxy settings to propagate for an interval, the receiving node, the \emph{stealer}, initiates a request to transfer the target partition from the \emph{donor}. 
+Now to allow for a safe transfer, all PUTs to node1 are also sent (proxyed) back to node0. This ensures no writes are lost in case of an abort or other failure. All GETs are first looked up locally in case they have been transferred yet. If not, the key is fetched explicitly from the donor and returned.
+In case of failures, we abort the plan and set the routing back to the old config.
+
+It is easy to see that this set of rules allows a partition move to be canceled or crash at any time without incurring data loss.
 
 
 % There are several factors that was important for us when choosing which distributed key-value store to work with. We both had detailed theoretical knowledge of Dynamo after holding a presentation on their paper. The simple design and data model of Voldemort also was a good fit for our project as we did not have any application specific requirements for our storage system to meet. Lastly we wanted to work with an open source project. Voldemort fulfilled all these requirements. 
