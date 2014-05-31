@@ -80,7 +80,7 @@ Finally it is possible to specify the format on keys and values. Supported key f
 </stores>
 \end{verbatim}
 
-\item \texttt{local.properties} is used to configure individual nodes in a cluster. The node ID must map to an entry in \texttt{cluster.xml} for it to be valid. Using the maximum threads field one can tune the application running to the hardware of the individual node. This config file also contains store related login infomation used to access those. 
+\item \texttt{server.properties} is used to configure individual nodes in a cluster. The node ID must map to an entry in \texttt{cluster.xml} for it to be valid. Using the maximum threads field one can tune the application running to the hardware of the individual node. This config file also contains store related login infomation used to access those. 
 
 \begin{verbatim}
 node.id=0
@@ -93,7 +93,7 @@ socket.enable=true
 # BDB
 bdb.write.transactions=false
 bdb.flush.transactions=false
-bdb.cache.size=1G
+bdb.cache.size=2G
 bdb.one.env.per.store=true
 
 # Mysql
@@ -109,7 +109,7 @@ request.format=vp3
 storage.configs=voldemort.store.bdb.BdbStorageConfiguration, voldemort.store.readonly.ReadOnlyStorageConfiguration
 \end{verbatim}
 
-\item We also have several local configuration files used during a rebalance operation. \texttt{rebalancing.steal.info.key} contains information on which partitions the node will need to fetch from other nodes in the system. The rebalance process also stores the existing \texttt{cluster.xml} and \texttt{stores.xml} before starting the rebalance operation in case of a roll back. Finally there is a \texttt{server.state} file that is used to persistently store rebalance state in case of a failure. It is either SERVER\_NORMAL or SERVER\_REBALANCING. 
+\item We also have several local configuration files used during a rebalance operation. \texttt{rebalancing.steal.info.key} contains information on which partitions the node will need to fetch from other nodes in the system. The rebalance process also stores the existing \texttt{cluster.xml} and \texttt{stores.xml} before starting the rebalance operation in case of a roll back. Finally there is a \texttt{server.state} file that is used to persistently store rebalance state in case of a failure. It is either \texttt{NORMAL\_SERVER} or \texttt{REBALANCING\_MASTER\_SERVER}. 
 
 \end{itemize}
 
