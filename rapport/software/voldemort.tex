@@ -1,8 +1,13 @@
 \section{Voldemort}
 \label{sec:voldemort}
-In this section we will explore the essential configuration data used to manage Voldemort. It is split into two parts: global and local files. Global files are identical files hosted by each individual node in a cluster, but they also need to be consistent between all nodes. These files contains persistent cluster metadata. As the number of nodes increase managing these files can become cumbersome. Local files typically contain per node specific persistent configuration data like hostname, ID and performance metrics. In our running cluster we use the following global configuration files:
+In this section we will explore the essential configuration data used to manage Voldemort. It is split into two parts: global and local files. Global files are identical files hosted by each individual node in a cluster, but they also need to be consistent between all nodes. These files contains persistent cluster metadata. As the number of nodes increase managing these files can become cumbersome. Local files typically contain per-node specific persistent configuration data like hostname, ID and performance metrics. In our running cluster we use the following global configuration files:
 
 \subsection{Configuration data}
+Each node has at any point a full overview of all the other nodes in the cluster and what partitions they hold. This is necessary to always directly route a key to the correct node.
+To provide this information, Voldemort distributes a XML file that describes the cluster, containing all hosts and partition information. This information is and needs to be consistent across all nodes.
+Note that the partitioning is strictly speaking decoupled from the storage, leaving (N,R,W) as a per \emph{storage} setting.
+
+Another feature of Voldemort is client side routing. Clients usually do routing of requests themselves, using the information of the cluster topology to find correct node for a key. A client fetches the cluster config when connecting, then uses this information for routing. When the client starts receiving errors of wrong routing from a or several nodes, it rereads the config to receive the updated information.
 
 \begin{itemize}
 \item \texttt{cluster.xml} contains persistent information on all nodes involved in a cluster. All nodes must have an entry in this file before they can join the cluster. The fields in the file is relatively self explanatory. In addition to listing communication ports, each entry must have a unique ID and hostname. The partition field tells each node which parts of the keyspace a node is responsible for. In Voldemort each partition can be moved between nodes, however the total number of partitions is not changeable after the cluster is running. In the example below the reader can verify that we have 16 partitions spread across 3 nodes. It is also possible to assign nodes into zones. Zones are typically used when operation in multiple data centers prevent too much traffic between data centers. 
@@ -48,7 +53,7 @@ Routing-strategy defines how replicas are stored in the cluster. Voldemort offer
 
 As with routing, we also have 3 alternatives for hinted handoff strategy: any-handoff, consistent handoff and proximity handoff. When using any-handoff, a random live node in the cluster is selected for the request. With consistent hand-off enabled, one of the N nodes on the hash ring after the failed node will handle the request. Finally with proximity handoff requests will be routed according to the zone proximity of the clients zone id. This is especially useful if an entire data center is offline. 
 
-We can also finely tune each individual cluster with regards to availability, consistency and durability. Replication factor specifies how many duplicates we want for each entry in the database. Required read and writes specifies how many nodes must respond to a request before it is considered successful. These three parameters greatly influences performance. 
+We can also finely tune each individual store with regards to availability, consistency and durability. Replication factor specifies how many duplicates we want for each entry in the database. Required read and writes specifies how many nodes must respond to a request before it is considered successful. These three parameters greatly influences performance. 
 
 Finally it is possible to specify the format on keys and values. Supported key formats are: json, java-serialization, string, protobuff, thrift and identity. Values can have the same formats and can be compressed with gzip or lzf. 
 

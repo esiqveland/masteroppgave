@@ -44,11 +44,11 @@ Our work should be rather failure tolerant, but we have not done very extensive 
 We feel that all our goals are met with the system we have created.
 
 \section{General Experiences}
-In this section we cover general experiences we have made that we find worth sharing. 
 \label{eval:exp}
+In this section we cover general experiences we have made that we find worth sharing. 
 
 \subsubsection{Server side caching}
-While testing, we noticed no real difference in performance between a 12MB and 2GB database cache on our Voldemort servers. This might suggest there is a problem with the cache setting in Voldemort. All of our hardware run on SSDs, but we would still consider this result surprising. This could be investigated further using largely different of data sets, but this was not our main focus in this thesis.
+While testing, we noticed no real difference in performance between a 12MB and 2GB database cache on our Voldemort servers. This might suggest there is a problem with the cache setting in Voldemort. All of our hardware run on SSDs, but we would still consider this result surprising. This could be investigated further using largely different of data sets, but this was not our main focus in this thesis. However, a theory is that the data files fit into the OS file caching, still providing very good read speeds.
 
 \subsubsection{Client updates}
 While benchmarking rebalancing we found a critical bug we had introduced in the way clients receive updates of configuration. It caused values being moved during a rebalance to be unavailable for the entire rebalance duration. This would have been hard to discover if we did not compare with the original Voldemort implementation. A graph illustration the issue is available in Figure: \ref{fig:adaptive_bug}

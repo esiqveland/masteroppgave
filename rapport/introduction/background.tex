@@ -2,7 +2,7 @@
 \section{Technical background}
 \label{sec:technical_background}
 
-The software used in this project employ many different and important techniques known from distributed computing, some of whom will be discussed here.
+The software used in this project employ many different and important techniques known from distributed computing, which will be discussed here.
 We will first discuss PAXOS, a protocol for reaching consensus in a set of independent nodes.
 In Section \ref{sec:consistenthashing} we will talk about another key aspect called consistent hashing.
 We will then discuss how these techniques help us build \emph{available} and \emph{durable} databases.
@@ -212,7 +212,7 @@ An example for adding a node with Gossip would be to tell, or \emph{seed} a coup
 As we can see, these highly distributed systems are built to allow for failure. We will here explore how Voldemort and Dynamo try to mitigate for failing nodes while also keeping with the operational requirements for consistency and durability. 
 
 \subsubsection{Hinted handoff}
-In practice, both nodes and network will fail. During such failures, who might be large, we still want to continue serving requests.
+In practice, both nodes and network will fail. During such failures, we still want to continue serving requests.
 To satisfy durability during failure, Voldemort perform a form of sloppy quorum. 
 Instead of requiring all N members of the quorum to fulfill a durable write, they use temporary hosts. 
 By this, we mean that in practice, the N nodes in the preference list a write eventually has to reach, are the next N \emph{healthy} nodes on the ring.
@@ -239,12 +239,12 @@ To minimize the impact on network load and node performance while simultaneously
 
 In Dynamo, Amazon have implemented merkle trees for comparing data sets between nodes. This significantly reduces workload on a replica synchronization.
 A merkle tree is a binary tree of hashes, see Figure \ref{fig:merkletree}, where the leaf nodes are hashes of the key objects.
-Now make a hash of the two children nodes
+Now make a hash of the two children nodes.
 Then to make the parent node, assign the parent the hash of the two hashes of the children until you have the root node. 
 
 Each node keeps a merkle tree for the keyspace that it shares with the other node. The tree is updated whenever a write is commited.
 When a sync happens between two nodes, they only need to compare the value of their root node to know if they have any differences.
-One can also see how this method makes it quick to discover which key differs. Each comparison will half the search area.
+One can also see how this method makes it quick to discover which key differs. Each comparison will halve the search area.
 I.e. we have a binary search for the differing key or even subtree.
 
 \begin{figure}[h]
@@ -267,7 +267,7 @@ Typically W is set to two, to make sure an object put must have two replicas in 
 Another interesting application is the highly writable property store we get with W=1. This means we would never reject a write as long as there is at least one node that can process a request. This will however jeopardize the durability of the data between returning the write and moving the object to other replicas. This setup also has a tendency to introduce a lot more inconsistencies in the data\cite{dynamo}.
 
 The parameter R controls how many nodes must be involved in a read for it to be successful. Setting R low (R=1) would give a high performance read engine. With R=1 though, we might end up with many inconsistencies in the data. It is the read quorum that must decide what data to return. During a read multiple versions of an object might occur. The quorum must then reconcile their versions and return the lastest, or return the conflicting ones.
-Because of this, discovering conflicts might be slower when only one node is involved in a read. We are in other words relying on only this single nodes' world view of the data in a optimistically consistent environment.
+Because of this, discovering conflicts might be slower when only one node is involved in a read. We are in other words relying on only this single node's world view of the data in a optimistically consistent environment.
 
 Knowing this, when executing a write, the first node to receive the put takes on the role as a coordinator for the write. The coordinator generates the new vector clock and writes a local copy. The coordinator then forwards the request to the top N healthy nodes in the preference list. Nodes that are not healthy are skipped. If W-1 of the healthy nodes report a successful write, the coordinator can return a successful request. 
 
