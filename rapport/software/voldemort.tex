@@ -161,7 +161,7 @@ The steps involved in executing a rebalance are the following:
 ./bin/run-class.sh voldemort.tools.RebalanceControllerCLI --url \$URL  --final-cluster final-cluster.xml --parallelism 8 --proxy-pause 900
 \end{lstlisting}
 
-Servers will be notified of the rebalance by the client sending the new \texttt{cluster.xml} files and changing their state to REBALANCING\_MASTER\_SERVER. Servers will now start proxying requests according to the new partition setup. During the proxy-pause interval, nodes will pair up in donor-stealer pairs based on tasks and start proxying requests as needed. After the proxy-pause has ended, donors will start to send data to the stealers. Once all task has been completed proxy-bridges are torn down, server state changes back to NORMAL\_SERVER, and the cluster returns to normal operations.
+Servers will be notified of the rebalance by the client sending the new \texttt{cluster.xml} files and changing their state to REBALANCING\_MASTER\_SERVER. Servers will now start proxying requests according to the new partition setup. During the proxy-pause interval, nodes will pair up in donor-stealer pairs based on tasks and start proxying requests as needed. After the proxy-pause has ended, donors will start to send data to the stealers. Once all task has been completed proxy-bridges are torn down, server state changes back to NORMAL\_SERVER, and the cluster returns to normal operation.
 
 \subsubsection{Verification}
 After a rebalance is completed, it can be useful to verify that the rebalance was a success. There is also a repair job that should be run after the rebalance to delete any orphaned keys. Recall that the entries shared by a donor node are now orphans, and can be cleaned up by deleting them.
@@ -176,9 +176,9 @@ After a rebalance is completed, it can be useful to verify that the rebalance wa
 \end{lstlisting}
 
 \subsubsection{Recovery from failure}
-A benefit of having a strict key-value store, is that there are no advanced feature. No invariants that must be kept or avoided, no joins, foreign keys, searches or other indexes (except for the primary, the key) that complicates moving and partitioning of data. 
+A benefit of having a strict key-value store, is that there are no advanced features. No invariants that must be kept or avoided, no joins, foreign keys, searches or other indexes (except for the primary, the key) that complicates moving and partitioning of data. 
 Think of Voldemort as a giant, distributed and persistent hash map.
-This simplifies the process for performing rebalancing, ie. scaling a lot. We can simply copy the partition, with some precautions to ensure durability and integrity.
+This simplifies the process for performing rebalancing, i.e. scaling a lot. We can simply copy the partition, with some precautions to ensure durability and integrity.
 
 When scaling, we give a list of $(node, partition) \rightarrow node$ pairs. The left side is the FROM node and right side TO, the destination node.
 A list of such pairs is called a \emph{rebalance plan}, a set of transfers that are to be executed during the rebalance.
