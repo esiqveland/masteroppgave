@@ -1,7 +1,8 @@
 % implementation.tex
 
-Our work and implementation happened mainly in 3 parts. Part 1 consists of integrating ZooKeeper support and mechanisms into a Voldemort server. Making Voldemort read configurations and storing data in ZooKeeper. Part 2 contains our work towards rebalancing by the help of ZooKeeper. In Part 3 we create the service Headmaster, which is a process to run along side of the Voldemort process. Headmaster listens to active nodes in the cluster, and can generate configuration for new nodes, add them to the cluster, and prepare the members for a rebalance to include the new node. Lastly we have included a part (\ref{sec:testing}) about how we validated our implementation while working.
+In this chapter we will cover our implementation process. It is structured in 4 parts. Part 1 consists of integrating ZooKeeper support and mechanisms into a Voldemort server, making Voldemort read configurations and storing data in ZooKeeper. Part 2 contains our work towards rebalancing by the help of ZooKeeper. In Part 3 we create the service Headmaster, which is a process to run along side of the Voldemort process. Headmaster listens to active nodes in the cluster, and can generate configuration for new nodes, add them to the cluster, and prepare the members for a rebalance to include the new node. We have also created SigarAgent and StatusAnalyzer to allow for Headmaster to make management decisions based on recent node activity.
 
+Lastly we have included a part (\ref{sec:testing}) about how we wrote tests to validate our implementation during development.
 
 \section{Part 1}
 Integrating ZooKeeper into Voldemort and taking advantage of the coordination services ZooKeeper provides, proved rather difficult.
