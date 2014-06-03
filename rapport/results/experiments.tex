@@ -58,13 +58,13 @@ In this part we want to investigate how our computer and cluster behaves in vari
 \subsection{Response time distribution}
 Response time is an important metric and the response time distribution is very helpful in determining perceived performance. Response time is important for both user experience when using a service and for upholding SLAs.
 
-We want to establish a baseline for how each individual node performs with regards to time used responding per requests. This is to verify the impact our modifications have on the users experience of performance. In this experiment we will setup a single node Voldemort instance, and measure the service time over a given number of requests. We will run this test with both our ZooKeeper implementation and the official Voldemort code for comparison. 
+We want to establish a baseline for how each individual node performs with regards to time used responding per request. This is to verify the impact our modifications have on the users experience of performance. In this experiment we will setup a single node Voldemort instance, and measure the service time over a given number of requests. We will run this test with both our ZooKeeper implementation and the official Voldemort code for comparison. 
 Queries are generated as fast as possible to test response time at maximum load, i.e. the worst case.
 
 We expect comparable results between the nodes, as all nodes will run at maximum capacity. We also expect the majority of these requests to be serviced in under 1 ms as found by Rabl et al.\cite{Rabl:2012:SBD:2367502.2367512}.
 
 \subsubsection{Throughput of single nodes}
-We also want to get an overview over each nodes ability to serve requests. To test throughput we will again run single node clusters and send requests at maximum load. The throughput is measured over 1 million requests, for values of 1024 bytes. 
+We also want to get an overview over each node's ability to serve requests. To test throughput we will again run single node clusters and send requests at maximum load. The throughput is measured over 1 million requests, for values of 1024 bytes. 
 
 As our hardware is so different we expect vast difference in individual node performance. The old core 2 duo will not fare well compared to the i5 and i7. 
 
@@ -72,9 +72,9 @@ As our hardware is so different we expect vast difference in individual node per
 In these experiments we have a look at how a cluster consisting of several nodes performs. We will explore different scenarios both with and without rebalancing, and look at how throughput and CPU usage is affected. For these experiments we increase the preloaded values in the system to 3 million to get a bigger data set to move during each rebalance operation. 
 
 \subsubsection{Baseline}
-This experiment will act as a base line for how a cluster behaves under load. We have 2 nodes sharing 16 partitions, 8 partitions each. We run this experiment on the two slowest nodes to make increases in performance more obvious. As we only have 2 nodes in the cluster we only use one required read / write on each request and no data duplication. Recall that this is a \texttt{(1,1,1)} system if we refer to the (N,R,W) parameters of Voldemort.
+This experiment will act as a baseline for how a cluster behaves under load. We have 2 nodes sharing 16 partitions, 8 partitions each. We run this experiment on the two slowest nodes to make increases in performance clearer, as the other two nodes maxes out above our load generator capacity. As we only have 2 nodes in the cluster we only use one required read / write on each request and no data duplication. Recall that this is a \texttt{(1,1,1)} system if we refer to the (N,R,W) parameters of Voldemort.
 
-We expect both nodes to struggle with servicing their workload and as a result the throughput should be less than optimal. In other words we do not expect the throughput of these two nodes combined to be equal to the sum of their individual throughputs. 
+We expect both nodes to struggle with servicing their workload and as a result the throughput should be less than optimal. In other words we do not expect the throughput of these two nodes combined to be equal to the sum of their individual throughputs, ie. we expect to experience sub-linear scaling. 
 
 \subsubsection{Manual rebalancing}
 In this experiment we want to see how the cluster behaves when we allow a struggling node to move partitions over to a node under less stress. We will manually move one partition at the time over from a struggling node to one less worked. We will use the same criteria as in our automatic system ,which means that a struggling node is defined as a node running over 85\% utilized CPU. We will continue to move partitions until there are no nodes under 85\% utilization. This experiment is run on the original Voldemort code. 
@@ -82,14 +82,14 @@ In this experiment we want to see how the cluster behaves when we allow a strugg
 During rebalancing we expect the throughput to suffer somewhat, however we expect to see an increase in performance over time as we gain a more optimal distribution of partitions. 
 
 \subsubsection{Automatic rebalancing}
-This experiment is a rerun of the previous one except there is no manual interaction and Headmaster is calling all the shots.
+This experiment is a rerun of the previous one except there is no manual interaction and Headmaster, our management service, is executing all operations based on monitor data.
 
-We expect this experiment to play out the same way as the previous one, with comparable performance.
+We expect this experiment to play out the same way as the previous one, with comparable performance. We expect the performance to be comparable as we did not observe any additional costs introduced by our code in the earlier tests.
 
 \subsubsection{Automatic cluster expansion}
 In this test we will utilize all our features by adding a node to an already struggling cluster and automatically move partitions to alleviate the existing nodes. We will have a cluster consisting of the Mac Mini and i5 MacBook Pro and we will add the i7 Macbook Pro during the experiment. Headmaster will be in charge of triggering rebalance as needed. 
 
-We expect the system to perform poorly during the initial phase as both computers will be running at near max capacity. After we add third computer and move the first partition the performance should increase. As the system migrates more partitions away from the struggling nodes the overall performance should keep increasing until it can keep up with maximum workload. 
+We expect the system to perform poorly during the initial phase as both computers will be running at near max capacity. After we add the third computer and move the first partition, the performance should increase. As the system migrates more partitions away from the struggling nodes the overall performance should keep increasing until it can keep up with maximum workload. 
 
 \subsubsection{Large scale move of partitions}
 Finally we want to investigate how much throughput suffers during a rebalance. We will increase the size of the data set to 15 million records to have a longer rebalance stage. This will also make sure that the entire work set does not fit in memory. We run this as a stand alone test because the other tests moving data too quickly to yield enough data points for proper analysis. We will run this experiment with a cluster consisting of 16 and 32 partitions to see if there is a relationship between partition size and performance during a rebalance. In both experiments the nodes will host the same amount of keys, but spread over varying numbers of partitions.
