@@ -89,3 +89,11 @@ I.e. if we have a query \texttt{<no.nrk.www, referrals:no.nrkbeta.www, 999>}, an
 \end{lstlisting}
 \texttt{<no.nrk.www, referrals:no.nrkbeta.www, 777>} will be returned.
 
+\subsection{SIGAR}
+SIGAR (System Information Gatherer and Reporter)\cite{sigar} is a cross-platform library and API for monitoring and gathering of system data. It is mainly written with java bindings in mind, providing a cross platform library that can be distributed as a single package. SIGAR also has bindings to many other popular languages, as the core is implemented in C, and accessed over Java JNI.
+
+SIGAR provides a variety of features and information, translating it into operating system provided information where available. It can provide information about CPU, processes, memory, state, arguments, network interfaces, network routes and various system loads.
+
+We use SIGAR as the low-level backend for collecting information on individual nodes.
+
+
