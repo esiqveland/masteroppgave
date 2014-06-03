@@ -51,7 +51,7 @@ I.e. nodes B, E and G in Figure \ref{fig:hashring} could be the same \emph{physi
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.5\textwidth]{introduction/hashring}
+    \includegraphics[width=0.5\textwidth]{background/figures/hashring}
     \caption{Hash ring with several nodes\cite{dynamo}.}
     \label{fig:hashring}
 \end{figure}
@@ -86,7 +86,7 @@ In distributed systems network and system failures can be quite common, making g
 This makes traditional replication methods unsuitable for highly concurrent distributed systems.
 
 \begin{wrapfigure}{R}{0.5\textwidth}
-    \includegraphics[width=0.5\textwidth]{introduction/hashring_voldemort}
+    \includegraphics[width=0.5\textwidth]{background/figures/hashring_voldemort}
     \caption{Hash ring with 3 nodes and 12 partitions from Voldemort\cite{dynamo} with N=2. Partitions are a fixed number of splits of the keyspace. Nodes are assigned a number of partitions which they hold. When a request is routed, one first hashes the key to find the partition the key belongs on. One then asks nodes in the order of the \emph{preference list} for the key.}
     \label{fig:voldemort_hashring}
 \end{wrapfigure}
@@ -151,7 +151,7 @@ If so, we can safely discard \texttt{A}.
 %\begin{wrapfigure}{r}{0.5\textwidth}
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.7\textwidth]{introduction/versioning}
+    \includegraphics[width=0.7\textwidth]{background/figures/versioning}
     \caption{Version history for an object\cite{voldemort}.}
     \label{fig:versioning}
 \end{figure}
@@ -199,7 +199,7 @@ An example for adding a node with Gossip would be to tell, or \emph{seed} a coup
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.5\textwidth]{introduction/gossip}
+    \includegraphics[width=0.5\textwidth]{background/figures/gossip}
     \caption{Gossiping about group membership. A node discovers \texttt{node2} is down, then relays this information to those in his neighbor list.}
     \label{fig:gossip}
 \end{figure}
@@ -249,7 +249,7 @@ I.e. we have a binary search for the differing key or even subtree.
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.5\textwidth]{introduction/hashtree}
+    \includegraphics[width=0.5\textwidth]{background/figures/hashtree}
     \caption{Structure of a merkle tree. Notice how the root node can be used for comparing two trees, and how the tree can be used for identifying divergent data.}
     \label{fig:merkletree}
 \end{figure}
