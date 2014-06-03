@@ -40,48 +40,46 @@
 \clearpage
 
 
-\begin{titlepage}\centering
-\vspace*{\fill}
-\LARGE Prelude
-\vspace*{\fill}
-\end{titlepage}
-\clearpage
-
-\input{thereandbackagain/thereandbackagain.tex}
-\clearpage
-
 \clearpage
 
 \tableofcontents
 \clearpage
 
+\pagenumbering{arabic}
+
 \listoffigures
 \clearpage
 \setcounter{page}{1}
-\pagenumbering{arabic}
+
 \chapter{Introduction and theory}
 \label{chapter:introduction}
 
 \input{introduction/introduction}
 \clearpage
 
-\input{introduction/related}
+\input{introduction/thereandbackagain}
 \clearpage
 
-\input{introduction/related_work}
+\chapter{Background theory and related work}
+\input{background/background}
 \clearpage
 
-\input{introduction/background}
+\input{background/related}
+\clearpage
+
+\input{background/related_work}
 \clearpage
 
 
+
+\chapter{Voldemort and ZooKeeper}
 \input{software/voldemort}
 \clearpage
 
 \input{software/zookeeper.tex}
 \clearpage
 
-\chapter{Implementation}
+\chapter{Integrating Voldemort and ZooKeeper}
 \label{chapter:implementation}
 \input{setup/implementation.tex}
 \clearpage
@@ -95,13 +93,13 @@
 \label{chapter:evaluation}
 \input{results/evaluation}
 
-\chapter{Future work}
-\label{chapter:futurework}
-\input{futurework}
-
 \chapter{Summary}
 \label{chapter:summary}
 \input{summary/summary}
+
+\chapter{Future work}
+\label{chapter:futurework}
+\input{futurework}
 
 \bibliographystyle{plain}
 \bibliography{references}
