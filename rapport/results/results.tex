@@ -119,8 +119,19 @@ At t=1700 there is a significant loss of throughput after a rebalance. We found 
     \label{fig:adapt_big_rebalance}
 \end{figure}
 
-Figure \ref{fig:adapt_big_rebalance} shows a large partition being moved. The partition holds almost 1 million entries or almost 1 gigabyte of data. Before the rebalance we have a steady throughput of 42k requests per second. For the duration of the rebalance, we average around 39,5k requests per second. In other words, the rebalance causes a 6\% loss of throughput. 
+Figure \ref{fig:adapt_big_rebalance} shows a large partition being moved. The partition holds almost 1 million entries or almost 1 gigabyte of data. Before the rebalance we have a steady throughput of 42k requests per second. For the duration of the rebalance, we average around 39,5k requests per second. We move a around 6\% of all values and the rebalance causes a 6\% loss of throughput. 
 
 Contrary to our expectations, we have a sudden drop in throughput followed by a steady increase during the rebalance. The sudden drop is caused by all clients being forced to fetch the newest metadata. The steady increase in throughput is a result of an increasing number of the entires being available at the stealer node, and lessening the need for proxying requests.
+
+\clearpage
+\begin{figure}[h]
+    \centering
+    \includegraphics[width = 1.0\textwidth]{results/throughput/adaptive/zookeeper/auto_3nodes_32part.pdf}
+    \caption{In depth view of thoughput during a rebalance with 15 million entries and 32 partitions. The blue vertical line marks average throughput during the rebalance.}
+    \label{fig:adapt_small_rebalance}
+\end{figure}
+
+In Figure \ref{fig:adapt_small_rebalance} we see the results of one out of 32 partitions is being moved. Before the rebalance we service 39,2k requests per second while during the rebalance we average 38,6k. This shows that over 98\% of the cluster performance is maintained during the process. For comparison we now move 3\% of all values.
+
 
 

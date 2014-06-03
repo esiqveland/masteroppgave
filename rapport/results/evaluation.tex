@@ -22,9 +22,13 @@ To achieve full potential scaling some skewing of partitions is required. In our
 
 With optimal partition distribution, a cluster consisting of the two slowest machines was able to service 46k requests per second providing almost the sum of both individual nodes. We also see that a cluster of all three nodes with proper partition distribution easily was able to service the maximum request rate of 60k requests per second. 
 
+In our final experiments we see how partition-size affects performance loss during a rebalance. Our results show that loss of performance is closely tied to how big of \% keys are affected by the rebalance. 
+
 Before starting we were worried of getting into scenario where two or more nodes ends up endlessly juggling partitions. We deemed this the biggest weakness of such a automated system. This situation did however never occur in our testing. We still think this is something that potential users need to be aware of, and need to watch out for. To mitigate this behavior, having a high number of partitions to minimize performance impact of moving one, seem like a good option.
 
-Having a high number of partitions have been a point we have made several times in this thesis. There is however a draw back. If there is a very high number of partitions in the system, and not a lot of data, we could have situations were moving a partition has little to no impact on the target systems. Even though we incurred all of these management costs, nothing really happened. This could be somewhat mitigated by moving several partitions when we are first moving, but we consider this to be more error prone.
+Having a high number of partitions have been a point we have made several times in this thesis. There is however a draw back. If there is a very high number of partitions in the system, and not a lot of data, we could have situations were moving a partition has little to no impact on the target systems. This would lead to waste of network and system resources for little to no gain. This could be somewhat mitigated by moving several partitions when we are first moving, but we consider this to be more error prone. 
+
+
 
 \subsection{Other notes}
 Overall we found the performance to be very consistent. Our results were on large very reproducible and saw little variance between benchmark runs.
