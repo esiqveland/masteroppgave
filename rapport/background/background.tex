@@ -3,34 +3,12 @@
 \label{sec:technical_background}
 
 The software used in this project employ many different and important techniques known from distributed computing, which will be discussed here.
-We will first discuss PAXOS, a protocol for reaching consensus in a set of independent nodes.
-In Section \ref{sec:consistenthashing} we will talk about another key aspect called consistent hashing.
-We will then discuss how these techniques help us build \emph{available} and \emph{durable} databases.
+In Section \ref{sec:consistenthashing} we will talk about the key aspect consistent hashing.
+We will then discuss how consistent hashing techniques help us build \emph{available} and \emph{durable} databases.
 
-Section \ref{sec:failures} discusses how failures are handled in the system.
+Section \ref{sec:failures} discusses how failures are handled in the system, before we reach the final point of this type of NoSQL databases, their \emph{tunability} in section \ref{sec:tunability}.
 
-\subsection{PAXOS}
-Whenever you have a distributed system where errors occur and messages get lost, even simple tasks like deciding on a value can become troublesome. PAXOS is a consensus algorithm made to solve this issue. 
-
-Say we have a set of processes that all can propose values. (The value could be related to leader election). Paxos ensures that a single one of these values is chosen and that all processes involved is notified of this value. If no value is being proposed, then no value should be chosen. 
-
-In Paxos a process can act in three different roles: {\it proposer, acceptor and learner}. A process is not limited to one role at the time. Processes communicate with one another by messages. These messages follow the non-Byzantine model and can take arbitrary long time to be delivered, or they can be lost entirely. They can also be duplicated, however they can not be corrupted. A process acting in a role might also crash, but we assume some critical information will remain through a restart. 
-
-When acting as a proposer, a process will propose a value to a majority subset of acceptors. These acceptors will then accept or deny the proposal according to some rules. Finally if a value is chosen, then all the learners will be informed of this value. The process of choosing a value is given below:
-
-\begin{enumerate}
-
-\item A proposer sends a prepare for proposal message to a majority set of acceptors with a number $n$. This number acts as a timestamp, and represents the last(newest) message this proposer has seen. 
-\item Each acceptor receiving this prepare for proposal message will compare the proposed number $n$ with their own highest observed $n$. If the proposed number is higher, then a promise of not accepting any proposal lower than $n$ will be sent back to the proposer along with the acceptors highest observed value. If the proposers number is lower than the acceptors observed number, then the value is sent back along with the highest observed $n$.
-\item If the proposer receives a promise from a majority of acceptors, it will send an accept message to the acceptors with the number $n$ along with the value $v$, which is the maximum values received from the acceptors. If the number of promises is less than the majority of acceptors then the attempt has failed, and the proposer must start again with a higher number $n$.
-\item When a acceptor receives an accept message, this acceptor will accept this proposal as long as there has not been issued a new proposal with a higher number in the meantime. 
-\item Finally, when an acceptor has accepted a proposal it informs all learners. Either by sending a message to all learners, or by sending a message to a designated learner, which in time will inform all other learners. This second step reduces message load but is less reliable.
-
-\end{enumerate}
-
-It is possible to construct a scenario where two proposers keep out proposing each other and no progress is ever made. To combat this a distinguished proposer must be elected. 
-
-Paxos can typically be used in distributed systems to coordinate processes. One example is leader election, another is deciding on the next action to be taken.
+We lastly introduce PAXOS, a protocol for reaching consensus in a set of independent nodes.
 
 \subsection{Consistent hashing}
 \label{sec:consistenthashing}
@@ -98,8 +76,8 @@ It is easy to see how the consistent hashing ring helps implement this approach 
 To ensure data durability, one can simply write the data to the next few nodes on the ring. In Dynamo and Voldemort this is a tunable parameter, W, which controls how many nodes a write synchronously has to reach to be successful. 
 Internally it is called \emph{required writes}.
 
-Similarly, it is easy to see how we can implement optimistic replication.
-By allowing nodes to push written object in the background at a later time to any number of nodes further down the ring.
+Similarly, it is easy to see how we can implement optimistic replication:
+By allowing nodes to push written objects in the background, at a later time, to any number of nodes further down the ring.
 This number \emph{N}, is called the \emph{replication factor}, and designates the number of replicas we \emph{eventually} want to be present.
 I.e. we will have an \emph{eventually consistent} form of replication.
 
@@ -255,6 +233,7 @@ I.e. we have a binary search for the differing key or even subtree.
 \end{figure}
 
 \subsection{Tunability}
+\label{sec:tunability}
 As we have briefly outlined above, the database system has three different parameters that are key to operation.
 The system gives the admin the opportunity to fine tune certain trade offs after what the implementation needs.
 
@@ -274,5 +253,28 @@ Knowing this, when executing a write, the first node to receive the put takes on
 Reads are handled similarly. The first node receiving the request take on the role as coordinator. The coordinator sends the request to his top N other healthy nodes for the key. After R replies, the coordinator returns the latest version this quorum can agree upon. If there are any divergently versioned objects, all of them are returned to the client for reconciliation.
 
 Amazon\cite{dynamo} mention that their most used configuration for Dynamo is a N=3, W=2, R=2 setup.
+
+\subsection{PAXOS}
+Whenever you have a distributed system where errors occur and messages get lost, even simple tasks like deciding on a value can become troublesome. PAXOS is a consensus algorithm made to solve this issue. 
+
+Say we have a set of processes that all can propose values. (The value could be related to leader election). Paxos ensures that a single one of these values is chosen and that all processes involved is notified of this value. If no value is being proposed, then no value should be chosen. 
+
+In Paxos a process can act in three different roles: {\it proposer, acceptor and learner}. A process is not limited to one role at the time. Processes communicate with one another by messages. These messages follow the non-Byzantine model and can take arbitrary long time to be delivered, or they can be lost entirely. They can also be duplicated, however they can not be corrupted. A process acting in a role might also crash, but we assume some critical information will remain through a restart. 
+
+When acting as a proposer, a process will propose a value to a majority subset of acceptors. These acceptors will then accept or deny the proposal according to some rules. Finally if a value is chosen, then all the learners will be informed of this value. The process of choosing a value is given below:
+
+\begin{enumerate}
+
+\item A proposer sends a prepare for proposal message to a majority set of acceptors with a number $n$. This number acts as a timestamp, and represents the last(newest) message this proposer has seen. 
+\item Each acceptor receiving this prepare for proposal message will compare the proposed number $n$ with their own highest observed $n$. If the proposed number is higher, then a promise of not accepting any proposal lower than $n$ will be sent back to the proposer along with the acceptors highest observed value. If the proposers number is lower than the acceptors observed number, then the value is sent back along with the highest observed $n$.
+\item If the proposer receives a promise from a majority of acceptors, it will send an accept message to the acceptors with the number $n$ along with the value $v$, which is the maximum values received from the acceptors. If the number of promises is less than the majority of acceptors then the attempt has failed, and the proposer must start again with a higher number $n$.
+\item When a acceptor receives an accept message, this acceptor will accept this proposal as long as there has not been issued a new proposal with a higher number in the meantime. 
+\item Finally, when an acceptor has accepted a proposal it informs all learners. Either by sending a message to all learners, or by sending a message to a designated learner, which in time will inform all other learners. This second step reduces message load but is less reliable.
+
+\end{enumerate}
+
+It is possible to construct a scenario where two proposers keep out proposing each other and no progress is ever made. To combat this a distinguished proposer must be elected. 
+
+Paxos can typically be used in distributed systems to coordinate processes. One example is leader election, another is deciding on the next action to be taken.
 
 
