@@ -1,28 +1,25 @@
 % implementation.tex
 
-In this chapter we will cover our implementation process. It is structured in 4 parts. Part 1 consists of integrating ZooKeeper support and mechanisms into a Voldemort server, making Voldemort read configurations and storing data in ZooKeeper. Part 2 contains our work towards rebalancing by the help of ZooKeeper. In Part 3 we create the service Headmaster, which is a process to run along side of the Voldemort process. Headmaster listens to active nodes in the cluster, and can generate configuration for new nodes, add them to the cluster, and prepare the members for a rebalance to include the new node. We have also created SigarAgent and StatusAnalyzer to allow for Headmaster to make management decisions based on recent node activity.
+In this chapter we will cover our implementation process. It is structured in 4 parts. Part 1 consists of integrating ZooKeeper support and mechanisms into the Voldemort project, making Voldemort read from and store configurations in ZooKeeper. Part 2 contains our work towards rebalancing by the help of ZooKeeper. In part 3 we create the service Headmaster, which is a management service to run along side of the Voldemort. Headmaster keeps track of active nodes in the cluster and generates configuration for new nodes that are added at runtime. It also includes them in the current cluster and executes rebalances transfer resposibility to the new nodes. We have also created SigarAgent and StatusAnalyzer to allow for Headmaster to make management decisions based on recent node activity.
 
-Lastly we have included a part (\ref{sec:testing}) about how we wrote tests to validate our implementation during development.
+Lastly we have included a part 4 on how we wrote tests to validate our implementation during development.
 
 \section{Part 1}
 Integrating ZooKeeper into Voldemort and taking advantage of the coordination services ZooKeeper provides, proved rather difficult.
 We chose to override and rewrite much of the current MetadataStore implementation to one that uses ZooKeeper as the backend storage engine instead of local files. 
-Actual data is still of course stored locally, but configuration (meta data) now resides in the ZooKeeper cluster.
+Actual data is still of course stored locally, but configuration (metadata) now resides in the ZooKeeper cluster.
 This abstraction works rather well for shared data files, but causes some issues with information that is stored for individual nodes. 
 As such, we landed on a fixed path scheme, where certain configuration files are expected to reside on known locations, and will be presented later.
 
-This change introduces the dependency of a running ZooKeeper cluster for normal operation of any node. While this is a liability and potential source for downtime in a highly available system, ZooKeeper is itself a highly available system and the 5 node setup is regarded as very stable and in heavy use at Yahoo\cite{need:citation}.
-TODO: CITATION
-
-Alternatively we could have made the coordination service optional, but we then considered it risky to allow updating config files live through ZooKeeper. In any case, the system will in general be able to operate through short ZooKeeper outages, as all meta and config data is cached locally, however changes will not propagate to the affected nodes as quickly.
+Using ZooKeeper as storage backend introduces a dependency of a running ZooKeeper cluster for normal operation of any node. While this is a liability and potential source for downtime in a highly available service, ZooKeeper is itself a highly available system and the 5 node setup is regarded as very stable and in heavy use at Yahoo\cite{zookeeperpaper}.In any case, the system will in general be able to operate through short ZooKeeper outages, as all meta and config data is cached locally, and will not affect operation. 
 
 \subsection{Configuration}
-Configuration is stored in a VoldemortConfig object. Normally this is created from settings stored in local files per node. At startup, the code looks for a properties file in a directory given by environment variable \texttt{VOLDEMORT\_HOME}. 
+Configuration is stored in a VoldemortConfig object. Normally this is created from settings stored in local files per node. At startup, the server looks for a properties file in a directory given by environment variable \texttt{VOLDEMORT\_HOME}. 
 
 Now, if you specify a ZooKeeper connection URL as a command line parameter, the program looks for configuration in ZooKeeper.
-We have given an example outline of the expected directory structure in Figure \ref{fig:configdirs}. This is for the three nodes \texttt{vold0.idi.ntnu.no}, \texttt{vold1.idi.ntnu.no} and \texttt{vold2.idi.ntnu.no}. You can see the expected path follows the pattern \texttt{/config/HOSTNAME/server.properties}. 
+We have given an example outline of the expected directory structure in Figure \ref{fig:configdirs}. This is for the three nodes \texttt{vold0.idi.ntnu.no}, \texttt{vold1.idi.ntnu.no} and \texttt{vold2.idi.ntnu.no}. You can see the expected path follows the pattern \texttt{/config/nodes/HOSTNAME/server.properties}. 
 
-The startup code then reads the config file and tries to parse. If parsing fails, the server is set to fail to clearly signal something is wrong at startup, and needs immediate fixing. If the file is not found, the server registers a watch on the path in ZooKeeper. If there is a write to this file, ZooKeeper will let the server know and the config file can be re-read. 
+The startup code then reads and tries to parse the config file. If parsing fails, the server will fail to clearly signal something is wrong during startup, and needs immediate fixing. If the file is not found, the server registers a watch on the path in ZooKeeper. If there is a write to this file, ZooKeeper will let the server know and the config file can be re-read. 
 
 One can argue whether to fail or listen when a config is not found, but we decided for the latter, to listen for changes, after implementing the management service. As we later will see, listening allows us to push new config files to a node by the help of our management daemon Headmaster. 
 
@@ -77,12 +74,12 @@ The directory structure for the whole program can be viewed in its entirety in F
 .3 headmaster\_0011 \ldots{} (ephemeral \& sequential).
 .3 headmaster\_0012 \ldots{} (ephemeral \& sequential) .
 }
-\caption{Directory structure in ZooKeeper. The nodes or directories are actually Znodes and can hold data.}
+\caption{Directory structure in ZooKeeper. The nodes or directories are actually znodes and can hold data.}
 \label{fig:dirstruct}
 \end{figure}
 
 \subsection{MetadataStore}
-The internal state for a node is written to a \texttt{Store} called \texttt{MetadataStore}. It consists of an in memory cache store, and a persistent one to disk. The different stores are implementations of an abstract data \texttt{Store}. As such, we wrote a \texttt{Store} using ZooKeeper as the backend, and used this for persistent storage.
+The internal state for a node is written to a \texttt{Store} called \texttt{MetadataStore}. It consists of an in memory cache store, and a persistent one on disk. The different stores are implementations of an abstract data \texttt{Store}. As such, we wrote a \texttt{Store} using ZooKeeper as the backend, and used this for persistent storage.
 
 At startup we read the global configuration, the cluster and stores settings, from the Store. The Store fetches the requested files from ZooKeeper, and leaves a watch on the nodes. Because a store \emph{only} \emph{stores} data, the Store itself can not take advantage of the event deliveries from ZooKeeper: The Store keeps no application logic, and can be thought of as a hash map.
 
@@ -94,7 +91,7 @@ If it is a management event, like a disconnect event, we temporarily disable the
 After a session expiry, we receive a reconnected event when the ZooKeeper client reestablishes a connection. At this point, all set watches are lost, and all events during the connection loss will have been lost. We must therefore reset all watches and check the global configuration data on reconnect. 
 
 \section{Handling the ZooKeeper connection}
-Our handling of the ZooKeeper client and connection went through many stages and changes as we got a better understanding of its features.
+Our way of handling of the ZooKeeper client and connection went through many stages and changes as we got a better understanding of its features.
 
 Our currently preferred design can be viewed in \texttt{ActiveNodeZKListener}.
 The ActiveNodeZKListener class wraps a ZooKeeper client connection, providing event delivery to the interface \texttt{ZKDataListener}. 
@@ -104,13 +101,13 @@ We provide the following listener events:
 \begin{description}
 
 	\item[dataChanged(path):] 
-		This method is called when data has been written to the watched Znode on \texttt{path}.
+		This method is called when data has been written to the watched znode on \texttt{path}.
 	\item[nodeDeleted(path):] 
-		A call to the listener to let it know the Znode on \texttt{path} has been deleted.
+		A call to the listener to let it know the znode on \texttt{path} has been deleted.
 	\item[reconnected():] 
 		The connection handler provides a simple call \texttt{reconnected()} when a connection is reestablished after session expiry. When this call happens, we know it is safe to do sanity checking of our state and register watches again.
 	\item[childrenList(path):]
-		This one is a little bit special. This method is called whenever a Znode's children list is changed. Recall that Znodes are like nodes in a tree, and can have many children. This method call indicates new or removed children for the node on \texttt{path}.
+		This one is a little bit special. This method is called whenever a znodes childrenList is changed. Recall that znodes are like nodes in a tree, and can have many children. This method call indicates new or removed children for the node on \texttt{path}.
 
 \end{description}
 
@@ -123,37 +120,32 @@ We also include the possibility for receiving the raw events from the ZooKeeper 
 \end{description}
 
 
-
-
 \section{Part 2}
 
-\subsection{Initial configuration}
+\subsection{Including rebalance functionality in Headmaster}
+Voldemort uses external scripts for triggering rebalancing and repartitioning. This made incorporating this functionality into Headmaster very cumbersome. To get around this we created added the functionality of these scripts to Voldemort. We included two classes into the project: \texttt{RebalancePlannerZK} and \texttt{RebalancerZK}. These expose the methods: \texttt{createRebalacePlan()} and \texttt{rebalance(RebalancePlan plan)} used to trigger these events. Both classes utilize \texttt{ActiveZooKeeperListener} to fetch required configuration data from ZooKeeper. Headmaster now have access to these methods and can trigger them if deemed necessary. 
 
-
-\subsection{Rebalance}
-Another issue we bumped into is related to the architecture of Voldemort.
-In a rebalance, the new config files are pushed (written) to each node separately using Voldemort admin data requests. This causes every node to execute a put of the new data on the MetadataStore.
+\subsection{Recursive triggered writes of meta data}
+While adding the rebalance features, we bumped into an issue related to the architecture of Voldemort.
+In a rebalance, the new config files are pushed (written) to each node separately using Voldemort admin data requests. This causes every node to execute a PUT of the new data on the MetadataStore.
 
 As explained above, we use ZooKeeper for (persistently) sharing the global configuration files.
 Also, we would like to be notified about changes to the config files using watches. So first you have N nodes in the cluster, executing N writes to the same file. Each file write potentially triggers N watches, causing a read and watch reset. Worst case we will end up with N writes and N*N watch triggers and reads, all in quick succession (less than a second).
 We therefore decided to ignore such put requests in the ZooKeeper driven persistent Store, and only put the new data in the Metadata cache store, deferring the admin to use a ZooKeeper write operation to put the new config out, making the nodes do a re-read.
 
 
-\subsection{Including rebalance functionality in Headmaster}
-Voldemort uses external scripts for triggering rebalancing and repartitioning. This makes incorporating this behavior into Headmaster very cumbersome. To get around this we created classes that mirrors the scripts behavior. We included two classes into the project: \texttt{RebalancePlannerZK} and \texttt{RebalancerZK}. These expose the methods: \texttt{createRebalacePlan()} and \texttt{rebalance(RebalancePlan plan)} used to trigger these events. Both classes utilize \texttt{ActiveZooKeeperListener} to fetch required configuration data from ZooKeeper. Headmaster now have access to these methods and will trigger them given a token in ZooKeeper. 
-
 
 \section{Part 3}
 \subsection{Headmaster}
 % We ran into some issues while writing these features. Originally the rebalance process sends the newly created \texttt{final\_cluster.xml} to all nodes. 
 
-Headmaster is our cluster administrator service. It can be started on any node as long as ZooKeeper is reachable. When an instance of Headmaster is started an ephemeral znode is created under /headmaster in ZooKeeper. This path has the sequential flag set, so each znode will autmoatically have a sequence number appended to its name. So at runtime with 3 nodes running Headmaster we typically have a structure like in Figure \ref{fig:dirstruct}
+Headmaster is our clusters management service. It can be started on any node as long as ZooKeeper is reachable. When an instance of Headmaster is started an \emph{ephemeral} and \emph{sequential} znode is created on the path /headmaster in ZooKeeper. This means that each instance will automatically have its own sequence number appended to its name. So at runtime with 3 nodes running Headmaster we typically have a structure like in Figure \ref{fig:dirstruct}
 
-Headmaster can be running on multiple nodes concurrently, and a leader election protocol based on ZooKeeper is resposible for only having one active Headmaster at the time. If the current Headmaster becomes unavailable, one of the waiting Headmasters will take over and become active. 
+Headmaster can be running on multiple nodes concurrently, and a leader election protocol based on ZooKeeper is responsible for only having one active Headmaster at the time. If the current Headmaster becomes unavailable, one of the waiting Headmasters will take over and become active. 
 
-Whenever a node is starting Voldemort, the node registers itself under the znode /active in ZooKeeper. This is done with the ephemeral flag set. To recap on ZooKeeper, this means that if for some reason the node is disconnected from ZooKeeper. The znode will be deleted. When a node creates this znode it also put its node id as the value. If it is a new node with no existing id, it sets the value to ``NEW''. 
+Whenever a node is starting Voldemort, the node registers itself under the a znode called  /active in ZooKeeper. This is done with the \emph{ephemeral} flag set. When a node creates this znode it also put its node id as the value. If the node has not yet received an id, it sets the value to ``NEW''. 
 
-Through ZooKeeper, Headmaster is informed of all changes under the /active znode. So, whenever there is a node registering, Headmaster checks for the value ``NEW''. Headmaster then checks if the node has an entry in the current \texttt{cluster.xml}. If the node has an entry, Headmaster simply changes the value to the correct id. If there is no entry in cluster.xml, Headmaster assigns the node a unique id and creates a znode under /config/nodes/ and uploads the corresponding server.properties file. Finally cluster.xml is updated with a new entry for the new node. This node will not have responsibility for any partitions yet.
+Through ZooKeeper, Headmaster is informed of all changes on the /active path. So, whenever there is a node registering, Headmaster checks for the value ``NEW''. Headmaster then checks if the node has an entry in the current \texttt{cluster.xml}. If the node has an entry, Headmaster simply changes the value to the correct id. If there is no entry in cluster.xml, Headmaster assigns the node a unique id and creates a znode under /config/nodes/ and uploads the corresponding server.properties file. Finally \texttt{cluster.xml} is updated with a new entry for the new node. This node will not have responsibility for any partitions yet. A rebalance to give the newcomer a part of the keyspace can be triggered manually or by StatusAnalyzer will be presented below.
 
 \subsection{SigarAgent}
 SigarAgent is our service for monitoring activity on nodes in the cluster. Our solution is heavily inspired by the work of Andreas Baakind\cite{baakind}. We utilize Hyperic's sigar API to gather system information on each individual node and send this to Headmaster. We continiously send status on current CPU usage, current consumed memory and how much data the node have stored compared to a given maximum. In contrast to Baakind who only informed his scaling service if any value was above a set threshold, we send a status message every 5 seconds. To prevent these messages for taking up too much resources, we use UDP instead of TCP as we do not require all messages to arrive at Headmaster. 
@@ -165,7 +157,7 @@ StatusAnalyzer is a decisions system available to the current Headmaster. Status
 
 StatusAnalyser has a few useful member functions:
 
-\begin{lstlisting}[style=customjava,label=lst:test,caption={a caption}]
+\begin{lstlisting}[style=customjava,label=lst:test,caption={Helper functions in StatusAnalyzer.}]
 
 getAvgCPU(String hostname)
 getCalmestNode()
@@ -174,14 +166,12 @@ migratePartitions(List<String> strugglingNodes)
 
 \end{lstlisting}
 
-Every 30 seconds analyzeCPU is run to see if the average CPU-utilization of any node is over a threshold. We have defined a node running at over 80\% as a struggling node. If any nodes are above this threshold, getCalmestNode is run to see if there are any nodes that have a lesser workload. Any node with less than 70\% load is defined as a calm node. If we have one or more struggling nodes and a calm node, migratePartitions is triggered. This will inform Headmaster that we need a rebalance action to stabilize the cluster. 
+Every 30 seconds analyzeCPU is run to see if the average CPU-utilization of any node is over a threshold. We have defined a node running at over 84\% as a struggling node. If any nodes are above this threshold, getCalmestNode is run to see if there are any calm nodes . Any node with less than 70\% load is defined as a calm node. If any node is struggling and there is a calm node, migratePartitions is triggered. This will inform Headmaster that we need a rebalance action to stabilize the cluster. 
 
-We have two strategies for moving partitions. If we have more than one struggling node we either pick one at random and move one partition over to the calm node, or we move one partition from each struggling nodes over to the calm node. The former strategy will ensure a slow and steady transition while the latter could arrive at a stable state faster at the cost of performance during the more heavy rebalance.
-
+We have two strategies for moving partitions. If we have more than one struggling node we either pick a node at random and move one partition over to the calm node, or we move one partition from each struggling nodes over to the calm node. The former strategy will ensure a slow and steady transition while the latter could arrive at a stable state faster at the cost of performance during the more heavy rebalance. 
 
 \section{Part 4}
 \subsection{Testing}
-\label{sec:testing}
 When working on large projects, a lot of code lines are involved. To prevent breaking functionality underway, and to help verify correct (desired) behavior while working, we decided to write unit tests. 
 Because of the complex series of events that need to happen while running the program to execute your desired code, it is much easier and more efficient to test and verify your code programmatically in a test environment. The design and verification of our Headmaster program greatly benefited from this approach. The event chain to test the code can be fairly complex, even though the application logic is fairly straight forward.
 
@@ -214,5 +204,5 @@ public void whenDataChangedTestIfWatchIsReset() {
 
 \end{lstlisting}
 
-Here we are verifying that upon receiving a notification that a znode has changed, the Znode (path) is fetched with a new watch set.
+Here we are verifying that upon receiving a notification that a znode has changed, the znode (path) is fetched with a new watch set.
 All without actually providing a working third party object (ActiveNodeZKListener) to the test, the object is entirely faked with the static \texttt{when} and \texttt{thenReturn} methods. After setting the dependency class up with the desired behavior, it is injected into the class we are testing, then verify that the desired method is called once and only once (\texttt{times(1)}). Similarly it is easy to see how you can verify two calls (\texttt{times(2)}). For zero calls, it is recommended to use the more readable method \texttt{never}.
