@@ -39,13 +39,13 @@ These are also the settings we used for most of our tests.
 We have 4 computers involved in these experiments:
 
 \begin{enumerate}
-	\item Custom built desktop: Intel Core i7 3.5 GHz Quad Core  16 GB Memory 250GB SSD
+	\item Desktop computer: Intel Core i7 3.5 GHz Quad Core  16 GB Memory 2x250GB SSD (load generator)
 	\item MacBook Pro: Intel Core i7 2.6 GHz Quad Core 8 GB Memory 250GB SSD
 	\item MacBook Pro: Intel Core i5 2.5 GHz Dual Core 8 GB Memory 120GB SSD
 	\item Mac Mini: Intel Core 2 Duo 2.4 GHz Dual Core 8 GB Memory 250GB SSD
 \end{enumerate}
 
-In addition we use a D-Link Dir-655 gigabit router for networking.
+In addition we use a D-Link Dir-655 gigabit router for networking. All computers are equipped with a single gigabit ethernet connection.
 
 \subsection{Software}
 All computers run Apple OS X 10.9.2 operating system and Java JDK 1.7.0\_51. 
@@ -92,21 +92,9 @@ In this test we will utilize all our features by adding a node to an already str
 We expect the system to perform poorly during the initial phase as both computers will be running at near max capacity. After we add third computer and move the first partition the performance should increase. As the system migrates more partitions away from the struggling nodes the overall performance should keep increasing until it can keep up with maximum workload. 
 
 \subsubsection{Large scale move of partitions}
-Finally we want to investigate how much throughput suffers during a rebalance. We will increase the size of the data set to 15 million records to have a longer rebalance stage. This will also make sure that the entire work set does not fit in memory. We run this as a stand alone test because the other tests moving data too quickly to yield enough data points for proper analysis. We will run this experiment with a cluster consisting of 16 and 32 partitions to see if there is a relationship between partition size and performance during a rebalance. In both experiments the nodes will host the same portion of keys.  
+Finally we want to investigate how much throughput suffers during a rebalance. We will increase the size of the data set to 15 million records to have a longer rebalance stage. This will also make sure that the entire work set does not fit in memory. We run this as a stand alone test because the other tests moving data too quickly to yield enough data points for proper analysis. We will run this experiment with a cluster consisting of 16 and 32 partitions to see if there is a relationship between partition size and performance during a rebalance. In both experiments the nodes will host the same amount of keys, but spread over varying numbers of partitions.
 
-As the entire work set does not fit in memory, we expect throughput to be lower than in the other tests. During a rebalance the throughput be consistent but lower than before the rebalance took place. As less data is transfered during the second experiment. There should be less drop in throughput. 
-
-
-
-- more partitions:
-	- 54000 / 52000 3.7\%
-
-
-
-
-
-
-
+As the entire work set does not fit in memory, we expect throughput to be lower than in the other tests. During a rebalance, we expect the throughput be consistent but lower than before the rebalance started. 
 
 
 
