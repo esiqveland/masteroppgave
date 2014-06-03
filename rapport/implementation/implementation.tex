@@ -159,7 +159,7 @@ SigarAgent is our service for monitoring activity on nodes in the cluster. Our s
 SigarAgent utilizes ZooKeeper to keep track of who is current Headmaster, and will react if there is a change of leadership. If there is no Headmaster active, SigarAgent will sleep until it is notified of a new Headmaster. 
 
 \subsection{StatusAnalyzer}
-StatusAnalyzer is a decisions system available to the current Headmaster. StatusAnalyser receives status messages from all nodes running SigarAgent and stores them in a \texttt{HashMap<String, LinkedList<StatusMessage>>}. We store the last 10 messages received from each node, corresponding to 10 intervals of data. This HashMap is used to analyze the cluster state and trigger rebalancing actions if deemed necessary.
+StatusAnalyzer is a decision system available to the current Headmaster. StatusAnalyser receives status messages from all nodes running SigarAgent and stores them in a \texttt{HashMap<String, LinkedList<StatusMessage>>}. We store the last 10 messages received from each node, corresponding to 10 intervals of data. This HashMap is used to analyze the cluster state and trigger rebalancing actions if deemed necessary.
 
 StatusAnalyser has a few useful member functions:
 
@@ -175,6 +175,8 @@ migratePartitions(List<String> strugglingNodes)
 Every 30 seconds analyzeCPU is run to see if the average CPU-utilization of any node is over a threshold. We have defined a node running at over 84\% as a struggling node. If any nodes are above this threshold, getCalmestNode is run to see if there are any calm nodes . Any node with less than 70\% load is defined as a calm node. If any node is struggling and there is a calm node, migratePartitions is triggered. This will inform Headmaster that we need a rebalance action to stabilize the cluster. 
 
 We have two strategies for moving partitions. If we have more than one struggling node we either pick a node at random and move one partition over to the calm node, or we move one partition from each struggling nodes over to the calm node. The former strategy will ensure a slow and steady transition while the latter could arrive at a stable state faster at the cost of performance during the more heavy rebalance. 
+
+Figure \ref{fig:headmaster} gives an overview of the monitor/decision cycle.
 
 \section{Part 4}
 \subsection{Testing}
