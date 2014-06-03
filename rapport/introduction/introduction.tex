@@ -1,15 +1,10 @@
 % introduction.tex
 
-This thesis is split into \ref{chapter:summary} chapters. Chapter \ref{chapter:introduction} introduces the project, goals, background and technical information. In chapter \ref{chapter:implementation} we present the work we did and how we implemented our goals. Chapter \ref{chapter:results} present the results from testing and verifying our implementation. We then have an evaluation of our work in chapter \ref{chapter:evaluation} and a summary in chapter \ref{chapter:summary}. Chapter \ref{chapter:futurework} presents our thoughts and ideas for future work.
+This thesis is split into \ref{chapter:summary} chapters. Chapter \ref{chapter:introduction} introduces the project and our goal and includes a brief summery of our pre-project as well as early work with Voldemort. Chapter \ref{chapter:background} covers technical background, related work on the topic of automated management and Hbase and Cassandra - two distributed systems similar to Voldemort. In chapter \ref{chapter:implementation} we present our implementation and we introduce Headmaster, our stand alone automated management system. Chapter \ref{chapter:results} present experiments we have run to test our implementation along with the corresponding results. Chapter \ref{chapter:evaluation} contains our evaluation the results as well as our system as a whole. Our thoughts for future work can be found in chapter \ref{chapter:futurework}. Finally a summery and our conclusion is located in chapter \ref{chapter:summary}.
 
 \section{Introduction}
 This section expands upon the background for our project, what goals we have and what methods we have employed to reach our goals. 
-The goal is a redundant, self balancing service for Voldemort that uses live data about a nodes health to make management decisions.
-
-Section \ref{sec:related_software} introduces other similar databases, where we take a quick look at Cassandra and HBase.
-Section \ref{sec:related_work} looks at similar work in our area.
-Section \ref{sec:technical_background} explains technology and techniques commonly used in distributed systems, and how they are used in Voldemort.
-Another software project we ended up using heavily is Apache ZooKeeper, and is introduced in section \ref{sec:zookeeper}.
+Our end goal is a redundant, self balancing service for Voldemort that uses live data about a nodes health to make management decisions.
 
 \subsection{Background}
 Traditional relational database systems are generally very safe to use, usually providing all of the ACID (\emph{Atomicity, Consistency, Isolation, Durability}) properties.
