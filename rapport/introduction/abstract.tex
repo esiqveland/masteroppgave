@@ -1,8 +1,13 @@
 
 \begin{abstract}
-We have migrated the configuration storage of a distributed NoSql database from local XML files on disk, to global objects stored in Apache ZooKeeper.
+NoSQL databases often support scalability and high availability.
+We address Voldemort, which is a popular, highly available NoSQL database that can be run on several nodes.
+The system is cumbersome to setup and maintain. As clusters grow in size, scaling into hundreds of nodes, management and administrative tasks become increasingly complex. We have therefore focused on automating management of a running cluster of nodes.
+
+We have migrated the configuration storage of the Voldemort distributed NoSQL database from local XML files on disk to global objects using Apache ZooKeeper.
 
 Using native tools and ZooKeeper coordination, we have implemented a fault tolerant, redundant service. The service manages node discovery, configuration generation and propagation. It also has components for live monitoring and adjustment of responsibility to match each nodes available system resources.
+
 \end{abstract}
 
 \clearpage
