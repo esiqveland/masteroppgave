@@ -77,7 +77,7 @@ This experiment will act as a baseline for how a cluster behaves under load. We 
 We expect both nodes to struggle with servicing their workload and as a result the throughput should be less than optimal. In other words we do not expect the throughput of these two nodes combined to be equal to the sum of their individual throughputs, ie. we expect to experience sub-linear scaling. 
 
 \subsubsection{Manual rebalancing}
-In this experiment we want to see how the cluster behaves when we allow a struggling node to move partitions over to a node under less stress. We will manually move one partition at the time over from a struggling node to one less worked. We will use the same criteria as in our automatic system ,which means that a struggling node is defined as a node running over 85\% utilized CPU. We will continue to move partitions until there are no nodes under 85\% utilization. This experiment is run on the original Voldemort code. 
+In this experiment we want to see how the cluster behaves when we allow a struggling node to move partitions over to a node under less stress. We will manually move one partition at the time over from a struggling node to one less worked. We will use the same criteria as in our automatic system ,which means that a struggling node is defined as a node running at 85\% utilized CPU or higher. We will continue to move partitions until there are no nodes over 85\% utilization. This experiment is run on the original Voldemort code. 
 
 During rebalancing we expect the throughput to suffer somewhat, however we expect to see an increase in performance over time as we gain a more optimal distribution of partitions. 
 
