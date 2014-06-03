@@ -22,12 +22,20 @@ To achieve full potential scaling some skewing of partitions is required. In our
 
 With optimal partition distribution, a cluster consisting of the two slowest machines was able to service 46k requests per second providing almost the sum of both individual nodes. We also see that a cluster of all three nodes with proper partition distribution easily was able to service the maximum request rate of 60k requests per second. 
 
-In our final experiments we see how partition-size affects performance loss during a rebalance. Our results show that loss of performance is closely tied to how big of \% keys are affected by the rebalance. 
+\subsection{Cost of rebalance}
+The last two results focuses on the performance cost of transferring partitions live. We see how partition-size affects performance loss during a rebalance. Our results suggests that performance cost is tied to the percentile of keys affected by the rebalance. With 98\% performance retained when 3\% of keys are copied, and 94\% retained performance when 6\% of keys are copied we would suggest taking this into consideration when deciding number of partitions.
+
+Contrary to our expectations, we have a sudden drop in throughput fol- lowed by a steady increase during the rebalance. The sudden drop is caused by all clients being forced to fetch the newest metadata. The steady increase in throughput is a result of an increasing number of the entries being available at the stealer node, and decreasing the need for proxying GET requests to the donor.
+
+We would also argue this makes sense in the relationship between keys moved and performance loss.
+When the proxy bridges are setup, all requests for the affected keys are routed to the stealer node, which do not yet hold any of these keys. 
+This means the percentage of keys being moved, are now temporarily \emph{unavailable}, in the sense that all requests for this percentile of keys must be proxied to the donor node and fetched, before the query can be answered. This performance cost should in other words relate to the percentage of keys affected.
+
+\subsection{Issues}
 
 Before starting we were worried of getting into scenario where two or more nodes ends up endlessly juggling partitions. We deemed this the biggest weakness of such a automated system. This situation did however never occur in our testing. We still think this is something that potential users need to be aware of, and need to watch out for. To mitigate this behavior, having a high number of partitions to minimize performance impact of moving one, seem like a good option.
 
 Having a high number of partitions have been a point we have made several times in this thesis. There is however a draw back. If there is a very high number of partitions in the system, and not a lot of data, we could have situations were moving a partition has little to no impact on the target systems. This would lead to waste of network and system resources for little to no gain. This could be somewhat mitigated by moving several partitions when we are first moving, but we consider this to be more error prone. 
-
 
 
 \subsection{Other notes}
