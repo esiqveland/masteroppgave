@@ -10,7 +10,7 @@ We did not have access to different network hardware while doing this project. O
 
 \subsection{Response time distribution and throughput}
 \label{eval:performance}
-In our initial benchmarking experiments we have found no significant difference in the performance when comparing our ZooKeeper implementation with the original Voldemort code. In some cases our implementation is performing slightly better, while in other the opposite is true. We believe this mostly comes down to variance.
+In our initial benchmarking experiments we have found no significant difference in the performance when comparing our ZooKeeper implementation with the original Voldemort code. In some cases our implementation is performing slightly better, while in other the opposite is true. We interpret this shifting variance between them to suggest the two versions are quite similar. If the jitter between tests are seemingly larger than the impact of the changes, it is hard to find anything more conclusive.
 
 Contrary to our expectations, the response time distribution varies greatly on different hardware. In our results the 0.999 percentile response time varies from 250 ms on the slowest hardware to 5 ms on the fastest. On the .90 percentile there is however is much less difference with response times of 2 ms on the slowest hardware and 1 ms on the fastest.
 
