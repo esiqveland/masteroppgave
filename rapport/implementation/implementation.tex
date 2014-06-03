@@ -176,7 +176,7 @@ Every 30 seconds analyzeCPU is run to see if the average CPU-utilization of any 
 
 We have two strategies for moving partitions. If we have more than one struggling node we either pick a node at random and move one partition over to the calm node, or we move one partition from each struggling nodes over to the calm node. The former strategy will ensure a slow and steady transition while the latter could arrive at a stable state faster at the cost of performance during the more heavy rebalance. 
 
-Figure \ref{fig:headmaster} gives an overview of the monitor/decision cycle.
+Figure \ref{fig:headmaster} gives an overview of the monitor/decision cycle and the typical ordering of events.
 
 \section{Part 4}
 \subsection{Testing}
