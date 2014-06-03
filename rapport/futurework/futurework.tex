@@ -6,7 +6,8 @@ We will here introduce and expand upon some ideas we have for future work on thi
 Voldemort as of this project, does not support downscaling, ie. downsizing the cluster. There is work going on for this, but it is not a current priority. We would of course like to include this functionality into our project once it is possible.
 
 \section{Data rebalancing}
-Rebalancing here refers to the data balance in the cluster. With nodes being added and partitions shuffled around, the system might end up in states were the data distribution is uneven like in Table \ref{tbl:datarebalance}.
+A cluster serving requests might over time develop an uneven data distribution like in Table \ref{tbl:datarebalance}. The reason for this uneven data distribution is simply bad luck. 
+
 \begin{center}
 \begin{table}[h]
 	\begin{tabular}{|c|c|r|}
@@ -69,6 +70,3 @@ Managing nodes in the cluster through a web interface could add a lot of value, 
 Manually configuring and monitoring large clusters of over 100 computers is tedious and error prone, if not impossible by humans.
 Using our framework to automate such tasks through a interface would not be too hard to implement.
 We can easily see it being used for both introducing new nodes, replacing and overall monitoring of system health.
-
-
-TODO: - Application specific rebalance strategys. ?
