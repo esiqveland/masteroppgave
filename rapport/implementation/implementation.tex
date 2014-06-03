@@ -134,6 +134,12 @@ Also, we would like to be notified about changes to the config files using watch
 We therefore decided to ignore such put requests in the ZooKeeper driven persistent Store, and only put the new data in the Metadata cache store, deferring the admin to use a ZooKeeper write operation to put the new config out, making the nodes do a re-read.
 
 
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1.0\textwidth]{implementation/Headmaster}
+    \caption{System drawing of the management service Headmaster.}
+    \label{fig:headmaster}
+\end{figure}
 
 \section{Part 3}
 \subsection{Headmaster}
@@ -143,12 +149,12 @@ Headmaster is our clusters management service. It can be started on any node as 
 
 Headmaster can be running on multiple nodes concurrently, and a leader election protocol based on ZooKeeper is responsible for only having one active Headmaster at the time. If the current Headmaster becomes unavailable, one of the waiting Headmasters will take over and become active. 
 
-Whenever a node is starting Voldemort, the node registers itself under the a znode called  /active in ZooKeeper. This is done with the \emph{ephemeral} flag set. When a node creates this znode it also put its node id as the value. If the node has not yet received an id, it sets the value to ``NEW''. 
+Whenever a node is starting Voldemort, the node registers itself under a znode called \texttt{/active} in ZooKeeper. This is done with the \emph{ephemeral} flag set. When a node creates this znode it also put its node id as the value. If the node has not yet received an id, it sets the value to ``NEW''. 
 
-Through ZooKeeper, Headmaster is informed of all changes on the /active path. So, whenever there is a node registering, Headmaster checks for the value ``NEW''. Headmaster then checks if the node has an entry in the current \texttt{cluster.xml}. If the node has an entry, Headmaster simply changes the value to the correct id. If there is no entry in cluster.xml, Headmaster assigns the node a unique id and creates a znode under /config/nodes/ and uploads the corresponding server.properties file. Finally \texttt{cluster.xml} is updated with a new entry for the new node. This node will not have responsibility for any partitions yet. A rebalance to give the newcomer a part of the keyspace can be triggered manually or by StatusAnalyzer will be presented below.
+Through ZooKeeper, Headmaster is informed of all changes on the \texttt{/active} path. So, whenever there is a node registering, Headmaster checks for the value ``NEW''. Headmaster then checks if the node has an entry in the current \texttt{cluster.xml}. If the node has an entry, Headmaster simply changes the value to the correct id. If there is no entry in \texttt{cluster.xml}, Headmaster assigns the node a unique id and creates a znode under \texttt{/config/nodes/} and uploads the corresponding \texttt{server.properties} file. Finally \texttt{cluster.xml} is updated with a new entry for the new node. This node will not have responsibility for any partitions yet. A rebalance to give the newcomer a part of the keyspace can be triggered manually or by StatusAnalyzer will be presented below.
 
 \subsection{SigarAgent}
-SigarAgent is our service for monitoring activity on nodes in the cluster. Our solution is heavily inspired by the work of Andreas Baakind\cite{baakind}. We utilize Hyperic's sigar API to gather system information on each individual node and send this to Headmaster. We continiously send status on current CPU usage, current consumed memory and how much data the node have stored compared to a given maximum. In contrast to Baakind who only informed his scaling service if any value was above a set threshold, we send a status message every 5 seconds. To prevent these messages for taking up too much resources, we use UDP instead of TCP as we do not require all messages to arrive at Headmaster. 
+SigarAgent is our service for monitoring activity on nodes in the cluster. Our solution is heavily inspired by the work of Andreas Baakind\cite{baakind}. We utilize Hyperic's sigar API to gather system information on each individual node and send this to Headmaster. We continuously send status on current CPU usage, memory used and how much data the node has stored compared to a given maximum. In contrast to Baakind who only informed his scaling service if any value was above a set threshold, we send a status message every 5 seconds. To prevent these messages for taking up too much resources, we use UDP instead of TCP as we do not require all messages to arrive at Headmaster. During all our testing we had 0 lost packages.
 
 SigarAgent utilizes ZooKeeper to keep track of who is current Headmaster, and will react if there is a change of leadership. If there is no Headmaster active, SigarAgent will sleep until it is notified of a new Headmaster. 
 
