@@ -4,7 +4,7 @@ In this section we present our results from the experiments. The experiments fol
 
 \subsection{Response time distribution}
 
-\clearpage
+%\clearpage
 \begin{figure}[h]
     \centering
     \includegraphics[width=1.0\textwidth]{results/distribution/distribution_macmini}
@@ -119,9 +119,9 @@ At t=1700 there is a significant loss of throughput after a rebalance. We found 
     \label{fig:adapt_big_rebalance}
 \end{figure}
 
-Figure \ref{fig:adapt_big_rebalance} shows a large partition being moved. The partition holds almost 1 million entries or almost 1 gigabyte of data. Before the rebalance we have a steady throughput of 42k requests per second. For the duration of the rebalance, we average around 39,5k requests per second. We move a around 6\% of all values and the rebalance causes a 6\% loss of throughput. 
+Figure \ref{fig:adapt_big_rebalance} shows a large partition being moved. The partition holds almost 1 million entries or almost 1 gigabyte of data. Before the rebalance we have a steady throughput of 42k requests per second. For the duration of the rebalance, we average around 39,5k requests per second. We move a around 6\% of all values and the rebalance causes a 6\% loss of throughput, running at roughly 94\% of performance before the rebalance. 
 
-Contrary to our expectations, we have a sudden drop in throughput followed by a steady increase during the rebalance. The sudden drop is caused by all clients being forced to fetch the newest metadata. The steady increase in throughput is a result of an increasing number of the entires being available at the stealer node, and lessening the need for proxying requests.
+Contrary to our expectations, we have a sudden drop in throughput followed by a steady increase during the rebalance. The sudden drop is caused by all clients being forced to fetch the newest metadata. The steady increase in throughput is a result of an increasing number of the entries being available at the stealer node, and lessening the need for proxying GET requests.
 
 \clearpage
 \begin{figure}[h]
@@ -131,7 +131,6 @@ Contrary to our expectations, we have a sudden drop in throughput followed by a 
     \label{fig:adapt_small_rebalance}
 \end{figure}
 
-In Figure \ref{fig:adapt_small_rebalance} we see the results of one out of 32 partitions is being moved. Before the rebalance we service 39,2k requests per second while during the rebalance we average 38,6k. This shows that over 98\% of the cluster performance is maintained during the process. For comparison we now move 3\% of all values.
-
+In Figure \ref{fig:adapt_small_rebalance} we see the results of moving one of the 32 partitions. Before the rebalance we service 39,2k requests per second, while during the rebalance we average 38,6k requests per second. This shows that over 98\% of the cluster performance is maintained during the process. For comparison we now move 3\% of all values.
 
 
