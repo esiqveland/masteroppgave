@@ -1,6 +1,6 @@
 % introduction.tex
 
-This thesis is split into \ref{chapter:futurework} chapters. Chapter \ref{chapter:introduction} introduces the project and our goal and includes a brief summery of our pre-project as well as early work with Voldemort. Chapter \ref{chapter:background} covers technical background, related work on the topic of automated management and Hbase and Cassandra - two distributed systems similar to Voldemort. In chapter \ref{chapter:implementation} we present our implementation and we introduce Headmaster, our stand alone automated management system. Chapter \ref{chapter:results} present experiments we have run to test our implementation along with the corresponding results. Chapter \ref{chapter:evaluation} contains our evaluation the results as well as our system as a whole. Finally a summary and conclusion is located in chapter \ref{chapter:summary}. Our thoughts for future work can be found in chapter \ref{chapter:futurework}. 
+This thesis is split into \ref{chapter:futurework} chapters. Chapter \ref{chapter:introduction} introduces the project and our goal and includes a brief summery of our pre-project as well as early work with Voldemort. Chapter \ref{chapter:background} covers technical background, related work on the topic of automated management and an introduction to Hbase and Cassandra - two distributed systems similar to Voldemort. Chapter \ref{chapter:voldemort_and_zookeeper} discusses Voldemort and ZooKeeper in detail. In chapter \ref{chapter:implementation} we present our implementation and we introduce Headmaster, our stand alone automated management system. Chapter \ref{chapter:results} present experiments we have run to test our implementation along with the corresponding results. Chapter \ref{chapter:evaluation} contains our evaluation of the results as well as our system as a whole. Finally a summary and conclusion is located in chapter \ref{chapter:summary}. Our thoughts for future work can be found in chapter \ref{chapter:futurework}. 
 
 \section{Introduction}
 This section expands upon the background for our project, what goals we have and what methods we have employed to reach our goals. 
@@ -34,16 +34,16 @@ We have chosen to implement this proposed configuration system by moving Voldemo
 
 We divide our goals into general goals and implementation goals. The general goals are as follows: 
 
-\begin{enumerate}
-	\item{Design a solution for simple management and automatic scaling using Voldemort and ZooKeeper.}
-	\item{Experiment and evaluate the suggested solution.}
-\end{enumerate}
+\begin{itemize}
+	\item{Design a solution for simpler management and automatic scaling using Voldemort and ZooKeeper.}
+	\item{Test and evaluate the suggested solution.}
+\end{itemize}
 
 Our implementation goals will act as a road map for our project. They will be implemented in listed order:
 
 \begin{enumerate}
 	\item{Move Voldemort configuration data away from each local node and into the global domain of ZooKeeper}
-	\item{Simplify the rebalance process using ZooKeeper}
+	\item{Integrate the Voldemort rebalance process with ZooKeeper}
 	\item{Create a service for automatic management of the cluster, including node discovery, membership and rebalancing with new members}
 	\item{Create a monitor service to monitor live nodes}
 	\item{Be able to act and make decisions about the cluster based on gathered information}
@@ -53,19 +53,4 @@ While management and monitoring can be both useful and convenient, it does intro
 
 \subsection{Method}
 We plan to rewrite the MetadataStore in Voldemort to utilize ZooKeeper instead of local files. As ZooKeeper does not offer advanced primitives, we need to implement the ones we need. We will create a separate service outside Voldemort for node discovery, membership and automatic management. We will also create a node monitor service. The monitor service will act as decision support system for the automated management service. 
-
-
-% The supported queries are limited to simple get and put operations on objects uniquely identified by a key. 
-% The objects stored are by the system considered binary blobs.
-% The database is mainly used to store lots of smaller items, typically less than 1MB in size.
-
-% Voldemort and Dynamo sacrifices consistency and isolation requirements to achieve higher availability with satisfactory durability.
-% In fact, we will later see that most of this behavior is easily tunable and left as design choices per implementation.
-% You should also note Voldemort (and Dynamo) does not guarantee any form of isolation and does not support multiple key updates.
-
-
-%\subsubsection{Motivation for these systems}
-%Traditional relational database systems are generally very safe to use, usually providing all of the ACID (\emph{Atomicity, Consistency, Isolation, Durability}) properties.
-%This guarantees that all committed transactions are processed reliably.
-%Experience has however shown that databases providing ACID guarantees have trouble scaling. It is very difficult, if not impossible, to have ACID databases handle the high traffic volumes in addition to the high availability demands of today.
 

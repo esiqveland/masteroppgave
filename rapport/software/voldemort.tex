@@ -2,7 +2,7 @@
 
 \section{Voldemort}
 \label{sec:voldemort}
-In this section we will explore the essential configuration data used to manage Voldemort. It is split into two parts: global and local files. Global files are identical files hosted by each individual node in a cluster, but they also need to be consistent between all nodes. These files contains persistent cluster metadata. As the number of nodes increase managing these files can become cumbersome. Local files typically contain per-node specific persistent configuration data like hostname, ID and performance metrics. In our running cluster we use the following global configuration files:
+In this section we will explore the essential configuration data used to manage Voldemort. It is split into two parts: global and local files. Global files are identical files hosted by each individual node in a cluster, but they also need to be consistent between all nodes. These files contains persistent cluster metadata. As the number of nodes increase managing these files can become cumbersome. Local files typically contain per-node specific persistent configuration data like hostname, ID and performance metrics.
 
 \subsection{Configuration data}
 Each node has at any point a full overview of all the other nodes in the cluster and what partitions they hold. This is necessary to always directly route a key to the correct node.
@@ -10,6 +10,8 @@ To provide this information, Voldemort distributes a XML file that describes the
 Note that the partitioning is strictly speaking decoupled from the storage, leaving (N,R,W) as a per \emph{storage} setting.
 
 Another feature of Voldemort is client side routing. Clients usually do routing of requests themselves, using the information of the cluster topology to find correct node for a key. A client fetches the cluster config when connecting, then uses this information for routing. When the client starts receiving errors of wrong routing from a or several nodes, it rereads the config to receive the updated information.
+
+In our running cluster we use the following global configuration files:
 
 \begin{itemize}
 \item \texttt{cluster.xml} contains persistent information on all nodes involved in a cluster. All nodes must have an entry in this file before they can join the cluster. The fields in the file is relatively self explanatory. In addition to listing communication ports, each entry must have a unique ID and hostname. The partition field tells each node which parts of the keyspace a node is responsible for. In Voldemort each partition can be moved between nodes, however the total number of partitions is not changeable after the cluster is running. In the example below the reader can verify that we have 16 partitions spread across 3 nodes. It is also possible to assign nodes into zones. Zones are typically used when operation in multiple data centers prevent too much traffic between data centers. 
@@ -178,7 +180,7 @@ After a rebalance is completed, it can be useful to verify that the rebalance wa
 \end{lstlisting}
 
 \subsubsection{Recovery from failure}
-A benefit of having a strict key-value store, is that there are no advanced features. No invariants that must be kept or avoided, no joins, foreign keys, searches or other indexes (except for the primary, the key) that complicates moving and partitioning of data. 
+A benefit of having a strict key-value store, is that there are no advanced features to consider when moving data. No invariants that must be kept or avoided, no joins, foreign keys, searches or other indexes (except for the primary, the key) that complicates moving and partitioning of data. 
 Think of Voldemort as a giant, distributed and persistent hash map.
 This simplifies the process for performing rebalancing, i.e. scaling a lot. We can simply copy the partition, with some precautions to ensure durability and integrity.
 

@@ -44,7 +44,7 @@ Finally in Figure \ref{fig:dist_eivind} we see the results on the i7 Macbook Pro
     \label{fig:thug_mini}
 \end{figure}
 
-On Figure \ref{fig:thug_mini} we see that the Mac Mini's Core 2 Duo is clearly running at max capacity keeping up with the workload, running at close to 100\% utilization of the CPU. Maximum throughput is hovering around 17k requests per second. 
+On Figure \ref{fig:thug_mini} we see that the Mac Mini's Core 2 Duo is clearly running at maximum capacity keeping up with the workload, running at close to 100\% utilization of the CPU. Maximum throughput is hovering around 17k requests per second. 
 
 \clearpage
 \begin{figure}[h]
@@ -104,7 +104,7 @@ Figure \ref{fig:adaptive_auto} shows the same experiment just automated by Headm
 \begin{figure}[h]
     \centering
     \includegraphics[width=1.0\textwidth]{results/adaptive3node}
-    \caption{Automatic migration of partitions in a struggling cluster after a third node joins. A smoothed average is plotted on top of throughput, but is excluded from the legend for spacial reasons}
+    \caption{Automatic migration of partitions in a struggling cluster after a third node joins. A smoothed average is plotted on top of throughput, but is excluded from the legend for spatial reasons.}
     \label{fig:adapt_3node}
 \end{figure}
 Figure \ref{fig:adapt_3node} shows the result adding a node to a struggling cluster and rebalance live. At t=380 the i7 is introduced to the cluster. We see a steady increase in performance as more and more partitions are moved to the i7. In the end the different nodes are holding different number of partitions. This is 3,5,8 for the Core 2, i5 and i7 respectively. 
