@@ -1,5 +1,5 @@
 \section{Results}
-In this section we present our results from the experiments. The experiments follow the same order as they were presented. We will have a short summary after each phase. 
+In this section we present our results from the experiments. The experiments follow the same order as they were presented. 
 
 
 \subsection{Response time distribution}
@@ -44,7 +44,7 @@ Finally in Figure \ref{fig:dist_eivind} we see the results on the i7 Macbook Pro
     \label{fig:thug_mini}
 \end{figure}
 
-On Figure \ref{fig:thug_mini} we see that the Mac Mini's Core 2 Duo is clearly maxed out keeping up with the workload, running at close to 100\% utilization of the CPU. Maximum throughput is hovering around 17k requests per second. 
+On Figure \ref{fig:thug_mini} we see that the Mac Mini's Core 2 Duo is clearly running at max capacity keeping up with the workload, running at close to 100\% utilization of the CPU. Maximum throughput is hovering around 17k requests per second. 
 
 \clearpage
 \begin{figure}[h]
@@ -54,7 +54,7 @@ On Figure \ref{fig:thug_mini} we see that the Mac Mini's Core 2 Duo is clearly m
     \label{fig:thug_knut}
 \end{figure}
 
-Figure \ref{fig:thug_knut} paints a very similar picture. The Core i5 in the MacBook performs a lot better than the Mac Mini, but it is still not able to keep up with the workload. It maxes out at around 32k requests per second. 
+Figure \ref{fig:thug_knut} paints a very similar picture. The Core i5 in the MacBook performs a lot better than the Mac Mini, but it is still not able to keep up with the workload. It reaches saturation at around 32k requests per second. 
 
 \clearpage
 
@@ -65,7 +65,7 @@ Figure \ref{fig:thug_knut} paints a very similar picture. The Core i5 in the Mac
     \label{fig:thug_eivind}
 \end{figure}
 
-Finally we have the Core i7 Macbook. Figure \ref{fig:thug_eivind} shows us the Core i7 maxing out at around 44k requests per second. It is worth noting that in this experiment the CPU-utilization is at less than 80\% meaning there is another factor limiting the system. Our explanation is that disk access might act as a bottleneck and thus limiting the i7 at 44k requests per second.
+Finally we have the Core i7 Macbook. Figure \ref{fig:thug_eivind} shows us the Core i7 saturated at around 44k requests per second. It is worth noting that in this experiment the CPU-utilization is at less than 80\% meaning there is another factor limiting the system. Our explanation is that disk access might act as a bottleneck and thus limiting the i7 at 44k requests per second.
 
 
 \clearpage
@@ -104,10 +104,10 @@ Figure \ref{fig:adaptive_auto} shows the same experiment just automated by Headm
 \begin{figure}[h]
     \centering
     \includegraphics[width=1.0\textwidth]{results/adaptive3node}
-    \caption{Automatic migration of partitions in a struggling cluster after a third node joins}
+    \caption{Automatic migration of partitions in a struggling cluster after a third node joins. A smoothed average is plotted on top of throughput, but is excluded from the legend for spacial reasons}
     \label{fig:adapt_3node}
 \end{figure}
-Our final Figure \ref{fig:adapt_3node} shows the result adding a node to a struggling cluster and rebalance live. At t=380 the i7 is introduced to the cluster. We see a steady increase in performance as more and more partitions are moved to the i7. In the end the different nodes are holding different number of partitions. This is 3,5,8 for the Core 2, i5 and i7 respectively. 
+Figure \ref{fig:adapt_3node} shows the result adding a node to a struggling cluster and rebalance live. At t=380 the i7 is introduced to the cluster. We see a steady increase in performance as more and more partitions are moved to the i7. In the end the different nodes are holding different number of partitions. This is 3,5,8 for the Core 2, i5 and i7 respectively. 
 
 At t=1700 there is a significant loss of throughput after a rebalance. We found no reason for this in our logs, so we suspect this to be related to unrelated work done by the operating system on the workload generating computer, but we failed to find any verification on this. The test is quite long, running for over 40 minutes and a quite a few of our tests got affected by random events on this time frame.
 
