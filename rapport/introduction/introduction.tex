@@ -32,10 +32,14 @@ Voldemort is currently being used by a number of known companies. At LinkedIn th
 \subsection{Goals}
 We have chosen to implement this proposed configuration system by moving Voldemort's configuration data into ZooKeeper. In addition we would like to utilize the powerful features of ZooKeeper to create an automated service for managing a running Voldemort cluster. 
 
-% Create a system for automatically including new nodes in a set of member nodes.
-% For Voldemort, this includes redistributing partitions and updating routing information without making the system unresponsive, i.e. without incurring downtime.
+We divide our goals into general goals and implementation goals. The general goals are as follows: 
 
-In short our goals are the following:
+\begin{enumerate}
+	\item{Design a solution for simple management and automatic scaling using Voldemort and ZooKeeper.}
+	\item{Experiment and evaluate the suggested solution.}
+\end{enumerate}
+
+Our implementation goals will act as a road map for our project. They will be implemented in listed order:
 
 \begin{enumerate}
 	\item{Move Voldemort configuration data away from each local node and into the global domain of ZooKeeper}
