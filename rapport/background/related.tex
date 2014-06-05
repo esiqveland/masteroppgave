@@ -1,6 +1,6 @@
 \section{Related software}
 \label{sec:related_software}
-In this section we will cover Cassandra and HBase. Two other distributed systems with similar applications and techniques as Voldemort.
+In this section we will cover Cassandra and HBase. Two other distributed systems with similar applications and techniques as Voldemort. Lastly we will introduce SIGAR, a cross platform library for monitoring of system information that we used.
 
 \subsection{Cassandra}
 Cassandra is a scalable NoSQL database now available as open source through the Apache foundation. It was built from scratch with goal of being a massively scalable NoSQL database. In a cluster running Cassandra there is no sense of a master node, and all communication between nodes use peer to peer and the gossip protocol. As an administrator it is possible to scale Cassandra to meet both current and future system requirements. 
@@ -38,7 +38,7 @@ In Cassandra de-normalization in important to efficiently perform queries that a
 Cassandra is used by several well known companies. Netflix uses Cassandra for several applications, including its subscriber system and viewer history service. Facebook used Cassandra to power their inbox search, however this was abandoned in late 2010 in favor of HBase. Spotify also moved to Cassandra after migrating away from postgreSQL because of scaling issues. They use Cassandra to store playlists, radio stations and notification notifications.
 
 \subsection{HBase}
-HBase is based on Googles paper on BigTable.
+HBase is based on Google's paper on BigTable.
 It is a sparse, distributed, persistent multi-dimensional sorted map.
 
 With regards to the CAP-theorem (Consistency, Availability, Partitioning), HBase provides consistency and tolerance to partitioning, making HBase fault tolerant and easy to reason with in practice.

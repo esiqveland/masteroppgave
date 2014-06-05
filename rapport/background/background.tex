@@ -3,10 +3,10 @@
 \label{sec:technical_background}
 
 The software used in this project employ many different and important techniques known from distributed computing, which will be discussed here.
-In Section \ref{sec:consistenthashing} we will talk about the key aspect consistent hashing.
+In section \ref{sec:consistenthashing} we will talk about the key aspect consistent hashing.
 We will then discuss how consistent hashing techniques help us build \emph{available} and \emph{durable} databases.
 
-Section \ref{sec:failures} discusses how failures are handled in the system, before we reach the final point of this type of NoSQL databases, their \emph{tunability} in section \ref{sec:tunability}.
+Section \ref{sec:failures} discusses how failures are handled in the system. The tunability of the database is introduced in section \ref{sec:tunability}.
 
 We lastly introduce PAXOS, a protocol for reaching consensus in a set of independent nodes.
 
@@ -14,7 +14,7 @@ We lastly introduce PAXOS, a protocol for reaching consensus in a set of indepen
 \label{sec:consistenthashing}
 Consistent hashing is a technique introduced in 1997 by David Karger\cite{Karger97consistenthashing} et al.
 The technique is used to solve problems with locating a key in a distributed system.
-Let's assume you have $n$ servers in the system, then number these from $0$ to $n-1$.
+Assume you have $n$ servers in the system, then number these from $0$ to $n-1$.
 The \emph{hashspace} of the keys are then divided into $n$ partitions. Then, to find which server to put a key on, do a $$\textrm{Hash(key) mod } n$$ and you have the server number for the key. 
 
 However, with this scheme if a server fails and you now have $n-1=m$ servers, all the failed server's data is gone.
@@ -51,7 +51,7 @@ This approach to locating keys has several advantages:
 Consistent hashing also conveniently allows for easy, tunable replication of data to ensure durability, as used by key-value stores Dynamo\cite{dynamo} and Voldemort\cite{voldemort}. Consider W the number of data replicas to create. Hash the key, then move along the ring, writing key K to the W first nodes encountered on the ring. This will also ensure backups to be available along the ring when a node fails and requests gets passed along.
 
 \subsection{Durability}
-As explained in \ref{sec:consistenthashing}, both Voldemort and Dynamo use consistent hashing to locate and and store keys.
+As explained in \ref{sec:consistenthashing}, both Voldemort and Dynamo use consistent hashing to locate and store keys.
 They are both key-value stores only.
 The goals for the Voldemort project is a database which is highly available and fault tolerant, providing an \emph{always-on} experience.
 
@@ -91,7 +91,7 @@ In Voldemort, the hash ring is split into X equally sized parts, called \emph{pa
 The nodes create a \emph{preference list} over the partitions, which says to which \emph{partitions} it should store the replicas.
 
 Now let $N=2$ with 12 partitions as in Figure \ref{fig:voldemort_hashring}. 
-Let a key K hash to belong in partition 0. From the preference list, we see that this key should be put in \texttt{node0}, and replicated to the node holding partition 1, which is \texttt{node1}.
+Let a key K's hash belong in partition 0. From the preference list, we see that this key should be put in \texttt{node0}, and replicated to the node holding partition 1, which is \texttt{node1}.
 Voldemort also does some sanity checking when replicating, such that replicas are always replicated to N \emph{physical} nodes. 
 I.e. In our example, if both partition 0 and 1 where held by \texttt{node0}, Voldemort would move along the ring until it finds the next partition that is assigned to a different node before storing the replica.
 
@@ -102,11 +102,11 @@ Network splits, nodes dying, overloaded network points and concurrent operations
 These conflicts \emph{will} arise and need to be discovered and resolved at some point.
 
 How to deal with conflict is an important decision.
-The question of when to resolve them and who should have the task of doing so all have different properties.
+The question of when to resolve them and who should have the responsibility of doing so all have different properties.
 A traditional approach is to resolve conflicts when they appear, i.e. on writes. 
 This has the benefit of keeping read logic simple, but we may have to reject a write if not all (or a majority of) replicas are reachable. Resolving conflicts on write is also easy for the user to reason with.
 
-Voldemort however wishes to run an always writable store. No data write should fail as far as we can, even during periods of network splits and failing nodes.
+Voldemort however wishes to run an always writable store. No data write should fail, even during periods of network splits and failing nodes.
 This requirement makes it impossible to resolve conflicts on write, and forces us to do conflict resolution on read.
 
 This leaves the question of who should resolve the conflicts. We can either let the database store do conflict resolution or leave it to the application.
@@ -122,7 +122,7 @@ To be able to record all changes (writes), Voldemort uses a versioning system to
 To record this version history, Voldemort employs \emph{vector clocks}.
 
 Roughly vector clocks are implemented as a list of \texttt{(node, counter)} pairs and this list is stored with every version of every stored object.
-By evaluating the vector clocks between two versions (or more), we can decide if one is an ancestor of the other or not. If \texttt{A} followed as a version of \texttt{B}, we can discard \texttt{B} and use \texttt{A} because the changes for \texttt{B} are already included in this object. 
+By evaluating the vector clocks between two versions (or more), we can decide if one is an ancestor of the other or not. If \texttt{A} followed as a version of \texttt{B}, we can discard \texttt{B} and use \texttt{A} because the changes for \texttt{B} are already included in A. 
 If the histories are divergent, we have a conflict and need to do some sort of merge or resolution. More formally an object \texttt{A} is an ancestor of \texttt{B} if all the clocks in \texttt{A} are less than or equal to the clocks in \texttt{B}. 
 If so, we can safely discard \texttt{A}.
 
@@ -143,13 +143,13 @@ An example of an objects version history is given in Figure \ref{fig:versioning}
 The different objects written are labeled DX and the vector clock associated with the object is given in parenthesis. The distinct nodes are designated with S followed by a character, for example $S_x$ and $S_y$ are two distinct nodes.
 
 First a new object, D1 is written to the database. This write is handled by node $S_x$, and it assigns D1 the vector clock \texttt{([$S_x$,1])}.
-This is because it is the first version for this key and node $S_x$ managed the write. If another object, D2, is written to the same key is managed by $S_x$, we increment the counter for the $S_x$ version. We then have the object D2 \texttt{([$S_x$,2])}. Note that this means if somewhere we found D1, we could discard D1 if we are also holding D2 because of the versioning causality.
+This is because it is the first version for this key and node $S_x$ managed the write. If another object, D2, is written to the same key is managed by $S_x$, we increment the counter for the $S_x$ version. We then have the object D2 \texttt{([$S_x$,2])}. Note that this means if somewhere we found D1, we could discard D1 if we are also holding D2 because of the versioning causality. D1 is the direct ancestor of D2, and is obsolete.
 Next in Figure \ref{fig:versioning}, we have two more objects written to the key, but they are handled by different nodes.
-First a client reads D2, than writes object D3. The write of D3 is handled by node $S_y$, with the context from D2. We therefore get the object D3 \texttt{([$S_x$,2],[$S_y$,1])}. We can say D3 \emph{decends} from D4.
+First a client reads D2, then writes object D3. The write of D3 is handled by node $S_y$, with the context from D2. We therefore get the object D3 \texttt{([$S_x$,2],[$S_y$,1])}. We can say D3 \emph{decends} from D2.
 
 Another client has also read D2 earlier. This client writes D4, which coincidentally is also written with the context of D2. D4 ends up being handled by $S_z$. D4 gets the vector clock \texttt{([$S_x$,2],[$S_z$,1])}.
 
-As we can see, D3 and D4 are now on diverging paths, but both are based on D2.
+As we can see, D3 and D4 are now on diverging paths, as both are based on D2.
 Now when a read happens, either D3 or D4 could be returned, but ideally, and at some point, \emph{both} D3 and D4 will be returned.
 The application then needs to perform a \emph{merge}, writing an object, D5, which includes the histories of both D3 and D4.
 We see that this indeed occurs, with D5 \texttt{([$S_x$,3],[$S_y$,1],[$S_z$,1])}.
@@ -163,7 +163,7 @@ When the number of versions exceeds a number N, the oldest vector clock is delet
 While this could remove important information and create issues in the database, Giuseppe DeCandia et al.\cite{dynamo} mentions that this problem has never occurred in production.
 
 \subsection{Membership}
-In a distributed system individual nodes sometimes need to know what other nodes are available in the system. We call this group membership. Whenever a node crashes we want its membership removed so that other nodes are aware of the crash. This can be achieved in various ways. 
+In a distributed system individual nodes sometimes need to know whichx other nodes are available in the system. We call this group membership. Whenever a node crashes we want its membership removed so that other nodes are aware of the crash. This can be achieved in various ways. 
 
 \begin{itemize}
 \item A central service where nodes register themselves and send keep alive messages to verify that they are alive. When a new member is added or removed the service can simply broadcast a message to all members of the change. A drawback of this strategy is that we now have a single point of failure, as well as a solution that does not scale very well. As we expand and get more nodes in the system, the traffic into the central controller will increase as well. ZooKeeper can be used as one such central service, and we will look at how in the ZooKeeper section.

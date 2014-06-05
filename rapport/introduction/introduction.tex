@@ -1,15 +1,15 @@
 % introduction.tex
 
-This thesis is split into \ref{chapter:futurework} chapters. Chapter \ref{chapter:introduction} introduces the project and our goal and includes a brief summery of our pre-project as well as early work with Voldemort. Chapter \ref{chapter:background} covers technical background, related work on the topic of automated management and an introduction to Hbase and Cassandra - two distributed systems similar to Voldemort. Chapter \ref{chapter:voldemort_and_zookeeper} discusses Voldemort and ZooKeeper in detail. In chapter \ref{chapter:implementation} we present our implementation and we introduce Headmaster, our stand alone automated management system. Chapter \ref{chapter:results} present experiments we have run to test our implementation along with the corresponding results. Chapter \ref{chapter:evaluation} contains our evaluation of the results as well as our system as a whole. Finally a summary and conclusion is located in chapter \ref{chapter:summary}. Our thoughts for further work can be found in chapter \ref{chapter:futurework}. 
+This thesis is split into \ref{chapter:futurework} chapters. Chapter \ref{chapter:introduction} introduces the project and our goals and includes a brief summery of our pre-project as well as early work with Voldemort. Chapter \ref{chapter:background} covers technical background, related work on the topic of automated management and an introduction to Hbase and Cassandra - two distributed systems similar to Voldemort. Chapter \ref{chapter:voldemort_and_zookeeper} discusses Voldemort and ZooKeeper in detail. In chapter \ref{chapter:implementation} we present our implementation and we introduce Headmaster, our stand alone automated management system. Chapter \ref{chapter:results} present experiments we have run to test our implementation along with the corresponding results. Chapter \ref{chapter:evaluation} contains our evaluation of the results as well as our system as a whole. Finally a summary and conclusion is located in chapter \ref{chapter:summary}. Our thoughts for further work can be found in chapter \ref{chapter:futurework}. 
 
 \section{Introduction}
 This section expands upon the background for our project, what goals we have and what methods we have employed to reach our goals. 
-Our end goal is a redundant, self balancing service for Voldemort that uses live data about a nodes health to make management decisions.
+Our end goal is a redundant, self balancing service for Voldemort that uses live data about a nodes health to make management decisions. By balancing we refer to the distribution of load among the nodes.
 
 \subsection{Background}
 Traditional relational database systems are generally very safe to use, usually providing all of the ACID (\emph{Atomicity, Consistency, Isolation, Durability}) properties.
 This guarantees that all committed transactions are processed reliably. 
-Today a lot of services needs to support up to millions of users and serve thousands of requests per second, and experience has shown that databases providing ACID guarantees have trouble scaling. 
+Today a lot of services needs to support up to millions of users and serve thousands of requests per second. Experience has shown that databases providing ACID guarantees have trouble scaling. 
 To allow for cost effective scaling, commodity hardware is used instead of expensive specialized servers. To continue scaling by adding numerous small servers, applications need to become increasingly distributed.
 
 The main reason for ACID databases having troubles scaling is the strong guarantees of atomic operations, isolation and consistency. 
@@ -22,7 +22,7 @@ The databases are designed to scale linearly, however managing and scaling these
 
 
 \subsection{Voldemort and Dynamo}
-Voldemort is an open source distributed key-value database based off Amazon's paper on Dynamo, Amazons's highly available key-value store. Voldemort was created by LinkedIn and the first public release was in 2009. It is still under active development. Voldemort supports a simple set of operations limited to put, get and delete. Stored objects are uniquely identified by a key and are considered by the system as binary blobs. Voldemort is commonly used for storing lots of smaller objects, typically less than 1MB.  As with other NoSQL implementations, Voldemort sacrifices consistency and isolation requirements to achieve higher availability with satisfactory durability. In fact, we will later see that most of this behavior is easily tunable and left as design choices per implementation. In section \ref{sec:voldemort} we will look closer at the specifics of configuring Voldemort. 
+Voldemort is an open source distributed key-value database based off Amazon's paper on Dynamo, Amazon's highly available key-value store. Voldemort was created by LinkedIn and the first public release was in 2009. It is still under active development. Voldemort supports a simple set of operations limited to \emph{put}, \emph{get} and \emph{delete}. Stored objects are uniquely identified by a key and are considered by the system as binary blobs. Voldemort is commonly used for storing lots of smaller objects, typically less than 1MB.  As with other NoSQL implementations, Voldemort sacrifices consistency and isolation requirements to achieve higher availability with satisfactory durability. In fact, we will later see that most of this behavior is easily tunable and left as design choices per implementation. In section \ref{sec:voldemort} we will look closer at the specifics of configuring Voldemort. 
 
 Compared with Apaches Cassandra, Voldemort lacks the power of column families and multi-key lookup. This means that any application powered by Voldemort requires additional logic to handle more advanced queries. For simple read heavy workloads however Voldemort is quite fast, reportedly serving over 20 000 read requests per second per node\cite{voldemort}. 
 
@@ -30,7 +30,8 @@ Voldemort is currently being used by a number of known companies. At LinkedIn th
 
 
 \subsection{Goals}
-We have chosen to implement this proposed configuration system by moving Voldemort's configuration data into ZooKeeper. In addition we would like to utilize the powerful features of ZooKeeper to create an automated service for managing a running Voldemort cluster. 
+Configuration of this distributed system is a complex and error prone task for system administrators.
+To simplify this configuration process, we want to move Voldemort's configuration data into ZooKeeper for easier coordination. In addition we would like to utilize the powerful features of ZooKeeper to create an automated service for managing a running Voldemort cluster. 
 
 We divide our goals into general goals and implementation goals. The general goals are as follows: 
 
@@ -49,8 +50,8 @@ Our implementation goals will act as a road map for our project. They will be im
 	\item{Be able to act and make decisions about the cluster based on gathered information}
 \end{enumerate}
 
-While management and monitoring can be both useful and convenient, it does introduce overhead. This overhead should not have a significant impact on system performance, others citing as low as 1-2\% impact as tolerable\cite{Rabl:2012:SBD:2367502.2367512}.
+While management and monitoring can be both useful and convenient, it does introduce overhead. This overhead should not have a significant impact on system performance, with Rabl et al. suggesting as low as 1-2\% impact as tolerable\cite{Rabl:2012:SBD:2367502.2367512}.
 
 \subsection{Method}
-We plan to rewrite the MetadataStore in Voldemort to utilize ZooKeeper instead of local files. As ZooKeeper does not offer advanced primitives, we need to implement the ones we need. We will create a separate service outside Voldemort for node discovery, membership and automatic management. We will also create a node monitor service. The monitor service will act as decision support system for the automated management service. 
+We plan to rewrite the MetadataStore in Voldemort to utilize ZooKeeper instead of local files. We will also create a separate service outside Voldemort for node discovery, membership and automatic management. For the nodes, we will create a status monitor service. The monitor service will act as decision support system for the automated management service. 
 

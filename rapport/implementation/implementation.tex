@@ -90,7 +90,7 @@ If it is a management event, like a disconnect event, we temporarily disable the
 
 After a session expiry, we receive a reconnected event when the ZooKeeper client reestablishes a connection. At this point, all set watches are lost, and all events during the connection loss will have been lost. We must therefore reset all watches and check the global configuration data on reconnect. 
 
-\section{Handling the ZooKeeper connection}
+\subsection{Handling the ZooKeeper connection}
 Our way of handling of the ZooKeeper client and connection went through many stages and changes as we got a better understanding of its features.
 
 Our currently preferred design can be viewed in \texttt{ActiveNodeZKListener}.
