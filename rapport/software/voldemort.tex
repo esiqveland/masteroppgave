@@ -16,7 +16,7 @@ In our running cluster we use the following global configuration files:
 \begin{itemize}
 \item \texttt{cluster.xml} contains persistent information on all nodes involved in a cluster. All nodes must have an entry in this file before they can join the cluster. The fields in the file is relatively self explanatory. In addition to listing communication ports, each entry must have a unique ID and hostname. The partition field tells each node which parts of the keyspace a node is responsible for. In Voldemort each partition can be moved between nodes, however the total number of partitions is not changeable after the cluster is running. In the example below the reader can verify that we have 16 partitions spread across 3 nodes. It is also possible to assign nodes into zones. Zones are typically used when operating in multiple data centers limiting traffic between them. 
 
-\begin{verbatim}
+\begin{lstlisting}[style=customc, caption=Sample cluster.xml]
 <cluster>
   <name>ntnucluster</name>
   <server>
@@ -47,7 +47,7 @@ In our running cluster we use the following global configuration files:
     <partitions>12, 2, 10, 14, 5</partitions>
   </server>
 </cluster>
-\end{verbatim}
+\end{lstlisting}
 
 \item \texttt{stores.xml} contains persistent metadata on all stores operated by a cluster. One cluster running Voldemort can have several pluggable stores, served by different backends. These backends can even potentially be other databases, like a mysql or BDB database. As with \texttt{cluster.xml}, each node must have it's own copy of this file. The parameters in this file control each store's behavior. 
 
@@ -61,7 +61,7 @@ We can also finely tune each individual store with regards to availability, cons
 
 Finally it is possible to specify the format on keys and values. Supported key formats are: json, java-serialization, string, protobuff, thrift and identity. Values can have the same formats and can be compressed with gzip or lzf. 
 
-\begin{verbatim}
+\begin{lstlisting}[style=customc, caption=Sample stores.xml]
 <stores>
     <store>
         <name>test</name>
@@ -82,11 +82,11 @@ Finally it is possible to specify the format on keys and values. Supported key f
         </value-serializer>
     </store>
 </stores>
-\end{verbatim}
+\end{lstlisting}
 
 \item \texttt{server.properties} is used to configure individual nodes in a cluster. The node ID must map to an entry in \texttt{cluster.xml} for it to be valid. Using the maximum threads field one can tune the application running to the hardware of the individual node. This config file also contains store related login infomation used to access those. 
 
-\begin{verbatim}
+\begin{lstlisting}[style=customc, caption=Sample server.properties]
 node.id=0
 max.threads=100
 
@@ -110,8 +110,10 @@ mysql.database=test
 #NIO connector settings.
 enable.nio.connector=true
 request.format=vp3
-storage.configs=voldemort.store.bdb.BdbStorageConfiguration, voldemort.store.readonly.ReadOnlyStorageConfiguration
-\end{verbatim}
+storage.configs=voldemort.store.bdb.BdbStorageConfiguration, 
+voldemort.store.readonly
+ReadOnlyStorageConfiguration
+\end{lstlisting}
 
 \item We also have several local configuration files used during a rebalance operation. \texttt{rebalancing.steal.info.key} contains information on which partitions the node will need to fetch from other nodes in the system. The rebalance process also stores the existing \texttt{cluster.xml} and \texttt{stores.xml} before starting the rebalance operation in case of a roll back. Finally there is a \texttt{server.state} file that is used to persistently store rebalance state in case of a failure. It is either \texttt{NORMAL\_SERVER} or \texttt{REBALANCING\_MASTER\_SERVER}. 
 

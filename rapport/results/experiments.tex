@@ -28,8 +28,8 @@ threads=54
 recordcount=1 000 000 # records to insert during warmup
 valuesize=1024 # bytes per record
 
-voldemort-performance-tool.sh --threads $threads --metric-type $metric 
---ops-count $ops --url $url --value-size $valuesize 
+voldemort-performance-tool.sh --threads $threads --metric-type
+$metric --ops-count $ops --url $url --value-size $valuesize 
 --store-name $store --record-count $recordcount $@
 \end{lstlisting}
 
