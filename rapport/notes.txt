@@ -1,0 +1,8 @@
+notes:
+
+Dynamo: amazon’s highly available key-value store (2007)
+http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.115.1568
+
+Consistent hashing and random trees: Distributed caching protocols for relieving hot spots on the World Wide Web (1997)
+http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.147.1879
+
