@@ -1,5 +1,5 @@
 % -*- root: rapport.tex -*-
-\documentclass[a4paper, 12pt, twoside]{report}
+\documentclass[a4paper, 12pt, twoside, openright]{book}
 %\documentclass[pdftex,10pt,b5paper,twoside]{report}
 %\usepackage[lmargin=25mm,rmargin=25mm,tmargin=27mm,bmargin=30mm]{geometry}
 \usepackage[utf8]{inputenc}
@@ -18,12 +18,14 @@
 \usepackage{color}
 \usepackage{multirow}
 \usepackage{inconsolata}
+\usepackage[english]{babel}
+\usepackage{abstractbook}
 
 % settings for dokumentet
 \input{rapportsetup}
 
 \begin{document}
-\thispagestyle{empty}
+\pagenumbering{gobble}
 
 \input{introduction/abstract}
 \clearpage
@@ -34,7 +36,6 @@
 \tableofcontents
 \clearpage
 
-\pagenumbering{gobble}
 \listoffigures
 
 \clearpage
