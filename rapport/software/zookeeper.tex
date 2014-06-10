@@ -1,7 +1,7 @@
 \clearpage
 \section{Apache ZooKeeper}
 \label{sec:zookeeper}
-We have relied heavily on ZooKeeper in order to store our Voldemort configuration data as well as handling coordination in in our management system. In this section we will explain what ZooKeeper is along with how it works. Finally we will present which techniques we have used along with how we used them. 
+We have relied heavily on ZooKeeper in order to store our Voldemort configuration data as well as handling coordination in our management system. In this section we will explain what ZooKeeper is along with how it works. Finally we will present which techniques we have used along with how we used them. 
 
 \subsection{What is ZooKeeper}
 From Apache ZooKeepers own website\cite{zookeeper} they explain ZooKeeper as:
@@ -13,7 +13,7 @@ ZooKeeper was designed without specific primitives (i.e. locks and leader electi
 \subsection{Clarification}
 A \texttt{write} or \texttt{put} in the context of ZooKeeper is considered a ZooKeeper \texttt{setData} operation.
 
-A ZooKeeper event, is an event triggered by a watch set in ZooKeeper, giving push information to a client about a change in ZooKeeper about a znode being watched.
+A ZooKeeper event, is an event triggered by a watch set in ZooKeeper, giving push information to a client about a change in a ZooKeeper znode.
 
 In the context of ZooKeeper, the word file might be used for a znode. File used in the context of a local filesystem is a local file.
 
@@ -39,10 +39,10 @@ ZooKeeper provides two basic ordering guarantees:
  	\item FIFO client order
 \end{itemize}
 
-Since we have asynchronous writes a client can have several outstanding operations, but ZooKeeper guarantees that they will be executed in FIFO order. ZooKeeper also provides clients with the option to listen for changes on a znode. ZooKeeper guarantees that a client will receive a changeEvent before see the new state of the system following the change. 
+Since we have asynchronous writes a client can have several outstanding operations, but ZooKeeper guarantees that they will be executed in FIFO order. ZooKeeper also provides clients with the option to listen for changes on a znode. ZooKeeper guarantees that a client will receive a changeEvent before seeing the new state of the system following the change. 
 
 \subsection{Watches}
-As mentioned above, a client can request a watch on a znode in ZooKeeper. This watch will give the client a changeEvent the next time this znode is modified. This could be changes in number of children, changes in the data of znode or that the znode has been deleted. These watches can also be put on non existing znodes which gives the client a changeEvent when the znode is registered in ZooKeeper. It is however important to note that a watch will only trigger once, and it is not possible to request infinite watches. So it is up to each individual client to request a new watch after receiving a changeEvent.
+As mentioned above, a client can request a watch on a znode in ZooKeeper. This watch will give the client a changeEvent the next time this znode is modified. This could be changes in number of children, changes in the data or that the znode has been deleted. These watches can also be put on non existing znodes which gives the client a changeEvent when the znode is registered in ZooKeeper. It is however important to note that a watch will only trigger once, and it is not possible to request infinite watches. So it is up to each individual client to request a new watch after receiving a changeEvent.
 
 Because of ZooKeepers linearizable guarantees a read following one of these watchEvents will always return the new state of the system. In the event of several changes in quick succession it is possible for a client to not be notified of each individual change. It will however always be able to determine the final state of the system after all the changes.
 
@@ -58,7 +58,7 @@ Note that only a message of \emph{change} is delivered. This means that if 3 nod
 \subsubsection{Leader election}
 Leader election is something that frequently needs to be addressed in a distributed system. In our own management service we used ZooKeeper to handle this issue. 
 
-To elect a leader we utilize the \emph{sequential} and \emph{ephemeral} flags of a znode. We have a znode called \emph{leaders} in ZooKeeper where potential leaders can register themselves. This znode has the sequential flag set so we get a total order on the potential leaders. We also force each potential leader to use the ephemeral flag when registering. This ensures that when a client disconnects, it is removed from the children list. When it rejoins, it is given a new sequence number. By default the znode with the lowest sequence number will be the one that is the leader.
+To elect a leader we utilize the \emph{sequential} and \emph{ephemeral} flags of a znode. We have a znode called leaders in ZooKeeper where potential leaders can register themselves. This znode has the sequential flag set so we get a total order on the potential leaders. We also force each potential leader to use the ephemeral flag when registering. This ensures that when a client disconnects, it is removed from the children list. When it rejoins, it is given a new sequence number. By default the znode with the lowest sequence number will be the leader.
 
 If a node registers as a potential leader but does not win the election (i.e: There is another contender with a lower sequence number) it puts a watch on the winner and waits for changes. If eventually the leader disconnects then there will once again be elected a new leader based on sequence numbers.
 
@@ -67,9 +67,9 @@ Any client wanting to get a hold of its leader can simply ask ZooKeeper for all 
 This however can cause a thundering horde effect. When the leader disappears, ZooKeeper suddenly have lots of watches to deliver, as well as a horde of incoming requests for children lists of the parent node. To avoid this, every node waiting to be the leader can listen on the \emph{previous} node in the queue. Because of the linearizable guarantees, we know that we will never become the leader until the one in front disappears. This way only one watchEvent has to be delivered, causing only one request for the updated znode list.
 
 \subsubsection{Locks}
-Another use case for ZooKeeper is managing limited resources. This is implemented with locks. To create a lock we have a reserved znode for the resource in ZooKeeper. To queue for the lock, clients must create \emph{sequential} and \emph{ephemeral} children on this node. The client with the lowest number holds the lock. We use ephemeral to prevent a client for keeping the lock forever in case of a disconnect, and sequential is for ordering of clients.
+Another use case for ZooKeeper is managing access to resources. This is implemented with locks. To create a lock we have a reserved znode for the resource in ZooKeeper. To queue for the lock, clients must create \emph{sequential} and \emph{ephemeral} children on this node. The client with the lowest number holds the lock. We use ephemeral to prevent a client for keeping the lock forever in case of a disconnect, and sequential is for ordering of clients.
 
-It is also possible to separate locks into read and write locks. In ZooKeeper their only difference will be in the naming of the znode, but the client now can regard them as read or write locks. The case explained above is a typical write, or exclusive lock. In the case of a read lock, the client will be allowed access to the resource as long as there is no write locks before it. If there is a write lock ahead of the read, the client will put a watch on the previous exclusive lock and wait until it is deleted. Such read/write locks can typically be created by prepending a ``r'' or an ``x'' on the client znode, to signal a read or exclusive, respectively.
+It is also possible to separate locks into read and write locks. In ZooKeeper their only difference will be in the naming of the znode, but the client now can regard them as read or write locks. The case explained above is a typical write, or exclusive lock. In the case of a read lock, the client will be allowed access to the resource as long as there is no write locks ahead of it. If there is a write lock ahead of the read, the client will put a watch on the previous exclusive lock and wait until it is deleted. Such read/write locks can typically be created by prepending a ``r'' or an ``x'' on the client znode, to signal a read or exclusive lock, respectively.
 
 
 

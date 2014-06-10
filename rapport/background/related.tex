@@ -32,7 +32,7 @@ In Cassandra all participating nodes can be accessed for writes and reads. To en
 
 \subsubsection{Data model}
 The Cassandra data model is based on a key:value model, however Cassandra extends this model with up to two levels of nesting. This forms a map structure called columns where the outer row key acts as a primary key and the inner sorted map holds all information: \texttt{Map<RowKey, SortedMap<ColumnKey, ColumnValue>>}. By using maps we achieve easy lookups and range scans. By adding one more level of nesting we can group columns. These are called super columns. 
-In Cassandra de-normalization in important to efficiently perform queries that accesses information stored in separate columns. To allow for faster loopups composite columns can be created to match the need of one or more specific queries. These composite columns simply duplicate information already stored in various columns for easier access. 
+In Cassandra de-normalization in important to efficiently perform queries that accesses information stored in separate columns. To allow for faster loopups composite columns can be created to match the need of one or more specific queries. These composite columns simply duplicate information already stored in various columns for more efficient access. 
 
 
 Cassandra is used by several well known companies. Netflix uses Cassandra for several applications, including its subscriber system and viewer history service. Facebook used Cassandra to power their inbox search, however this was abandoned in late 2010 in favor of HBase. Spotify also moved to Cassandra after migrating away from postgreSQL because of scaling issues. They use Cassandra to store playlists, radio stations and notification notifications.

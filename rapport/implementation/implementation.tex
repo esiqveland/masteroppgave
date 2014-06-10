@@ -1,6 +1,6 @@
 % implementation.tex
 
-In this chapter we will cover our implementation process. It is structured in 4 parts. Part 1 consists of integrating ZooKeeper support and mechanisms into the Voldemort project, making Voldemort read from and store configurations in ZooKeeper. Part 2 contains our work towards rebalancing by the help of ZooKeeper. In part 3 we create the service Headmaster, which is a management service to run along side of the Voldemort. Headmaster keeps track of active nodes in the cluster and generates configuration for new nodes that are added at runtime. It also includes them in the current cluster and executes rebalances transfer resposibility to the new nodes. We have also created SigarAgent and StatusAnalyzer to allow for Headmaster to make management decisions based on recent node activity.
+In this chapter we will cover our implementation process. It is structured in 4 parts. Part 1 consists of integrating ZooKeeper support and mechanisms into the Voldemort project, making Voldemort read and store configurations in ZooKeeper. Part 2 contains our work towards rebalancing with the help of ZooKeeper. In part 3 we create the service Headmaster, which is a management service to run along side of the Voldemort. Headmaster keeps track of active nodes in the cluster and generates configuration for new nodes that are added at runtime. It also includes them in the current cluster and executes rebalances to transfer data to the new nodes. We have also created SigarAgent and StatusAnalyzer to allow for Headmaster to make management decisions based on recent node activity levels. All our work and code can be found in our git repository\cite{githubvold}.
 
 Lastly we have included a part 4 on how we wrote tests to validate our implementation during development.
 
@@ -11,7 +11,7 @@ Actual data is still of course stored locally, but configuration (metadata) now 
 This abstraction works rather well for shared data files, but causes some issues with information that is stored for individual nodes. 
 As such, we landed on a fixed path scheme, where certain configuration files are expected to reside on known locations, and will be presented later.
 
-Using ZooKeeper as storage backend introduces a dependency of a running ZooKeeper cluster for normal operation of any node. While this is a liability and potential source for downtime in a highly available service, ZooKeeper is itself a highly available system and the 5 node setup is regarded as very stable and in heavy use at Yahoo\cite{zookeeperpaper}.In any case, the system will in general be able to operate through short ZooKeeper outages, as all meta and config data is cached locally, and will not affect operation. 
+Using ZooKeeper as storage backend introduces a dependency of a running ZooKeeper cluster for normal operation of any node. While this is a liability and potential source for downtime in a highly available service, ZooKeeper is itself a highly available system and the 5 node setup is regarded as very stable and in heavy use at Yahoo\cite{zookeeperpaper}. In any case, the system will in general be able to operate through short ZooKeeper outages, as all meta and config data is cached locally, and will not affect operation. 
 
 \subsection{Configuration}
 Configuration is stored in a VoldemortConfig object. Normally this is created from settings stored in local files per node. At startup, the server looks for a properties file in a directory given by environment variable \texttt{VOLDEMORT\_HOME}. 
@@ -19,7 +19,7 @@ Configuration is stored in a VoldemortConfig object. Normally this is created fr
 Now, if you specify a ZooKeeper connection URL as a command line parameter, the program looks for configuration in ZooKeeper.
 We have given an example outline of the expected directory structure in Figure \ref{fig:configdirs}. This is for the three nodes \texttt{vold0.idi.ntnu.no}, \texttt{vold1.idi.ntnu.no} and \texttt{vold2.idi.ntnu.no}. You can see the expected path follows the pattern \texttt{/config/nodes/HOSTNAME/server.properties}. 
 
-The startup code then reads and tries to parse the config file. If parsing fails, the server will fail to clearly signal something is wrong during startup, and needs immediate fixing. If the file is not found, the server registers a watch on the path in ZooKeeper. If there is a write to this file, ZooKeeper will let the server know and the config file can be re-read. 
+The startup code then reads and tries to parse the config file. If parsing fails, the server will fail. This is to clearly signal that something is wrong during startup, and needs immediate fixing. If the file is not found, the server registers a watch on the path in ZooKeeper. If there is a write to this file, ZooKeeper will let the server know and the config file can be re-read. 
 
 One can argue whether to fail or listen when a config is not found, but we decided for the latter, to listen for changes, after implementing the management service. As we later will see, listening allows us to push new config files to a node by the help of our management daemon Headmaster. 
 
@@ -123,7 +123,7 @@ We also include the possibility for receiving the raw events from the ZooKeeper 
 \section{Part 2}
 
 \subsection{Including rebalance functionality in Headmaster}
-Voldemort uses external scripts for triggering rebalancing and repartitioning. This made incorporating this functionality into Headmaster very cumbersome. To get around this we created added the functionality of these scripts to Voldemort. We included two classes into the project: \texttt{RebalancePlannerZK} and \texttt{RebalancerZK}. These expose the methods: \texttt{createRebalacePlan()} and \texttt{rebalance(RebalancePlan plan)} used to trigger these events. Both classes utilize \texttt{ActiveZooKeeperListener} to fetch required configuration data from ZooKeeper. Headmaster now have access to these methods and can trigger them if deemed necessary. 
+Voldemort uses external scripts for triggering rebalancing and repartitioning. This made incorporating this functionality into Headmaster very cumbersome. We included two classes into the project: \texttt{RebalancePlannerZK} and \texttt{RebalancerZK}. These expose the methods: \texttt{createRebalacePlan()} and \texttt{rebalance(RebalancePlan plan)} used to trigger these events. Both classes utilize \texttt{ActiveZooKeeperListener} to fetch required configuration data from ZooKeeper. Headmaster now have access to these methods and can trigger them if deemed necessary. 
 
 \subsection{Recursive triggered writes of meta data}
 While adding the rebalance features, we bumped into an issue related to the architecture of Voldemort.
@@ -151,7 +151,7 @@ Headmaster can be running on multiple nodes concurrently, and a leader election 
 
 Whenever a node is starting Voldemort, the node registers itself under a znode called \texttt{/active} in ZooKeeper. This is done with the \emph{ephemeral} flag set. When a node creates this znode it also put its node id as the value. If the node has not yet received an id, it sets the value to ``NEW''. 
 
-Through ZooKeeper, Headmaster is informed of all changes on the \texttt{/active} path. So, whenever there is a node registering, Headmaster checks for the value ``NEW''. Headmaster then checks if the node has an entry in the current \texttt{cluster.xml}. If the node has an entry, Headmaster simply changes the value to the correct id. If there is no entry in \texttt{cluster.xml}, Headmaster assigns the node a unique id and creates a znode under \texttt{/config/nodes/} and uploads the corresponding \texttt{server.properties} file. Finally \texttt{cluster.xml} is updated with a new entry for the new node. This node will not have responsibility for any partitions yet. A rebalance to give the newcomer a part of the keyspace can be triggered manually or by StatusAnalyzer will be presented below.
+Through ZooKeeper, Headmaster is informed of all changes on the \texttt{/active} path. So, whenever there is a node registering, Headmaster checks for the value ``NEW''. Headmaster then checks if the node has an entry in the current \texttt{cluster.xml}. If the node has an entry, Headmaster simply changes the value to the correct id. If there is no entry in \texttt{cluster.xml}, Headmaster assigns the node a unique id and creates a znode under \texttt{/config/nodes/} and uploads the corresponding \texttt{server.properties} file. Finally \texttt{cluster.xml} is updated with a new entry for the new node. This node will not have responsibility for any partitions yet. A rebalance to give the newcomer a part of the keyspace can be triggered manually or by StatusAnalyzer.
 
 \subsection{SigarAgent}
 SigarAgent is our service for monitoring activity on nodes in the cluster. Our solution is heavily inspired by the work of Andreas Baakind\cite{baakind}. We utilize Hyperic's sigar API to gather system information on each individual node and send this to Headmaster. We continuously send status on current CPU usage, memory used and how much data the node has stored compared to a given maximum. In contrast to Baakind who only informed his scaling service if any value was above a set threshold, we send a status message every 5 seconds. To prevent these messages for taking up too much resources, we use UDP instead of TCP as we do not require all messages to arrive at Headmaster. During all our testing we had 0 lost packages.
@@ -159,9 +159,9 @@ SigarAgent is our service for monitoring activity on nodes in the cluster. Our s
 SigarAgent utilizes ZooKeeper to keep track of who is current Headmaster, and will react if there is a change of leadership. If there is no Headmaster active, SigarAgent will sleep until it is notified of a new Headmaster. 
 
 \subsection{StatusAnalyzer}
-StatusAnalyzer is a decision system available to the current Headmaster. StatusAnalyser receives status messages from all nodes running SigarAgent and stores them in a \texttt{HashMap<String, LinkedList<StatusMessage>>}. We store the last 10 messages received from each node, corresponding to 10 intervals of data. This HashMap is used to analyze the cluster state and trigger rebalancing actions if deemed necessary.
+StatusAnalyzer is a decision system available to the current Headmaster. StatusAnalyzer receives status messages from all nodes running SigarAgent and stores them in a \texttt{HashMap<String, LinkedList<StatusMessage>>}. We store the last 10 messages received from each node, corresponding to 10 intervals of data. This HashMap is used to analyze the cluster state and trigger rebalancing actions if deemed necessary.
 
-StatusAnalyser has a few useful member functions:
+StatusAnalyzer has a few useful member functions:
 
 \begin{lstlisting}[style=customjava,label=lst:test,caption={Helper functions in StatusAnalyzer.}]
 
@@ -174,7 +174,7 @@ migratePartitions(List<String> strugglingNodes)
 
 Every 30 seconds analyzeCPU is run to see if the average CPU-utilization of any node is over a threshold. We have defined a node running at over 84\% as a struggling node. If any nodes are above this threshold, getCalmestNode is run to see if there are any calm nodes . Any node with less than 70\% load is defined as a calm node. If any node is struggling and there is a calm node, migratePartitions is triggered. This will inform Headmaster that we need a rebalance action to stabilize the cluster. 
 
-We have two strategies for moving partitions. If we have more than one struggling node we either pick a node at random and move one partition over to the calm node, or we move one partition from each struggling nodes over to the calm node. The former strategy will ensure a slow and steady transition while the latter could arrive at a stable state faster at the cost of performance during the more heavy rebalance. 
+We have two strategies for moving partitions. If we have more than one struggling node, we pick a node at random and move one partition over to the calm node, or we move one partition from each struggling node over to the calm node. The former strategy will ensure a slow and steady transition while the latter could arrive at a stable state faster at the cost of performance during the more heavy rebalance. Moving several partitions at once could lead to a calm node being overwhelmed.
 
 Figure \ref{fig:headmaster} gives an overview of the monitor/decision cycle and the typical ordering of events.
 

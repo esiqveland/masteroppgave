@@ -187,7 +187,7 @@ An example for adding a node with Gossip would be to tell, or \emph{seed} a coup
 
 \subsection{Failures}
 \label{sec:failures}
-As we can see, these highly distributed systems are built to allow for failure. We will here explore how Voldemort and Dynamo try to mitigate for failing nodes while also keeping with the operational requirements for consistency and durability. 
+As we can see, these highly distributed systems are built to allow for failure. We will here explore how Voldemort and Dynamo try to mitigate for failing nodes while also keeping the operational requirements for consistency and durability. 
 
 \subsubsection{Hinted handoff}
 In practice, both nodes and network will fail. During such failures, we still want to continue serving requests.
@@ -211,7 +211,7 @@ Using hinted handoff, we can still satisfy durability guarantees during node fai
 Hinted handoff helps in environments with low churn and where nodes usually come back online. But if a node holding a hinted replica goes down before the intended node comes back up, it may even be permanently down and the hinted object is never returned to the intended owner.
 
 To mitigate such permanent failures, Dynamo\cite{dynamo} employs a method to regularly ensure that datasets common between nodes are consistent. A naive approach to this could be sending your entire key set to the other node and compare the data directly.
-This is however very costly, both in bandwidth used and is both CPU and disk intensive for both.
+This is however very costly, both in bandwidth used and is also CPU and disk intensive.
 
 To minimize the impact on network load and node performance while simultaneously doing replica synchronization, the database uses hashes of the data. Here Voldemort and Dynamo have different approaches. In Voldemort, each key's hash is sent to the other node for comparison.
 
@@ -222,7 +222,7 @@ Then to make the parent node, assign the parent the hash of the two hashes of th
 
 Each node keeps a merkle tree for the keyspace that it shares with the other node. The tree is updated whenever a write is commited.
 When a sync happens between two nodes, they only need to compare the value of their root node to know if they have any differences.
-One can also see how this method makes it quick to discover which key differs. Each comparison will halve the search area.
+One can also see how this method makes it fast to discover which keys differ. Each comparison will halve the search area.
 I.e. we have a binary search for the differing key or even subtree.
 
 \begin{figure}[h]
@@ -235,7 +235,7 @@ I.e. we have a binary search for the differing key or even subtree.
 \subsection{Tunability}
 \label{sec:tunability}
 As we have briefly outlined above, the database system has three different parameters that are key to operation.
-The system gives the admin the opportunity to fine tune certain trade offs after what the implementation needs.
+The system gives the administrator the opportunity to fine tune certain trade-offs to implementation needs.
 
 Internally, these are called N, R, W and controls certain aspects of the quorum that is involved in data operations. N is the \emph{eventual} replication factor.
 This is the number of nodes we want to store replicas for a key on, and is allowed to happen asynchronously.
@@ -245,7 +245,7 @@ Typically W is set to two, to make sure an object put must have two replicas in 
 
 Another interesting application is the highly writable property store we get with W=1. This means we would never reject a write as long as there is at least one node that can process a request. This will however jeopardize the durability of the data between returning the write and moving the object to other replicas. This setup also has a tendency to introduce a lot more inconsistencies in the data\cite{dynamo}.
 
-The parameter R controls how many nodes must be involved in a read for it to be successful. Setting R low (R=1) would give a high performance read engine. With R=1 though, we might end up with many inconsistencies in the data. It is the read quorum that must decide what data to return. During a read multiple versions of an object might occur. The quorum must then reconcile their versions and return the lastest, or return the conflicting ones.
+The parameter R controls how many nodes must be involved in a read for it to be successful. Setting R low (R=1) would give a high performance read engine. With R=1 though, we might end up with many inconsistencies in the data. It is the read quorum that must decide what data to return. During a read multiple versions of an object might occur. The quorum must then reconcile their versions and return the latest, or return the conflicting ones.
 Because of this, discovering conflicts might be slower when only one node is involved in a read. We are in other words relying on only this single node's world view of the data in a optimistically consistent environment.
 
 Knowing this, when executing a write, the first node to receive the put takes on the role as a coordinator for the write. The coordinator generates the new vector clock and writes a local copy. The coordinator then forwards the request to the top N healthy nodes in the preference list. Nodes that are not healthy are skipped. If W-1 of the healthy nodes report a successful write, the coordinator can return a successful request. 
@@ -259,7 +259,7 @@ Whenever you have a distributed system where errors occur and messages get lost,
 
 Say we have a set of processes that all can propose values. (The value could be related to leader election). Paxos ensures that a single one of these values is chosen and that all processes involved is notified of this value. If no value is being proposed, then no value should be chosen. 
 
-In Paxos a process can act in three different roles: {\it proposer, acceptor and learner}. A process is not limited to one role at the time. Processes communicate with one another by messages. These messages follow the non-Byzantine model and can take arbitrary long time to be delivered, or they can be lost entirely. They can also be duplicated, however they can not be corrupted. A process acting in a role might also crash, but we assume some critical information will remain through a restart. 
+In Paxos a process can act in three different roles: \emph{proposer, acceptor} and \emph{learner}. A process is not limited to one role at the time. Processes communicate with one another by messages. These messages follow the non-Byzantine model and can take arbitrary long time to be delivered, or they can be lost entirely. They can also be duplicated, however they can not be corrupted. A process acting in a role might also crash, but we assume some critical information will remain through a restart. 
 
 When acting as a proposer, a process will propose a value to a majority subset of acceptors. These acceptors will then accept or deny the proposal according to some rules. Finally if a value is chosen, then all the learners will be informed of this value. The process of choosing a value is given below:
 
